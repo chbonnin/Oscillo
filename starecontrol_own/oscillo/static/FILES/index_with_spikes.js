@@ -1,3 +1,5 @@
+let current_signals = {};
+let current_signals_displayed = 0;
 let phase = 0; // Phase shift in radians
 
 let RUNNING = false;
@@ -17,13 +19,14 @@ const SETUP = document.getElementById('setup');
 const SIZE = document.getElementById('size');
 
 
+
 function environmentSetup(){//This function sets up anything necessary for interacting with the oscilloscope (EVentlisteners, etc)
     
     for (let i = 1; i < 11; i++) {//setup listeners for channel buttons
         let channel = "CH" + i;
         //console.log("Setting listener for " + channel)
         document.getElementById(channel).addEventListener("click", function() {
-            toggleChannelVisibility(channel);
+            console.log(channel + " clicked");
         });
     }
 
@@ -33,25 +36,8 @@ function environmentSetup(){//This function sets up anything necessary for inter
 
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
     drawGrid(50, 'rgba(128, 128, 128, 0.5)', 0.5, 3);
-
-
-    //Here we get the channels available and add to them variables to track their current state.
-    //We also set the default values for the channels that are not available.
-    for (let i = 1; i < 11; i++) {
-        let channel = "CH" + i;
-
-        if (channelsData[channel] !== undefined){
-            channelsData[channel].isReady = true;
-            channelsData[channel].isActive = false;
-        }else{
-            channelsData[channel] = {isReady: false, isActive: false, voltage: 0, colorLight: "black", colorDark: "black", signalType: "none"};
-        }
-    }
-
-    console.log("Complete list of channel entries :");
-    console.log(channelsData);
-
 }
+
 
 function changeCurrentAnimationState(){
     RUNNING = !RUNNING;//if it's running we stop it, if it's stopped we start it
@@ -160,69 +146,68 @@ function drawGrid(gridSize, gridColor, opacity, thickerLineWidth) {
                                     // 1000000 = 1 seconde par pixel
 
 
-// Function to draw the sinusoidal waveform
-function drawSinusoidal(voltage, color) {
-    // Get the canvas element
+
+// Function to draw the sinusoidal waveform with occasional spikes
+function drawSinusoidal(voltage, color, includeSpikes = false) {
     if (CANVAS.getContext) {
-        let offsetV = getCurrentVerticalOffset();
-        let offsetH = getCurrentHorizontalOffset();
-        let verticalScaleFactor = getCurrentVerticalScale();
-        let horizontalScaleFactor = getCurrentHorizontalScale();
-
-        // Convert voltage to pixels
-        let amplitude = voltage * verticalScaleFactor;
-
-        // Calculate horizontal scale factor (pixels per microsecond)
-        let horizontalScalePixelsPerMicrosecond = CANVAS.width / horizontalScaleFactor;
-
         let ctx = CANVAS.getContext('2d');
-
-        ctx.strokeStyle = color;// Set the line color
+        ctx.strokeStyle = color; // Set the line color
         ctx.lineWidth = 2; // Set the line width to 2 pixels
 
-        //Here we set the origin of the graph to the vertical center of the canvas completely left of the canvas.
-        ctx.beginPath();
-        let x = 0;
-        let y = CANVAS.height / 2;
-        ctx.moveTo(x, y);
-
-        // Adjust amplitude based on the scaling factor
-        amplitude /= 2; // Adjust for centering the waveform
-
-        for (x = 0; x <= CANVAS.width; x += 1) {
-            let time = (x + offsetH) / horizontalScalePixelsPerMicrosecond;//remplacer 0 par une variable pr l'offset horizontal
-            y = CANVAS.height / 2 + amplitude * Math.sin(2 * Math.PI * (time - phase)) + offsetV;
-            ctx.lineTo(x, y);
+        // Determine if we should include a spike
+        if (includeSpikes && Math.random() < 0.05) { // ~5% chance to spike
+            if (Math.random() < 0.5) {
+                voltage = voltage + Math.random();
+            }else{
+                voltage = voltage - Math.random();
+            }
+        } else {
+            voltage = voltage; // Normal voltage
         }
-        ctx.stroke();
 
+        // Loop through each pixel across the canvas width
+        for (let x = 0; x <= CANVAS.width; x += 1) {
+            let offsetV = getCurrentVerticalOffset();
+            let offsetH = getCurrentHorizontalOffset();
+            let verticalScaleFactor = getCurrentVerticalScale();
+            let horizontalScaleFactor = getCurrentHorizontalScale();
+            let horizontalScalePixelsPerMicrosecond = CANVAS.width / horizontalScaleFactor;
+
+            let time = (x + offsetH) / horizontalScalePixelsPerMicrosecond;
+            let y = CANVAS.height / 2;
+
+            let amplitude = voltage * verticalScaleFactor / 2; // Adjust for centering
+            y += amplitude * Math.sin(2 * Math.PI * (time - phase)) + offsetV;
+
+            // Draw the point
+            if (x === 0) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.stroke(); // Apply the stroke to the path
     }
 }
 
 
-function drawChannels() {
-    Object.keys(channelsData).forEach(key => {
-        let channel = channelsData[key];
-        if (channel.isReady && channel.isShown) {
-            drawSinusoidal(channel.voltage, channel.colorLight); 
-        }
-    });
-}
-
-function Run_Main_Screen(CHANNELS){
-    if (RUNNING && intervalId === null){//If the oscillo is started and the loop hasn't started yet, we start it
+function Run_Main_Screen() {
+    if (RUNNING && intervalId === null) {
         intervalId = setInterval(function() {
             clearCanvas();
             drawGrid(50, 'rgba(128, 128, 128, 0.5)', 0.5, 3);
-    
+
             phase += 0.01;
             if (phase > 1) phase = 0;
-            
-            //here we need to check what channels are active and draw them
-            drawChannels();
-            
+
+            // Toggle includeSpikes based on your condition for testing
+            drawSinusoidal(3.3, "red", true); // Now passing true to include spikes
+            drawSinusoidal(1.76, "cyan", true); // Now passing true to include spikes
+            drawSinusoidal(5.42, "pink", true); // Now passing true to include spikes
+            drawSinusoidal(6.98, "purple", true); // Now passing true to include spikes
         }, 50);
-    }else if (!RUNNING && intervalId !== null){//If the oscillo is stopped and the loop is running, we stop it
+    } else if (!RUNNING && intervalId !== null) {
         clearInterval(intervalId);
         intervalId = null;
         clearCanvas();
@@ -231,36 +216,14 @@ function Run_Main_Screen(CHANNELS){
 }
 
 
+
 document.addEventListener('DOMContentLoaded', function() {
     environmentSetup();//we load all the necessary event listeners for the oscilloscope
 
-    //console.log(channelsData);//checking if we got data or not
+    console.log(channelsData);//checking if we got data or not
 
-    Run_Main_Screen(channelsData);
+    Run_Main_Screen();
 });
 
 
-function changeChannelButtonColor(channelKey) {
-    let button = document.getElementById(channelKey);
-    if (channelsData[channelKey].isShown) {
-        console.log("This button is now shown !");
-
-        button.classList.remove("channel-not-displayed");
-        button.classList.add("channel-displayed");
-        button.classList.add(channelsData[channelKey].colorLight);
-    } else {
-        console.log("This button should not be shown !");
-
-        button.classList.remove("channel-displayed");
-        button.classList.add("channel-not-displayed");
-        
-    }
-}
-
-function toggleChannelVisibility(channelKey) {
-    if (channelsData[channelKey]) {//in case the channel does not exist
-        channelsData[channelKey].isShown = !channelsData[channelKey].isShown;
-        changeChannelButtonColor(channelKey);
-    }
-}
 

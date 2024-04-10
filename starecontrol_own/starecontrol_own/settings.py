@@ -78,8 +78,15 @@ WSGI_APPLICATION = 'starecontrol_own.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'CNRS',
+        'USER': 'owen',
+        'PASSWORD': 'j38fqt',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS' : {
+            'autocommit': True,
+        },
     }
 }
 
@@ -100,6 +107,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+]
+
+AUTHENTICATION_BACKENDS = [
+    'oscillo.backends.EmailOrUsernameModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 

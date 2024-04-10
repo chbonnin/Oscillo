@@ -1,5 +1,4 @@
 body{
-    /* background-color: darkblue; */
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -8,8 +7,6 @@ body{
 
     margin: 0px;
     padding: 0px;
-
-
 }
 
 section{
@@ -106,6 +103,22 @@ aside{
 
 =========================================================================================================================================*/
 
+.green{
+    background: green;
+    border: 2px solid black
+}
+
+.green::before{
+    background: lightgreen;
+}
+
+.green:hover{
+    background: rgb(0, 100, 0);
+}
+
+.green:active{
+    background: rgb(0, 100, 0);
+}
 
 /*CHANNEL DISPLAYED BUTTONS*/
 
@@ -127,8 +140,8 @@ aside{
     color: #382b22;
     text-transform: uppercase;
     padding: 1.25em 2em;
-    background: #fff0f0;
-    border: 2px solid #b18597;
+    /*background: #fff0f0;
+    border: 2px solid #b18597;*/
     border-radius: 0.75em;
     transform-style: preserve-3d;
     transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), background 150ms cubic-bezier(0, 0, 0.58, 1);
@@ -142,26 +155,26 @@ aside{
     left: 0;
     right: 0;
     bottom: 0;
-    background: #f9c4d2;
+    /*background: #f9c4d2;*/
     border-radius: inherit;
-    box-shadow: 0 0 0 2px #b18597, 0 0.625em 0 0 #bc8f8f;
+    box-shadow: 0 0 0 2px grey, 0 0.625em 0 0 grey;
     transform: translate3d(0, 0.75em, -1em);
     transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
 }
 .channel-displayed:hover {
-    background: #ffe9e9;
+    /*background: #ffe9e9;*/
     transform: translate(0, 0.25em);
 }
 .channel-displayed:hover::before {
-    box-shadow: 0 0 0 2px #b18597, 0 0.5em 0 0 #bc8f8f;
+    box-shadow: 0 0 0 2px grey, 0 0.5em 0 0 grey;
     transform: translate3d(0, 0.5em, -1em);
 }
 .channel-displayed:active {
-    background: #ffe9e9;
+    /*background: #ffe9e9;*/
     transform: translate(0em, 0.75em);
 }
 .channel-displayed:active::before {
-    box-shadow: 0 0 0 2px #b18597, 0 0 #bc8f8f;
+    box-shadow: 0 0 0 2px grey, 0 0 grey;
     transform: translate3d(0, 0, -1em);
 }
 
@@ -227,11 +240,3 @@ aside{
 }
 
 
-
-
-
-/*FUNCTION BUTTON REGULAR*/
-
-
-
-/*FUNCTION BUTTON FOCUSED*/
