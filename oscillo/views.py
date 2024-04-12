@@ -48,7 +48,7 @@ def get_user_favorite_colors(request):
 
 def oscillo(request):
     data = {}
-    for i in range(1, 7):#set to 1, 11 to generate 10 random channels
+    for i in range(1, 11):#set to 1, 11 to generate 10 random channels
         channel = f"CH{i}"
         voltage = random.uniform(0, 8)
         data[channel] = {"voltage": voltage}

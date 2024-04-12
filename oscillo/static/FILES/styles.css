@@ -105,7 +105,7 @@ aside{
 
 .green{
     background: green;
-    border: 2px solid black
+    border: 2px solid darkgreen !important;
 }
 
 .green::before{
@@ -119,6 +119,255 @@ aside{
 .green:active{
     background: rgb(0, 100, 0);
 }
+
+
+.red{
+    background: red;
+    border: 2px solid rgb(129, 0, 0) !important;
+}
+
+.red::before{
+    background: rgb(255, 56, 56);
+}
+
+.red:hover{
+    background: rgb(199, 0, 0);
+}
+
+.red:active{
+    background: rgb(199, 0, 0);
+}
+
+
+
+.gray{
+    background: gray;
+    border: 2px solid rgb(66, 66, 66) !important;
+}
+
+.gray::before{
+    background: lightgray;
+}
+
+.gray:hover{
+    background: rgb(88, 88, 88);
+}
+
+.gray:active{
+    background: rgb(88, 88, 88);
+}
+
+
+.olive{
+    background: olive;
+    border: 2px solid rgb(70, 70, 0) !important;
+}
+
+.olive::before{
+    background: rgb(163, 163, 0);
+}
+
+.olive:hover{
+    background: rgb(100, 100, 0);
+}
+
+.olive:active{
+    background: rgb(100, 100, 0);
+}
+
+
+.cyan{
+    background: cyan;
+    border: 2px solid rgb(0, 136, 136) !important;
+}
+
+.cyan::before{
+    background: lightcyan;
+}
+
+.cyan:hover{
+    background: rgb(0, 199, 199);
+}
+
+.cyan:active{
+    background: rgb(0, 199, 199);
+}
+
+.orange{
+    background: orange;
+    border: 2px solid rgb(180, 99, 0) !important;
+}
+
+.orange::before{
+    background: lightcoral;
+}
+
+.orange:hover{
+    background: darkorange;
+}
+
+.orange:active{
+    background: darkorange;
+}
+
+.maroon{
+    background: maroon;
+    border: 2px solid rgb(61, 0, 0) !important;
+}
+
+.maroon::before{
+    background: rgb(180, 0, 0);
+}
+
+.maroon:hover{
+    background: rgb(92, 0, 0);
+}
+
+.maroon:active{
+    background: rgb(92, 0, 0);
+}
+
+
+.blue{
+    background: blue;
+    border: 2px solid rgb(0, 0, 70) !important;
+}
+
+.blue::before{
+    background: lightblue;
+}
+
+.blue:hover{
+    background: darkblue;
+}
+
+.blue:active{
+    background: darkblue;
+}
+
+
+.purple{
+    background: purple;
+    border: 2px solid rgb(65, 0, 65) !important;
+}
+
+.purple::before{
+    background: rgb(177, 1, 177);
+}
+
+.purple:hover{
+    background: rgb(100, 0, 100);
+}
+
+.purple:active{
+    background: rgb(100, 0, 100);
+}
+
+.black{
+    background: black;
+    border: 2px solid rgb(51, 51, 51) !important;
+}
+
+.black::before{
+    background: rgb(46, 46, 46);
+}
+
+.black:hover{
+    background: black;
+}
+
+.black:active{
+    background: black;
+}
+
+
+.lime{
+    background: lime;
+    border: 2px solid rgb(30, 128, 30) !important;
+}
+
+.lime::before{
+    background: rgb(86, 255, 86);
+}
+
+.lime:hover{
+    background: limegreen;
+}
+
+.lime:active{
+    background: limegreen;
+}
+
+.yellow{
+    background: yellow;
+    border: 2px solid rgb(122, 122, 0) !important;
+}
+
+.yellow::before{
+    background: lightyellow;
+}
+
+.yellow:hover{
+    background: rgb(187, 187, 0);
+}
+
+.yellow:active{
+    background: rgb(187, 187, 0);
+}
+
+.pink{
+    background: pink;
+    border: 2px solid rgb(133, 99, 104) !important;
+}
+
+.pink::before{
+    background: lightpink;
+}
+
+.pink:hover{
+    background: rgb(201, 151, 159);
+}
+
+.pink:active{
+    background: rgb(201, 151, 159);
+}
+
+.fuschia{
+    background: fuchsia;
+    border: 2px solid rgb(119, 0, 119) !important;
+}
+
+.fuschia::before{
+    background: rgb(255, 125, 255);
+}
+
+.fuschia:hover{
+    background: rgb(190, 0, 190);
+}
+
+.fuschia:active{
+    background: rgb(190, 0, 190);
+}
+
+.white{
+    background: white;
+    border: 2px solid rgb(99, 99, 99) !important;
+} 
+
+.white::before{
+    background: whitesmoke;
+}
+
+.white:hover{
+    background: rgb(179, 179, 179);
+}
+
+.white:active{
+    background: rgb(179, 179, 179);
+}
+
+
+
 
 /*CHANNEL DISPLAYED BUTTONS*/
 

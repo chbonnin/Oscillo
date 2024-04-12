@@ -3,6 +3,13 @@ let phase = 0; // Phase shift in radians
 let RUNNING = false;
 let intervalId = null;//we need this to keep the same interval for the animation of the screen when we start/stop/restart it !
 
+
+//Those variables are necessary to handle the current status of the web-socket used to get the data via UDP.
+let ws //set globally to access it elswere in the code other than setup
+let web_socket_connected = false;
+let connectionAttempts = 0;
+const maxConnectionAttempts = 50;
+
 const CANVAS = document.getElementById('oscilloscope_screen');
 
 const RUNSTOP = document.getElementById('run-stop');
@@ -15,6 +22,66 @@ const MEASURE = document.getElementById('measure');
 const PRINT = document.getElementById('print');
 const SETUP = document.getElementById('setup');
 const SIZE = document.getElementById('size');
+
+
+
+function connectWebSocket() {
+    //This function is here to handle the base connection to the websocket that bridges the stare server and the web-app
+    //It also will handle the reconnection if the connection is lost.
+    //In case of an error, it will display it. (see in the future to implement error handling)
+    ws = new WebSocket('ws://localhost:8080');
+
+    ws.onopen = function() {
+        console.log('Connected to the WebSocket server!');
+        web_socket_connected = true;
+        connectionAttempts = 0; // Reset attempts on successful connection
+    };
+
+    ws.onerror = function() {
+        console.log('WebSocket connection failed!');
+        ws.close(); // Ensure the socket is closed properly
+    };
+
+    ws.onclose = function() {
+        console.log('WebSocket connection closed!');
+        web_socket_connected = false;
+        if (connectionAttempts < maxConnectionAttempts) {
+            setTimeout(connectWebSocket, 3000); // Try to reconnect after 3 seconds
+            connectionAttempts++;
+        } else {
+            alert('Unable to connect to the server. Please check if the server is running and accessible.');
+        }
+    };
+}
+
+
+function initializeWebSocketEvents() {
+    //This function is here to trigger the necessary events once we start receiving data through the websocket.
+    ws.onmessage = function(event) {
+        //console.log('Data received from server:', event.data);
+      
+        //Data comes in as a blobl so we need to convert it to an array buffer to translate it in a human-readable way.
+        event.data.arrayBuffer().then((buffer) => {
+          // create a view to treat the buffer as an array of 16-bit integers
+          let dataView = new DataView(buffer);
+          let points = [];
+      
+          // loop through each pair of bytes (16 bits)
+          for (let i = 0; i < dataView.byteLength; i += 2) {
+            let point = dataView.getUint16(i, true);
+            points.push(point);
+          }
+      
+          //final result of the data processing with integers all contained within the array 'points'
+          console.log(points);
+
+          //Now we send those points to the canvas to draw the signal ! 
+
+          drawSignal(points);
+        });
+      };
+    
+}
 
 
 function environmentSetup(){//This function sets up anything necessary for interacting with the oscilloscope (EVentlisteners, etc)
@@ -35,27 +102,15 @@ function environmentSetup(){//This function sets up anything necessary for inter
     drawGrid(50, 'rgba(128, 128, 128, 0.5)', 0.5, 3);
 
 
-    //Here we get the channels available and add to them variables to track their current state.
-    //We also set the default values for the channels that are not available.
-    for (let i = 1; i < 11; i++) {
-        let channel = "CH" + i;
-
-        if (channelsData[channel] !== undefined){
-            channelsData[channel].isReady = true;
-            channelsData[channel].isActive = false;
-        }else{
-            channelsData[channel] = {isReady: false, isActive: false, voltage: 0, colorLight: "black", colorDark: "black", signalType: "none"};
-        }
-    }
-
-    console.log("Complete list of channel entries :");
-    console.log(channelsData);
-
+    //here we test the connection to the server until we get confirmation we are indeed connected
+    connectWebSocket();
+    //initializeWebSocketEvents();
+    console.log("Environment setup done.");
 }
 
 function changeCurrentAnimationState(){
     RUNNING = !RUNNING;//if it's running we stop it, if it's stopped we start it
-    Run_Main_Screen(channelsData);
+    //Run_Main_Screen(channelsData);
 }
 
 function getCurrentVerticalOffset(){//This function will return the current value of the input 'vertical-offset'
@@ -148,58 +203,6 @@ function drawGrid(gridSize, gridColor, opacity, thickerLineWidth) {
 }
 
 
-// Define scaling factors
-//const verticalScaleFactor = 50; // 50 pixels per volt
-// Define minimum and maximum horizontal scale range in microseconds
-//const minHorizontalScaleMicroseconds = 1; // Minimum range: 1 microsecond
-//const maxHorizontalScaleMicroseconds = 1000000; // Maximum range: 1 second
-//let horizontalScaleMicroseconds = 1; // Correspond à cb de Microsecondes vaut un pixel
-                                    // 0.001 = 1 nano-seconde par pixel (utile dans le cas ou on veut voir des details de l'orde de la µs)
-                                    // 1 = 1 micro-seconde par pixel
-                                    // 1000 = 1 milli-seconde par pixel
-                                    // 1000000 = 1 seconde par pixel
-
-
-// Function to draw the sinusoidal waveform
-function drawSinusoidal(voltage, color) {
-    // Get the canvas element
-    if (CANVAS.getContext) {
-        let offsetV = getCurrentVerticalOffset();
-        let offsetH = getCurrentHorizontalOffset();
-        let verticalScaleFactor = getCurrentVerticalScale();
-        let horizontalScaleFactor = getCurrentHorizontalScale();
-
-        // Convert voltage to pixels
-        let amplitude = voltage * verticalScaleFactor;
-
-        // Calculate horizontal scale factor (pixels per microsecond)
-        let horizontalScalePixelsPerMicrosecond = CANVAS.width / horizontalScaleFactor;
-
-        let ctx = CANVAS.getContext('2d');
-
-        ctx.strokeStyle = color;// Set the line color
-        ctx.lineWidth = 2; // Set the line width to 2 pixels
-
-        //Here we set the origin of the graph to the vertical center of the canvas completely left of the canvas.
-        ctx.beginPath();
-        let x = 0;
-        let y = CANVAS.height / 2;
-        ctx.moveTo(x, y);
-
-        // Adjust amplitude based on the scaling factor
-        amplitude /= 2; // Adjust for centering the waveform
-
-        for (x = 0; x <= CANVAS.width; x += 1) {
-            let time = (x + offsetH) / horizontalScalePixelsPerMicrosecond;//remplacer 0 par une variable pr l'offset horizontal
-            y = CANVAS.height / 2 + amplitude * Math.sin(2 * Math.PI * (time - phase)) + offsetV;
-            ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-
-    }
-}
-
-
 function drawChannels() {
     Object.keys(channelsData).forEach(key => {
         let channel = channelsData[key];
@@ -231,12 +234,60 @@ function Run_Main_Screen(CHANNELS){
 }
 
 
+function drawSignal(points) {
+    const ctx = CANVAS.getContext('2d');
+    const width = CANVAS.width;
+    const height = CANVAS.height;
+
+    // Clear the canvas
+    clearCanvas();
+
+    // Find the max and min values in the points array
+    const maxValue = Math.max(...points);
+    const minValue = Math.min(...points);
+    const amplitudeRange = maxValue - minValue;
+
+    const verticalScalingFactor = getCurrentVerticalScale() / 50;
+    const horizontalScalingFactor = getCurrentHorizontalScale() / 50;
+
+    const verticalOffset = getCurrentVerticalOffset();
+    const horizontalOffset = getCurrentHorizontalOffset();
+
+    // Calculate the scaling factors based on actual data range
+    const verticalScale = (height / amplitudeRange) * verticalScalingFactor;
+    const horizontalScale = (width / points.length) * horizontalScalingFactor;
+
+    // Start drawing the waveform
+    ctx.beginPath();
+
+    // Adjust the waveform to be centered vertically
+    points.forEach((point, index) => {
+        const x = (index * (width / points.length) / horizontalScale) + horizontalOffset;
+        // Rescale and center the signal around the middle of the canvas
+        const y = ((height / 2) - ((point - minValue) - (amplitudeRange / 2)) * verticalScale) + verticalOffset;
+
+        if (index === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+
+    ctx.strokeStyle = 'red';  // Color of the waveform
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+
+
+
 document.addEventListener('DOMContentLoaded', function() {
     environmentSetup();//we load all the necessary event listeners for the oscilloscope
 
     //console.log(channelsData);//checking if we got data or not
 
-    Run_Main_Screen(channelsData);
+    //Run_Main_Screen(channelsData);
+
+    initializeWebSocketEvents();
 });
 
 
