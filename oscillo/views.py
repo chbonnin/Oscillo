@@ -45,6 +45,7 @@ class Main(TemplateView):
 
         return render(request, 'oscillo/graph.html', {"channels":data})
     
+    
 
     def oscilloSelect(self, request):
         if request.method == 'POST':
@@ -55,7 +56,7 @@ class Main(TemplateView):
                 self.context['nb'] = form.cleaned_data['nb']
                 self.context['voltage'] = form.cleaned_data['voltage']
                 self.context['bits'] = form.cleaned_data['bits']
-                return self.index(request)
+                return redirect('/oscillo/start/')
         else:
             form = OscilloSettingsForm()
             return render(request, 'oscillo/select.html', {'form': form})

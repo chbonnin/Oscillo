@@ -8,14 +8,15 @@ main = views.Main()
 
 urlpatterns = [
     path('', main.oscilloSelect, name='oscilloSelect'),
-
+    path('start/', main.index, name="start"),
     path("settings/", main.settings, name="settings"),
     path("data/", main.getData, name="data"),
     path("oscilloSelect/", main.oscilloSelect, name="oscilloSelect"),
-
 
     #User related patterns
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('disconnect/', views.disconnect, name='disconnect'),
 ]
+
+

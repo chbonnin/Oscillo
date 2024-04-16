@@ -51,7 +51,8 @@ function getCurrentSettings(){
                 colorDark: channelsMetaData['CH' + ch].colorDark, //channelsMetaData is passed from the backend to here via the html page
                 colorLight: channelsMetaData['CH' + ch].colorLight,
                 verticalOffset: 0,
-                verticalScale: 50, //50px per volt (default value)
+                verticalScale: 25, //50px per volt (default value)
+                verticalOffsetRelativeCursorPosition: 395,
             };
 
             channel_button = document.getElementById('CH' + ch);
@@ -126,7 +127,15 @@ function fetchData(){
 }
 
 function environmentSetup(){//This function sets up anything necessary for interacting with the oscilloscope (EVentlisteners, etc)
+    let isDragging = false;
     
+    const verticalScalingKnob = document.getElementById("vertical-scaling");
+    
+    const scrollBar = document.getElementById("scroll-bar");
+    const scroller = document.getElementById("scroller");
+    let startY;
+
+
     for (let i = 1; i < 11; i++) {//Setup listeners to change a button's aspect when clicked
         let channel = "CH" + i;
         document.getElementById(channel).addEventListener("click", function() {
@@ -135,23 +144,80 @@ function environmentSetup(){//This function sets up anything necessary for inter
         });
     }
 
-    //Setup listener for the vertical offset knob to update the channel's offset value
-    document.getElementById('vertical-offset').addEventListener("input", function() {
+    scroller.addEventListener('mousedown', function(event) {
+        isDragging = true;
+        startY = event.clientY - scroller.getBoundingClientRect().top + scrollBar.getBoundingClientRect().top;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(event) {
+        if (!isDragging) return;
+
+        //this part handles the actual movement of the element on the screen
+        let newY = event.clientY - startY;
+        newY = Math.max(newY, 0);
+        newY = Math.min(newY, scrollBar.clientHeight - scroller.clientHeight);
+
+        scroller.style.top = newY + 'px';
+        // console.log("Curser is being dragged");
+
+        //this part maps the relative position of the scroller to the offset of the signal
+        let percent = newY / (scrollBar.clientHeight - scroller.clientHeight);
+        let verticalOffset = (percent - 0.5) * 1000;
+        verticalOffset = Math.round(verticalOffset);
+
+        //and now we actually update the vertical offset of the focused channel
         for (let i = 1; i < config.numChannels + 1; i++) {
             if (channelData['CH' + i].focused) {
-                channelData['CH' + i].verticalOffset = parseInt(this.value, 10);//convert from str to int (base10)
+                channelData['CH' + i].verticalOffset = verticalOffset;
             }
         }
-    });
+    }
+
+    function onMouseUp(event) {
+        isDragging = false;
+
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+
+        //Here below we save the cursor position for that channel to restore it when the user clicks on the channel again
+
+        let newY = event.clientY - startY;
+        newY = Math.max(newY, 0);
+        newY = Math.min(newY, scrollBar.clientHeight - scroller.clientHeight);
+
+        for (let i = 1; i < config.numChannels + 1; i++) {
+            if (channelData['CH' + i].focused) {
+                channelData['CH' + i].verticalOffsetRelativeCursorPosition = newY;
+            }
+        }   
+    }
 
 
     //Setup listener for the vertical scale knob to update the channel's scale value
-    document.getElementById("vertical-scaling").addEventListener("input", function() {
+    verticalScalingKnob.addEventListener("input", function() {
+        isDragging = true;
         for (let i = 1; i < config.numChannels + 1; i++) {
             if (channelData['CH' + i].focused) {
                 channelData['CH' + i].verticalScale = parseInt(this.value, 10);//convert from str to int (base10)
             }
         }
+    });
+
+    verticalScalingKnob.addEventListener("mousedown", function() {
+        isDragging = false;
+    });
+
+    //Setup listener to detect a click on the knob and reinitialize the vertical scale to the default value.
+    verticalScalingKnob.addEventListener("mouseup", function(){
+        for (let i = 1; i < config.numChannels + 1; i++) {
+            if (channelData['CH' + i].focused && !isDragging) {
+                verticalScalingKnob.value = 50;
+                channelData['CH' + i].verticalScale = 50;//convert from str to int (base10)
+            }
+        }
+        isDragging = false;
     });
 
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
@@ -169,8 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }else{
             console.log("Waiting for settings retrieval...");
         }
-    }, 100);
-    
+    }, 10); 
 });
 
 function showToast(message) {
@@ -311,10 +376,12 @@ function changeChannelButtonStatus(channelKey) {
             button.classList.add('button-focused');
             channelData[channelKey].focused = true;
 
-            //Here we also set the correct values for the vertical offset and scaling of this channel to the knobs of the html page
-            document.getElementById('vertical-offset').value = channelData[channelKey].verticalOffset;
+            //Here we also set the correct values for the vertical scaling of this channel to the knob of the html page
             document.getElementById('vertical-scaling').value = channelData[channelKey].verticalScale;
-    
+            //And we do the same for the vertical offset (little cursor)
+            document.getElementById('scroller').style.top = channelData[channelKey].verticalOffsetRelativeCursorPosition + 'px';
+            document.getElementById('scroller').style.backgroundColor = channelData[channelKey].colorDark;
+
             // If channel is not displayed, display it
             if (!channelData[channelKey].display) {
                 // console.log("Displaying channel:", channelKey);

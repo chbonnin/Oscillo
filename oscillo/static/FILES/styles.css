@@ -21,7 +21,7 @@ section{
 
 #oscilloscope_screen{
     background-color: rgb(31, 31, 31);
-    margin: auto 10px; /* Center the canvas vertically and add horizontal margin */
+    margin: auto 0px; /* Center the canvas vertically and add horizontal margin */
     
     flex-grow: 1;
 }
@@ -87,12 +87,34 @@ aside{
     margin-bottom: 0.5em;
 }
 
-
-.knob-vertical{
-
-
+#middle-line{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    
+    margin-left: 0.5em;
 }
 
+#scroll-bar{
+    width: 20px;
+    background-color: black;
+
+    
+}
+
+
+#scroller{
+    width: 20px;
+    height: 10px;
+
+    background-color: yellow;
+
+    border-top-right-radius: 100px;
+    border-bottom-right-radius: 100px;
+
+    position: relative;
+    top: 395px;
+}
 
 
 
@@ -230,7 +252,7 @@ aside{
 
 .blue{
     background: blue;
-    border: 2px solid rgb(0, 0, 70);
+    border: 2px solid darkblue;
 }
 
 .blue::before{
