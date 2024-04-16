@@ -9,13 +9,13 @@
     <script src={% static "FILES/input-knob.js" %}></script>
 </head>
 <body>
+    <div id="toast"><!--message goes here--></div>
     {% csrf_token %}<!--Token used during http request and such by the javascript-->
     <script>
         const channelsMetaData = {{ channels|safe }};
     </script>
     <section><!--Contains the canvas for the screen of the oscilloscope & 2 optionnal lines (top and bottom of the screen)-->
         <div id="top-line"><!--Contains the top line of the screen-->
-
 
         </div>
         <canvas id="oscilloscope_screen" width="1024" height="800">
@@ -101,7 +101,7 @@
                     background-image: url({% static "IMAGES/knob.png" %} ); 
                     background-size: 100% 10100%; 
                     background-position: 0px -6400px;"
-                min="-1000"
+                min="-10000"
                 max="1000"
                 value="0">
             <!--Knob to change the vertical scaling of the signal (how many pixels per volt unit)-->

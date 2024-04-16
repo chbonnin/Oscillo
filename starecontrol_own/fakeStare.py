@@ -30,12 +30,9 @@ options.repeat = int(options.repeat)
 
 expected_buffer_size = options.nb * options.channels * 2
 
-print(f"The expected buffer size is {expected_buffer_size} bytes")
-print(f"This corresponds to 1024 samples per frame * {options.channels} channels * 2 bytes per sample !")
-
 if expected_buffer_size > options.size:#This is required to not have a buffer overflow and not have to constantly specify by hand the size of the buffer
     options.size = expected_buffer_size
-    print("An overflow was detected, we changed its size")
+    print("Updating buffer size")
 
 iHeight = 1 << 15
 phases = [0, math.pi / 3, math.pi / 2, math.pi, math.pi / 4, math.pi / 14]  # Different phase shifts for variety
@@ -43,6 +40,7 @@ frequencies = [1, 2, 3, 4, 5, 6, 7, 8, 9]  # Different frequencies for each chan
 arrBytes = bytearray(options.size)
 
 print("Expected Buffer Size:", expected_buffer_size)
+print(f"This corresponds to 1024 samples per frame * {options.channels} channels * 2 bytes per sample !")
 print("Actual Buffer Size:", len(arrBytes))
 
 for iRepeat in range(max(1, options.repeat)):

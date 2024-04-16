@@ -1,15 +1,6 @@
-//Those variables are necessary to handle the current status of the web-socket used to get the data via UDP.
-
-let ws //set globally to access it elswere in the code other than setup
-let web_socket_connected = false;
-let connectionAttempts = 0;
-const maxConnectionAttempts = 50;
-
 
 let config = {//Used to handle the configuration of the server, in case it changes we can update it here
-    numChannels: 4,  // How many channels are expected. update if server configuration changes
-    samplesPerFrame: 1024,  // How many samples per frame. update if server configuration changes
-    bytesPerPacket: 32768  // Total bytes per packet; update if server configuration changes
+    numChannels: null,  // How many channels are expected. update if server configuration changes
 };
 
 let channelData = {}; //This dictionnary holds the data for each channel including points, status, color, etc..
@@ -43,9 +34,33 @@ function getCurrentSettings(){
     Http.send(frm);
     Http.onload = function() {
         console.log(Http.responseText);
-    }
 
-    console.log("Current settings received");
+        const settings = JSON.parse(Http.responseText);
+
+        // update the numChannels in config
+        config.numChannels = settings.channels;
+        console.log("Updated config:", config);
+
+        // update the channelData object now that we know the number of channels
+
+        for (let ch = 1; ch <= config.numChannels; ch++) {
+            channelData['CH' + ch] = {
+                points: [],
+                display: true,
+                focused: false,
+                colorDark: channelsMetaData['CH' + ch].colorDark, //channelsMetaData is passed from the backend to here via the html page
+                colorLight: channelsMetaData['CH' + ch].colorLight,
+                verticalOffset: 0,
+                verticalScale: 50, //50px per volt (default value)
+            };
+
+            channel_button = document.getElementById('CH' + ch);
+            
+            channel_button.classList.remove("channel-not-displayed");
+            channel_button.classList.add("channel-displayed");
+            channel_button.classList.add(channelData['CH' + ch].colorDark);
+        }
+    }
 }
 
 
@@ -68,15 +83,10 @@ function fetchData(){
             console.log("Here below should be the dataView created from the received data : ");
             console.log(dataView);
 
-            colors = ["red", "green", "blue", "yellow"];//purely aesthetic to differentiate every signal from one another
-
-            const channelData = {};
-            for (let ch = 1; ch <= config.numChannels; ch++) {
-                channelData['CH' + ch] = {
-                    points: [],
-                    display: true,
-                    color: colors[ch - 1]
-                };
+            // Clear the channel data before parsing the new data
+            for (let i = 1; i <= config.numChannels; i++) {
+                let channelKey = 'CH' + i;
+                channelData[channelKey].points = [];
             }
         
             // Parse buffer into channel data
@@ -88,16 +98,17 @@ function fetchData(){
                 channelData[channelKey].points.push(point);
             }
 
-            //console.log("Current channel data: ");
-            //console.log(channelData);
-
             clearCanvas();
+            drawGrid(50, 'rgba(128, 128, 128, 0.5)', 0.5, 3);
 
             Object.keys(channelData).forEach(key => {
                 // console.log(key, channelData[key].points);
-                drawSignal(channelData[key].points, channelData[key].color); // Assuming drawSignal can handle channel colors
+                if (channelData[key].display === true){
+                    drawSignal(key);
+                }
             });
 
+            console.log(channelData);
 
 
         } else if (Http.status === 408) {
@@ -114,47 +125,59 @@ function fetchData(){
     Http.send();
 }
 
-
-
 function environmentSetup(){//This function sets up anything necessary for interacting with the oscilloscope (EVentlisteners, etc)
     
-    for (let i = 1; i < 11; i++) {//setup listeners for channel buttons
+    for (let i = 1; i < 11; i++) {//Setup listeners to change a button's aspect when clicked
         let channel = "CH" + i;
         document.getElementById(channel).addEventListener("click", function() {
             console.log(`Channel ${channel} clicked!`);
+            changeChannelButtonStatus(channel);
         });
     }
+
+    //Setup listener for the vertical offset knob to update the channel's offset value
+    document.getElementById('vertical-offset').addEventListener("input", function() {
+        for (let i = 1; i < config.numChannels + 1; i++) {
+            if (channelData['CH' + i].focused) {
+                channelData['CH' + i].verticalOffset = parseInt(this.value, 10);//convert from str to int (base10)
+            }
+        }
+    });
+
+
+    //Setup listener for the vertical scale knob to update the channel's scale value
+    document.getElementById("vertical-scaling").addEventListener("input", function() {
+        for (let i = 1; i < config.numChannels + 1; i++) {
+            if (channelData['CH' + i].focused) {
+                channelData['CH' + i].verticalScale = parseInt(this.value, 10);//convert from str to int (base10)
+            }
+        }
+    });
 
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
     drawGrid(50, 'rgba(128, 128, 128, 0.5)', 0.5, 3);
 
     getCurrentSettings();
-
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     environmentSetup();//we load all the necessary event listeners for the oscilloscope
 
-    console.log(channelsMetaData);//checking if we got data or not
-
-    fetchData();
-
-    // MAINLOOP = setInterval(function() {
-    //     fetchData();
-    // }, 100);
+    MAINLOOP = setInterval(function() {
+        if (config.numChannels != null) {
+            fetchData();
+        }else{
+            console.log("Waiting for settings retrieval...");
+        }
+    }, 100);
     
 });
 
-
-function getCurrentVerticalOffset(){//This function will return the current value of the input 'vertical-offset'
-    const verticalKnob = document.getElementById('vertical-offset');
-
-    let inputValueSTR = verticalKnob.value;
-
-    let inputValueINT = parseInt(inputValueSTR);
-
-    //Value between -500 and 500, the max height of the canvas being 800 there's no need to go further
-    return inputValueINT;
+function showToast(message) {
+    let toast = document.getElementById("toast");
+    toast.innerHTML = message;
+    toast.className = "show";
+    setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
 }
 
 function getCurrentHorizontalOffset(){//This function will return the current value of the input 'horizontal-offset'
@@ -166,17 +189,6 @@ function getCurrentHorizontalOffset(){//This function will return the current va
 
     //Value between -1000 and 1000, the max width of the canvas being 1100 there's no need to go further
     return inputValueINT;
-}
-
-function getCurrentVerticalScale(){//This function will return the current value of the input 'vertical-scale'
-    const verticalKnob = document.getElementById('vertical-scaling');
-
-    let inputValueSTR = verticalKnob.value;
-
-    let inputValueINT = parseInt(inputValueSTR);
-
-    //Value between 5 and 500 representing the number of pixels per volt
-    return inputValueINT
 }
 
 function getCurrentHorizontalScale(){//This function will return the current value of the input 'horizontal-scale'
@@ -235,8 +247,10 @@ function drawGrid(gridSize, gridColor, opacity, thickerLineWidth) {
     }
 }
 
+function drawSignal(channelKey) {
+    const channel = channelData[channelKey];
+    const points = channel.points;
 
-function drawSignal(points, color) {
     const ctx = CANVAS.getContext('2d');
     const width = CANVAS.width;
     const height = CANVAS.height;
@@ -246,10 +260,10 @@ function drawSignal(points, color) {
     const minValue = Math.min(...points);
     const amplitudeRange = maxValue - minValue;
 
-    const verticalScalingFactor = getCurrentVerticalScale() / 50;
+    const verticalScalingFactor = channel.verticalScale / 50;
     const horizontalScalingFactor = getCurrentHorizontalScale() / 50;
 
-    const verticalOffset = getCurrentVerticalOffset();
+    const verticalOffset = channel.verticalOffset;
     const horizontalOffset = getCurrentHorizontalOffset();
 
     // Calculate the scaling factors based on actual data range
@@ -272,28 +286,68 @@ function drawSignal(points, color) {
         }
     });
 
-    ctx.strokeStyle = color;  // Color of the waveform
+    ctx.strokeStyle = channel.colorDark;  // Color of the waveform
     ctx.lineWidth = 2;
     ctx.stroke();
 }
 
+function changeChannelButtonStatus(channelKey) {
+    let button = document.getElementById(channelKey);
 
-// function changeChannelButtonColor(channelKey) {
-//     let button = document.getElementById(channelKey);
-//     if (channelsData[channelKey].isShown) {
-//         console.log("This button is now shown !");
+    // Here we make sure only one button can be focused
+    Object.keys(channelData).forEach(key => {
+        let otherButton = document.getElementById(key);
+        otherButton.classList.remove('button-focused');
+        
+        if (key !== channelKey) {
+            channelData[key].focused = false;
+        }
+    });
 
-//         button.classList.remove("channel-not-displayed");
-//         button.classList.add("channel-displayed");
-//         button.classList.add(channelsData[channelKey].colorLight);
-//     } else {
-//         console.log("This button should not be shown !");
 
-//         button.classList.remove("channel-displayed");
-//         button.classList.add("channel-not-displayed");
-//         button.classList.remove(channelsData[channelKey].colorLight);
-//     }
-// }
+    try {//in case the channel clicked is not active (= not in the channelData dictionnary)
+        if (!channelData[channelKey].focused) {//if channel is not focused, then
+            // console.log("Focusing on channel:", channelKey);
+            button.classList.add('button-focused');
+            channelData[channelKey].focused = true;
+
+            //Here we also set the correct values for the vertical offset and scaling of this channel to the knobs of the html page
+            document.getElementById('vertical-offset').value = channelData[channelKey].verticalOffset;
+            document.getElementById('vertical-scaling').value = channelData[channelKey].verticalScale;
+    
+            // If channel is not displayed, display it
+            if (!channelData[channelKey].display) {
+                // console.log("Displaying channel:", channelKey);
+                button.classList.remove("channel-not-displayed");
+                button.classList.add("channel-displayed");
+                button.classList.add(channelData[channelKey].colorDark);
+                channelData[channelKey].display = true;
+            }
+        } else {
+            if (channelData[channelKey].display) {//if channel is focused, then
+                // console.log("Hiding channel:", channelKey);
+                button.classList.remove("channel-displayed");
+                button.classList.add("channel-not-displayed");
+                button.classList.remove(channelData[channelKey].colorDark);
+                channelData[channelKey].display = false;
+            }
+            // remove the focus since the button was clicked a second time
+            button.classList.remove('button-focused');
+            channelData[channelKey].focused = false;
+        }
+    } catch (error) {
+        if (error instanceof TypeError) {//Button not linked to an active channel
+            let text = "This channel is not active.";
+            showToast(text);
+        } else {
+            alert("An unknown error occured, please look at the console.")
+            console.error(error);
+        }
+    }
+    
+
+    // console.log(channelData);
+}
 
 
 

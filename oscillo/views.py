@@ -22,7 +22,7 @@ from .models import FavoriteColors
 class Main(TemplateView):
     #This 'context' variable is what tells us what to expect before rendering the actual oscilloscope screen.
     #During testing these values need to be changed by hand here but later on will sent via the server depending on what the user selected
-    context = {"channels": 4, "freq": 1e8, "nb": 1024, "voltage": 10, "bits": 14}
+    context = {"channels": 3, "freq": 1e8, "nb": 1024, "voltage": 10, "bits": 14}
     
     
     sock: socket = None
@@ -48,7 +48,7 @@ class Main(TemplateView):
 
 
 
-    def settings(self, request):
+    def settings(self, request):#In the future (in prod) this function will retrieve the settings from the server (starecontrol)
         return HttpResponse(json.dumps(self.context))
     
 
@@ -61,22 +61,15 @@ class Main(TemplateView):
             print("bound")
 
         try:
-            data, _ = self.sock.recvfrom(8192)
+            #Here we update the amount of bytes we expect to receive based off of the settings we received.
+            #Nb of channels * 1024 samples per frame * 2 bytes per sample
+            expected_data_to_send = self.context['channels'] * 1024 * 2
+
+            data, _ = self.sock.recvfrom(expected_data_to_send)
             print(f"Data received is {len(data)} bytes long")
             return HttpResponse(data, content_type="application/octet-stream")
         except socket.timeout:
             return HttpResponse("No data received so far..", status=408)
-
-
-
-
-
-
-
-
-
-
-
 
 def get_user_favorite_colors(request):
     # Default color sets
