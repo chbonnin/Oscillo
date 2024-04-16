@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oscillo Settings</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href={% static 'FILES/styles_settings.css' %}>
+</head>
+<body>
+    <header>
+        <nav id="user-related-actions">
+            {% if request.user.is_authenticated %}
+                <a href={% url "oscillo:disconnect" %}><button>Logout</button></a>
+                <a href="#"><button>Profile</button></a>
+            {% else %}
+                <a href={% url "oscillo:login" %}><button>Login</button></a>
+                <a href={% url "oscillo:register" %}><button>Register</button></a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main>
+        <h2>Settings selection for the oscilloscope</h2>
+        <br>
+        <p>Enter here the values you expect to receive from the stare cards.</p>
+        <p>Please make sur to enter the right informations or else the result of the signals displayed won't be accurate.</p>
+        <p>N.B: You can change these values at any moment once on the oscilloscope screen by clicking the button 'SETTINGS'</p>
+
+        <hr>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Confirm settings</button>
+        </form>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 CNRS-IPHC. All rights reserved.</p>
+    </footer>
+</body>
+</html>

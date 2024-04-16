@@ -7,11 +7,11 @@ main = views.Main()
 
 
 urlpatterns = [
-    path('', main.index, name='index'),
+    path('', main.oscilloSelect, name='oscilloSelect'),
 
-
-    path("settings/", main.settings),
-    path("data/", main.getData),
+    path("settings/", main.settings, name="settings"),
+    path("data/", main.getData, name="data"),
+    path("oscilloSelect/", main.oscilloSelect, name="oscilloSelect"),
 
 
     #User related patterns

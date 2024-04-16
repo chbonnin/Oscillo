@@ -2,7 +2,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse
-from django.views.generic import TemplateView 
+from django.views.generic import TemplateView
 
 #Python general imports
 import random
@@ -16,8 +16,7 @@ from django.contrib.auth import login, logout, authenticate
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
 from .models import FavoriteColors
 
-# Create your views here.
-
+from .forms import OscilloSettingsForm
 
 class Main(TemplateView):
     #This 'context' variable is what tells us what to expect before rendering the actual oscilloscope screen.
@@ -45,12 +44,25 @@ class Main(TemplateView):
             c += 1
 
         return render(request, 'oscillo/graph.html', {"channels":data})
+    
 
+    def oscilloSelect(self, request):
+        if request.method == 'POST':
+            form = OscilloSettingsForm(request.POST)
+            if form.is_valid():
+                self.context['channels'] = form.cleaned_data['channels']
+                self.context['freq'] = form.cleaned_data['freq']
+                self.context['nb'] = form.cleaned_data['nb']
+                self.context['voltage'] = form.cleaned_data['voltage']
+                self.context['bits'] = form.cleaned_data['bits']
+                return self.index(request)
+        else:
+            form = OscilloSettingsForm()
+            return render(request, 'oscillo/select.html', {'form': form})
 
 
     def settings(self, request):#In the future (in prod) this function will retrieve the settings from the server (starecontrol)
         return HttpResponse(json.dumps(self.context))
-    
 
 
     def getData(self, request):
@@ -70,6 +82,7 @@ class Main(TemplateView):
             return HttpResponse(data, content_type="application/octet-stream")
         except socket.timeout:
             return HttpResponse("No data received so far..", status=408)
+
 
 def get_user_favorite_colors(request):
     # Default color sets

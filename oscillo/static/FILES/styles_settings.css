@@ -1,0 +1,15 @@
+body{
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    
+    align-items: center;
+}
+
+
+footer{
+    position: fixed;
+    bottom: 0;
+}

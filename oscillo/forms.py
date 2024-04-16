@@ -24,3 +24,50 @@ class CustomUserCreationForm(UserCreationForm):
 
 class CustomAuthenticationForm(AuthenticationForm):
     username = forms.CharField(label="Username or Email")
+
+
+
+from django import forms
+
+class OscilloSettingsForm(forms.Form):
+    channels = forms.IntegerField(
+        label='Number of Channels',
+        initial=3,
+        min_value=1,
+        max_value=10,
+        widget=forms.NumberInput(attrs={'placeholder': '3'}),
+        required=False
+    )
+    freq = forms.FloatField(
+        label='Frequency (Hz)',
+        initial=1e8,
+        min_value=1.0,
+        max_value=1e9,
+        widget=forms.NumberInput(attrs={'placeholder': '1e8'}),
+        required=False
+    )
+    nb = forms.IntegerField(
+        label='Samples per frame',
+        initial=1024,
+        min_value=32,
+        max_value=4096,
+        widget=forms.NumberInput(attrs={'placeholder': 'Enter number of samples'}),
+        required=False
+    )
+    voltage = forms.FloatField(
+        label='Voltage (V)',
+        initial=10,
+        min_value=0.1,
+        max_value=50,
+        widget=forms.NumberInput(attrs={'placeholder': 'Enter voltage in volts'}),
+        required=False
+    )
+    bits = forms.IntegerField(
+        label='Bit Depth',
+        initial=16,
+        min_value=14,
+        max_value=64,
+        widget=forms.NumberInput(attrs={'placeholder': 'Enter bit depth'}),
+        required=False
+    )
+
