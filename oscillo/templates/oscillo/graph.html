@@ -14,7 +14,7 @@
     <script>
         const channelsMetaData = {{ channels|safe }};
     </script>
-    <section><!--Contains the canvas for the screen of the oscilloscope & 2 optionnal lines (top and bottom of the screen)-->
+    <section>
         <div id="top-line"><!--Contains the top line of the screen-->
 
         </div>
@@ -22,9 +22,15 @@
             <div id="scroll-bar">
                 <div id="scroller"></div>
             </div>
-            <canvas id="oscilloscope_screen" width="1024" height="800">
+            <div id="sub-div-horizontal-offset">
+                <div id="scrollbar-horizontal">
+                    <div id="scroller-Horizontal"></div>
+                </div>
+                <canvas id="oscilloscope_screen" width="1024" height="800">
 
-            </canvas>
+                </canvas>
+            </div>
+            
         </div>
         <div id="bottom-line"><!--Contains the bottom line of the screen-->
 
@@ -78,21 +84,6 @@
             </span>
         </div>
         <div id="knobs-div" class="main-divs-aside"><!--Contains the knobs to interact with the signal rendering-->
-            <!--Knob to change the horizontal offset of the signal-->
-            <input 
-                type="range" 
-                class="input-knob" 
-                id="horizontal-offset"
-                data-src={% static "IMAGES/knob.png" %} 
-                data-sprites="100"
-                data-diameter="100"
-                style="
-                    background-image: url({% static "IMAGES/knob.png" %} ); 
-                    background-size: 100% 10100%; 
-                    background-position: 0px -6400px;"
-                min="-10000"
-                max="1000"
-                value="0">
             <!--Knob to change the vertical scaling of the signal (how many pixels per volt unit)-->
             <input 
                 type="range" 

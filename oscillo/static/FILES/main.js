@@ -5,6 +5,7 @@ let config = {//Used to handle the configuration of the server, in case it chang
 
 let channelData = {}; //This dictionnary holds the data for each channel including points, status, color, etc..
 
+let horizontalOffset = 0;
 
 const CANVAS = document.getElementById('oscilloscope_screen');
 
@@ -18,7 +19,6 @@ const MEASURE = document.getElementById('measure');
 const PRINT = document.getElementById('print');
 const SETUP = document.getElementById('setup');
 const SIZE = document.getElementById('size');
-
 
 
 function getCurrentSettings(){
@@ -135,6 +135,10 @@ function environmentSetup(){//This function sets up anything necessary for inter
     const scroller = document.getElementById("scroller");
     let startY;
 
+    const scrollBarHorizontal = document.getElementById("scrollbar-horizontal");
+    const scrollerHorizontal = document.getElementById("scroller-Horizontal");
+    let startX;
+
 
     for (let i = 1; i < 11; i++) {//Setup listeners to change a button's aspect when clicked
         let channel = "CH" + i;
@@ -142,8 +146,10 @@ function environmentSetup(){//This function sets up anything necessary for inter
             console.log(`Channel ${channel} clicked!`);
             changeChannelButtonStatus(channel);
         });
-    }
+    };
 
+
+    //===================== VERTICAL OFFSET INTERACTIONS (MOUSE) =====================
     scroller.addEventListener('mousedown', function(event) {
         isDragging = true;
         startY = event.clientY - scroller.getBoundingClientRect().top + scrollBar.getBoundingClientRect().top;
@@ -173,7 +179,7 @@ function environmentSetup(){//This function sets up anything necessary for inter
                 channelData['CH' + i].verticalOffset = verticalOffset;
             }
         }
-    }
+    };
 
     function onMouseUp(event) {
         isDragging = false;
@@ -192,10 +198,40 @@ function environmentSetup(){//This function sets up anything necessary for inter
                 channelData['CH' + i].verticalOffsetRelativeCursorPosition = newY;
             }
         }   
-    }
+    };
 
+    //===================== HORIZONTAL OFFSET INTERACTIONS (MOUSE) =====================
 
-    //Setup listener for the vertical scale knob to update the channel's scale value
+    scrollerHorizontal.addEventListener('mousedown', function(event) {
+        isDragging = true;
+        startX = event.clientX - scrollerHorizontal.getBoundingClientRect().left + scrollBarHorizontal.getBoundingClientRect().left;
+        document.addEventListener('mousemove', onMouseMoveHorizontal);
+        document.addEventListener('mouseup', onMouseUpHorizontal);
+    });
+
+    function onMouseMoveHorizontal(event) {
+        if (!isDragging) return;
+        console.log("Curser is being dragged");
+
+        let newX = event.clientX - startX;
+        newX = Math.max(newX, 0);
+        newX = Math.min(newX, scrollBarHorizontal.clientWidth - scrollerHorizontal.clientWidth);
+
+        scrollerHorizontal.style.left = newX + 'px';
+
+        let percent = newX / (scrollBarHorizontal.clientWidth - scrollerHorizontal.clientWidth);
+        horizontalOffset = (percent - 0.5) * 1000;
+        horizontalOffset = Math.round(horizontalOffset);
+    };
+
+    function onMouseUpHorizontal(event) {
+        isDragging = false;
+
+        document.removeEventListener('mousemove', onMouseMoveHorizontal);
+        document.removeEventListener('mouseup', onMouseUpHorizontal);
+    };
+
+    //===================== VERTICAL SCALING INTERACTIONS (KNOB) =====================
     verticalScalingKnob.addEventListener("input", function() {
         isDragging = true;
         for (let i = 1; i < config.numChannels + 1; i++) {
@@ -213,8 +249,8 @@ function environmentSetup(){//This function sets up anything necessary for inter
     verticalScalingKnob.addEventListener("mouseup", function(){
         for (let i = 1; i < config.numChannels + 1; i++) {
             if (channelData['CH' + i].focused && !isDragging) {
-                verticalScalingKnob.value = 50;
-                channelData['CH' + i].verticalScale = 50;//convert from str to int (base10)
+                verticalScalingKnob.value = 25;
+                channelData['CH' + i].verticalScale = 25;//convert from str to int (base10)
             }
         }
         isDragging = false;
@@ -235,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }else{
             console.log("Waiting for settings retrieval...");
         }
-    }, 10); 
+    }, 1000); 
 });
 
 function showToast(message) {
@@ -243,7 +279,7 @@ function showToast(message) {
     toast.innerHTML = message;
     toast.className = "show";
     setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
-}
+};
 
 function getCurrentHorizontalOffset(){//This function will return the current value of the input 'horizontal-offset'
     const horizontalKnob = document.getElementById('horizontal-offset');
@@ -254,7 +290,7 @@ function getCurrentHorizontalOffset(){//This function will return the current va
 
     //Value between -1000 and 1000, the max width of the canvas being 1100 there's no need to go further
     return inputValueINT;
-}
+};
 
 function getCurrentHorizontalScale(){//This function will return the current value of the input 'horizontal-scale'
     const horizontallKnob = document.getElementById('horizontal-scaling');
@@ -265,12 +301,12 @@ function getCurrentHorizontalScale(){//This function will return the current val
 
     //Value between 1 and 1000000 representing the number of micro-seconds per pixel
     return inputValueINT
-}
+};
 
 function clearCanvas(){
     let ctx = CANVAS.getContext('2d');
     ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
-}
+};
 
 // Function to draw a grid composed of full squares on the canvas
 function drawGrid(gridSize, gridColor, opacity, thickerLineWidth) {
@@ -310,7 +346,7 @@ function drawGrid(gridSize, gridColor, opacity, thickerLineWidth) {
         ctx.lineTo(CANVAS.width, y);
         ctx.stroke();
     }
-}
+};
 
 function drawSignal(channelKey) {
     const channel = channelData[channelKey];
@@ -329,7 +365,6 @@ function drawSignal(channelKey) {
     const horizontalScalingFactor = getCurrentHorizontalScale() / 50;
 
     const verticalOffset = channel.verticalOffset;
-    const horizontalOffset = getCurrentHorizontalOffset();
 
     // Calculate the scaling factors based on actual data range
     const verticalScale = (height / amplitudeRange) * verticalScalingFactor;
@@ -340,7 +375,7 @@ function drawSignal(channelKey) {
 
     // Adjust the waveform to be centered vertically
     points.forEach((point, index) => {
-        const x = (index * (width / points.length) / horizontalScale) + horizontalOffset;
+        const x = (index * (width / points.length) / horizontalScale) + horizontalOffset;//horizontalOffset is init at the start of the script and modified by an eventlistener (cursor)
         // Rescale and center the signal around the middle of the canvas
         const y = ((height / 2) - ((point - minValue) - (amplitudeRange / 2)) * verticalScale) + verticalOffset;
 
@@ -354,7 +389,7 @@ function drawSignal(channelKey) {
     ctx.strokeStyle = channel.colorDark;  // Color of the waveform
     ctx.lineWidth = 2;
     ctx.stroke();
-}
+};
 
 function changeChannelButtonStatus(channelKey) {
     let button = document.getElementById(channelKey);
@@ -414,7 +449,5 @@ function changeChannelButtonStatus(channelKey) {
     
 
     // console.log(channelData);
-}
-
-
+};
 
