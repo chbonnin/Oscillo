@@ -1,6 +1,12 @@
 
 let config = {//Used to handle the configuration of the server, in case it changes we can update it here
     numChannels: null,  // How many channels are expected. update if server configuration changes
+    frequency: null,
+    samplesPerFrame: null,
+    voltage: null,
+    bitsPerSample: null,
+    verticalDivisions: 20,
+    horizontalDivisions: 16,
 };
 
 let channelData = {}; //This dictionnary holds the data for each channel including points, status, color, etc..
@@ -39,6 +45,11 @@ function getCurrentSettings(){
 
         // update the numChannels in config
         config.numChannels = settings.channels;
+        config.frequency = settings.freq;
+        config.samplesPerFrame = settings.nb;
+        config.voltage = settings.voltage;
+        config.bitsPerSample = settings.bits;
+
         console.log("Updated config:", config);
 
         // update the channelData object now that we know the number of channels
@@ -63,7 +74,6 @@ function getCurrentSettings(){
         }
     }
 }
-
 
 function fetchData(){
     const Http = new XMLHttpRequest();
@@ -100,7 +110,7 @@ function fetchData(){
             }
 
             clearCanvas();
-            drawGrid(50, 'rgba(128, 128, 128, 0.5)', 0.5, 3);
+            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
 
             Object.keys(channelData).forEach(key => {
                 // console.log(key, channelData[key].points);
@@ -257,21 +267,29 @@ function environmentSetup(){//This function sets up anything necessary for inter
     });
 
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
-    drawGrid(50, 'rgba(128, 128, 128, 0.5)', 0.5, 3);
+    drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
 
     getCurrentSettings();
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    environmentSetup();//we load all the necessary event listeners for the oscilloscope
 
-    MAINLOOP = setInterval(function() {
+function MAINLOOP(){
+    
+    LOOP = setInterval(function() {
         if (config.numChannels != null) {
             fetchData();
+            setScreenInformation();
         }else{
             console.log("Waiting for settings retrieval...");
         }
-    }, 1000); 
+   }, 1000);
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    environmentSetup();//we load all the necessary event listeners for the oscilloscope
+
+    MAINLOOP();
 });
 
 function showToast(message) {
@@ -281,114 +299,15 @@ function showToast(message) {
     setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
 };
 
-function getCurrentHorizontalOffset(){//This function will return the current value of the input 'horizontal-offset'
-    const horizontalKnob = document.getElementById('horizontal-offset');
-
-    let inputValueSTR = horizontalKnob.value;
-
-    let inputValueINT = parseInt(inputValueSTR);
-
-    //Value between -1000 and 1000, the max width of the canvas being 1100 there's no need to go further
-    return inputValueINT;
-};
-
 function getCurrentHorizontalScale(){//This function will return the current value of the input 'horizontal-scale'
     const horizontallKnob = document.getElementById('horizontal-scaling');
-
-    let inputValueSTR = horizontallKnob.value;
-
-    let inputValueINT = parseInt(inputValueSTR);
-
     //Value between 1 and 1000000 representing the number of micro-seconds per pixel
-    return inputValueINT
+    return parseInt(horizontallKnob.value);
 };
 
 function clearCanvas(){
     let ctx = CANVAS.getContext('2d');
     ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
-};
-
-// Function to draw a grid composed of full squares on the canvas
-function drawGrid(gridSize, gridColor, opacity, thickerLineWidth) {
-    let ctx = CANVAS.getContext('2d');
-    ctx.globalAlpha = opacity;
-
-    // Draw vertical grid lines
-    for (let x = gridSize; x < CANVAS.width; x += gridSize) {
-        if (x === CANVAS.width / 2) {
-            // Make the central vertical line thicker
-            ctx.strokeStyle = gridColor;
-            ctx.lineWidth = thickerLineWidth;
-        } else {
-            // Reset the line width to the default value
-            ctx.strokeStyle = gridColor;
-            ctx.lineWidth = 1;
-        }
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, CANVAS.height);
-        ctx.stroke();
-    }
-
-    // Draw horizontal grid lines
-    for (let y = gridSize; y < CANVAS.height; y += gridSize) {
-        if (y === CANVAS.height / 2) {
-            // Make the central horizontal line thicker
-            ctx.strokeStyle = gridColor;
-            ctx.lineWidth = thickerLineWidth;
-        } else {
-            // Reset the line width to the default value
-            ctx.strokeStyle = gridColor;
-            ctx.lineWidth = 1;
-        }
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(CANVAS.width, y);
-        ctx.stroke();
-    }
-};
-
-function drawSignal(channelKey) {
-    const channel = channelData[channelKey];
-    const points = channel.points;
-
-    const ctx = CANVAS.getContext('2d');
-    const width = CANVAS.width;
-    const height = CANVAS.height;
-
-    // Find the max and min values in the points array
-    const maxValue = Math.max(...points);
-    const minValue = Math.min(...points);
-    const amplitudeRange = maxValue - minValue;
-
-    const verticalScalingFactor = channel.verticalScale / 50;
-    const horizontalScalingFactor = getCurrentHorizontalScale() / 50;
-
-    const verticalOffset = channel.verticalOffset;
-
-    // Calculate the scaling factors based on actual data range
-    const verticalScale = (height / amplitudeRange) * verticalScalingFactor;
-    const horizontalScale = (width / points.length) * horizontalScalingFactor;
-
-    // Start drawing the waveform
-    ctx.beginPath();
-
-    // Adjust the waveform to be centered vertically
-    points.forEach((point, index) => {
-        const x = (index * (width / points.length) / horizontalScale) + horizontalOffset;//horizontalOffset is init at the start of the script and modified by an eventlistener (cursor)
-        // Rescale and center the signal around the middle of the canvas
-        const y = ((height / 2) - ((point - minValue) - (amplitudeRange / 2)) * verticalScale) + verticalOffset;
-
-        if (index === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
-        }
-    });
-
-    ctx.strokeStyle = channel.colorDark;  // Color of the waveform
-    ctx.lineWidth = 2;
-    ctx.stroke();
 };
 
 function changeChannelButtonStatus(channelKey) {
@@ -451,3 +370,130 @@ function changeChannelButtonStatus(channelKey) {
     // console.log(channelData);
 };
 
+
+// Function to draw a grid composed of full squares on the canvas
+function drawGrid(gridColor, opacity, thickerLineWidth) {
+    let ctx = CANVAS.getContext('2d');
+    ctx.globalAlpha = opacity;
+
+    const gridSizeVertical = CANVAS.width / config.verticalDivisions;
+    const gridSizeHorizontal = CANVAS.height / config.horizontalDivisions;
+    const centerVertical = CANVAS.width / 2;
+    const centerHorizontal = CANVAS.height / 2;
+    //We need the tolerance for a little wiggle room when detecting the two central lines.
+    //Otherwise we might not get a perfect == when checking the position of the drawer compared to CANVAS.width/2 or CANVAS.height/2.
+    const tolerance = 0.5;
+
+    // Draw vertical grid lines
+    for (let x = gridSizeVertical; x < CANVAS.width; x += gridSizeVertical) {
+        if (Math.abs(x - centerVertical) <= tolerance) {
+            // Make the central vertical line thicker
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = thickerLineWidth;
+            console.log("Central line");
+        } else {
+            // Reset the line width to the default value
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 1;
+        }
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, CANVAS.height);
+        ctx.stroke();
+    }
+
+    // Draw horizontal grid lines
+    for (let y = gridSizeHorizontal; y < CANVAS.height; y += gridSizeHorizontal) {
+        if (Math.abs(y - centerHorizontal) <= tolerance) {
+            // Make the central horizontal line thicker
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = thickerLineWidth;
+        } else {
+            // Reset the line width to the default value
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 1;
+        }
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(CANVAS.width, y);
+        ctx.stroke();
+    }
+};
+
+function drawSignal(channelKey) {
+    const channel = channelData[channelKey];
+    const points = channel.points;
+
+    const ctx = CANVAS.getContext('2d');
+    const width = CANVAS.width;
+    const height = CANVAS.height;
+
+    // Find the max and min values in the points array
+    const maxValue = Math.max(...points);
+    const minValue = Math.min(...points);
+    const amplitudeRange = maxValue - minValue;
+
+    const verticalScalingFactor = channel.verticalScale / 50; 
+    const horizontalScalingFactor = getCurrentHorizontalScale() / 50;//we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
+
+    const verticalOffset = channel.verticalOffset;
+
+    // Calculate the scaling factors based on actual data range
+    const verticalScale = (height / amplitudeRange) * verticalScalingFactor;
+    const horizontalScale = (width / points.length) * horizontalScalingFactor;
+
+    // Start drawing the waveform
+    ctx.beginPath();
+
+    // Adjust the waveform to be centered vertically
+    points.forEach((point, index) => {
+        const x = (index * (width / points.length) / horizontalScale) + horizontalOffset;//horizontalOffset is init at the start of the script and modified by an eventlistener (cursor)
+        // Rescale and center the signal around the middle of the canvas
+        const y = ((height / 2) - ((point - minValue) - (amplitudeRange / 2)) * verticalScale) + verticalOffset;
+
+        if (index === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+
+    ctx.strokeStyle = channel.colorDark;  // Color of the waveform
+    ctx.lineWidth = 2;
+    ctx.stroke();
+};
+
+function setScreenInformation(){
+    //insert time scale to the screen
+    const timePerDiv = getTimePerDiv();
+    document.getElementById('tpdiv-value').innerHTML = timePerDiv.value + ' ' + timePerDiv.scale + '/div';
+    console.log(`Time per division is : ${timePerDiv.value} ${timePerDiv.scale}`);
+};
+
+
+function getTimePerDiv() {
+    const horizontalScale = getCurrentHorizontalScale() / 50; //we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
+    const totalSamplingTime = config.samplesPerFrame / config.frequency;
+    const timePerDivision = (totalSamplingTime / config.horizontalDivisions) * horizontalScale;
+    let scale;
+    let value;
+
+    //convert timePerDivision to ms as a base unit to simplify the logic of the function
+    const microseconds = timePerDivision * 1e6;
+
+    if (microseconds < 1) {// nanoseconds
+        scale = 'ns'; 
+        value = (microseconds * 1000).toFixed(2); // convert to nanoseconds
+    } else if (microseconds < 1000) {// microseconds
+        scale = 'µs'; 
+        value = microseconds.toFixed(2);
+    } else if (microseconds < 1e6) {// Milliseconds
+        scale = 'ms'; 
+        value = (microseconds / 1000).toFixed(2); // convert microseconds to milliseconds
+    } else { // Seconds
+        scale = 's';
+        value = (microseconds / 1e6).toFixed(2); // convert microseconds to seconds
+    }
+
+    return { value: parseFloat(value), scale: scale };
+}

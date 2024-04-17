@@ -154,6 +154,56 @@ aside{
 
 
 
+#info-display-oscilloscope{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+
+    background-color: black;
+}
+
+#info-display-oscilloscope span{
+    width : 33%;
+    margin: 0px auto;
+}
+
+#vpdiv-mesurements{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+#vpdiv-mesurements p{
+    width: 18%;
+
+    margin: 0px 2% 0px 0px;
+}
+
+#mathres-measurements{
+    display: flex;
+    justify-content: center;
+
+    align-items: center;
+}
+
+#mathres-measurements p{
+    margin: 0px;
+    color: grey;
+}
+
+#tpdiv-measurement{
+    display: flex;
+    justify-content: right;
+
+    align-items: center;
+}
+
+#tpdiv-measurement p{
+    margin: 0px;
+    color: white;
+}
+
 /*=======================================================================================================================================
 
                     THE FOLLOWING STYLES ARE FOR THE BASIC ASSETS OF THE APP (BUTTONS, INPUTS, ETC)
