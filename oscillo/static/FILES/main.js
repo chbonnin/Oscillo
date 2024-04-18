@@ -5,8 +5,8 @@ let config = {//Used to handle the configuration of the server, in case it chang
     samplesPerFrame: null,
     voltage: null,
     bitsPerSample: null,
-    verticalDivisions: 20,
-    horizontalDivisions: 16,
+    verticalDivisions: 16,
+    horizontalDivisions: 20,
 };
 
 let channelData = {}; //This dictionnary holds the data for each channel including points, status, color, etc..
@@ -62,7 +62,7 @@ function getCurrentSettings(){
                 colorDark: channelsMetaData['CH' + ch].colorDark, //channelsMetaData is passed from the backend to here via the html page
                 colorLight: channelsMetaData['CH' + ch].colorLight,
                 verticalOffset: 0,
-                verticalScale: 25, //50px per volt (default value)
+                verticalScale: 1, //default value from the knob on the page is 50px p volt so here we set it to 25 so the signals only take half the screen and not the complete height.
                 verticalOffsetRelativeCursorPosition: 395,
             };
 
@@ -246,7 +246,7 @@ function environmentSetup(){//This function sets up anything necessary for inter
         isDragging = true;
         for (let i = 1; i < config.numChannels + 1; i++) {
             if (channelData['CH' + i].focused) {
-                channelData['CH' + i].verticalScale = parseInt(this.value, 10);//convert from str to int (base10)
+                channelData['CH' + i].verticalScale = parseFloat(this.value);//convert from str to int (base10)
             }
         }
     });
@@ -259,8 +259,8 @@ function environmentSetup(){//This function sets up anything necessary for inter
     verticalScalingKnob.addEventListener("mouseup", function(){
         for (let i = 1; i < config.numChannels + 1; i++) {
             if (channelData['CH' + i].focused && !isDragging) {
-                verticalScalingKnob.value = 25;
-                channelData['CH' + i].verticalScale = 25;//convert from str to int (base10)
+                verticalScalingKnob.value = 1;
+                channelData['CH' + i].verticalScale = 1;//convert from str to int (base10)
             }
         }
         isDragging = false;
@@ -282,7 +282,7 @@ function MAINLOOP(){
         }else{
             console.log("Waiting for settings retrieval...");
         }
-   }, 1000);
+   }, 100);
 }
 
 
@@ -376,8 +376,8 @@ function drawGrid(gridColor, opacity, thickerLineWidth) {
     let ctx = CANVAS.getContext('2d');
     ctx.globalAlpha = opacity;
 
-    const gridSizeVertical = CANVAS.width / config.verticalDivisions;
-    const gridSizeHorizontal = CANVAS.height / config.horizontalDivisions;
+    const gridSizeVertical = CANVAS.width / config.horizontalDivisions;
+    const gridSizeHorizontal = CANVAS.height / config.verticalDivisions;
     const centerVertical = CANVAS.width / 2;
     const centerHorizontal = CANVAS.height / 2;
     //We need the tolerance for a little wiggle room when detecting the two central lines.
@@ -390,7 +390,6 @@ function drawGrid(gridColor, opacity, thickerLineWidth) {
             // Make the central vertical line thicker
             ctx.strokeStyle = gridColor;
             ctx.lineWidth = thickerLineWidth;
-            console.log("Central line");
         } else {
             // Reset the line width to the default value
             ctx.strokeStyle = gridColor;
@@ -433,7 +432,7 @@ function drawSignal(channelKey) {
     const minValue = Math.min(...points);
     const amplitudeRange = maxValue - minValue;
 
-    const verticalScalingFactor = channel.verticalScale / 50; 
+    const verticalScalingFactor = channel.verticalScale; 
     const horizontalScalingFactor = getCurrentHorizontalScale() / 50;//we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
 
     const verticalOffset = channel.verticalOffset;
@@ -467,9 +466,24 @@ function setScreenInformation(){
     //insert time scale to the screen
     const timePerDiv = getTimePerDiv();
     document.getElementById('tpdiv-value').innerHTML = timePerDiv.value + ' ' + timePerDiv.scale + '/div';
-    console.log(`Time per division is : ${timePerDiv.value} ${timePerDiv.scale}`);
+    //console.log(`Time per division is : ${timePerDiv.value} ${timePerDiv.scale}`);
+
+    for (let i = 1; i < config.numChannels + 1; i++) {
+        const voltsPerDiv = getVoltsPerDiv(channelData['CH' + i].verticalScale);
+        document.getElementById('mes-CH' + i).innerHTML = voltsPerDiv + ' V/div';
+        document.getElementById('mes-CH' + i).style.color = channelData['CH' + i].colorDark;
+    }
 };
 
+
+function getVoltsPerDiv(channelVerticalScale) {
+    const totalVoltageRange = config.voltage; //voltage range we get from the settings (-V to +V)
+    const verticalDivisions = config.verticalDivisions;
+
+    const voltsPerDivision = totalVoltageRange / (verticalDivisions * channelVerticalScale); 
+
+    return voltsPerDivision;//round here to 2 decimals
+};
 
 function getTimePerDiv() {
     const horizontalScale = getCurrentHorizontalScale() / 50; //we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
@@ -496,4 +510,4 @@ function getTimePerDiv() {
     }
 
     return { value: parseFloat(value), scale: scale };
-}
+};

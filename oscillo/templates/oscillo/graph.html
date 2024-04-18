@@ -31,22 +31,22 @@
                 </canvas>
                 <div id="info-display-oscilloscope">
                     <span id="vpdiv-mesurements">
-                        <p id="mes-CH1" class="chanmeasures">3.52V </p>
-                        <p id="mes-CH2" class="chanmeasures">7.3V </p>
-                        <p id="mes-CH3" class="chanmeasures">5V </p>
-                        <p id="mes-CH4" class="chanmeasures">6.2V </p>
-                        <p id="mes-CH5" class="chanmeasures">1.87V </p>
-                        <p id="mes-CH6" class="chanmeasures">4.22V </p>
-                        <p id="mes-CH7" class="chanmeasures">2.54V </p>
-                        <p id="mes-CH8" class="chanmeasures">9.1V </p>
-                        <p id="mes-CH9" class="chanmeasures">3.41V </p>
-                        <p id="mes-CH10" class="chanmeasures">8.26V </p>
+                        <p id="mes-CH1" class="chanmeasures"></p>
+                        <p id="mes-CH2" class="chanmeasures"></p>
+                        <p id="mes-CH3" class="chanmeasures"></p>
+                        <p id="mes-CH4" class="chanmeasures"></p>
+                        <p id="mes-CH5" class="chanmeasures"></p>
+                        <p id="mes-CH6" class="chanmeasures"></p>
+                        <p id="mes-CH7" class="chanmeasures"></p>
+                        <p id="mes-CH8" class="chanmeasures"></p>
+                        <p id="mes-CH9" class="chanmeasures"> </p>
+                        <p id="mes-CH10" class="chanmeasures"></p>
                     </span>
                     <span id="mathres-measurements">
-                        <p id="mathres-1">5.64</p>
+                        <p id="mathres-1">--.--</p>
                     </span>
                     <span id="tpdiv-measurement">
-                        <p id="tpdiv-value">XX yy</p>
+                        <p id="tpdiv-value">-- xx/div</p>
                     </span>
                 </div>
             </div>
@@ -117,8 +117,9 @@
                     background-size: 100% 10100%; 
                     background-position: 0px -6400px;"
                 min="0"
-                max="250"
-                value="50">
+                max="3"
+                value="1"
+                step="0.01">
             <!--Knob to change the horizontal scaling of the signal (how many micro-seconds per pixels)-->
             <input 
                 type="range" 

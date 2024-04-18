@@ -70,7 +70,7 @@ class Main(TemplateView):
         if not self.sock:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.bind(("127.0.0.1", 7999))
-            self.sock.settimeout(10)
+            self.sock.settimeout(3000)
             print("bound")
 
         try:

@@ -4,6 +4,7 @@ import socket
 import optparse
 import time
 import math
+import random
 
 parser = optparse.OptionParser(usage="%prog [options] \n\nSend data via UDP protocol")
 parser.add_option("-s", "--size", action="store", dest="size", help="Taille des paquets de données en octets", default=8192)
