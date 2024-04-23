@@ -12,7 +12,7 @@ parser.add_option("-c", "--channels", action="store", dest="channels", help="Nom
 parser.add_option("-d", "--delay", action="store", dest="delay", help="Durée entre deux envois (en ms)", default=100)
 parser.add_option("-f", "--file", action="store", dest="file", help="chemin du fichier où lire les données")
 parser.add_option("-i", "--ip", action="store", dest="ip", help="adresse ipv4 où envoyer les données", default="127.0.0.1")
-parser.add_option("-p", "--port", action="store", dest="port", help="Numéro de port", default=7999)
+parser.add_option("-p", "--port", action="store", dest="port", help="Numéro de port", default=7888)
 parser.add_option("-r", "--repeat", action="store", dest="repeat", help="Nombre d'envois de paquets", default=0)
 parser.add_option("-g", "--group", action="store", dest="group", help="Nombre de paquets regroupés dans un envoi (supplémentaire, 1 par défaut)", default=1)
 

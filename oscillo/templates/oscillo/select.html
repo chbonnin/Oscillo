@@ -31,13 +31,60 @@
 
         <form method="post">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Confirm settings</button>
+            <div>
+                {{ form.mode }}
+            </div>
+            <div class="toggle-visibility">
+                {{ form.channels }}
+            </div>
+            <div class="toggle-visibility">
+                {{ form.freq }}
+            </div>
+            <div class="toggle-visibility">
+                {{ form.nb }}
+            </div>
+            <div class="toggle-visibility">
+                {{ form.voltage }}
+            </div>
+            <div class="toggle-visibility">
+                {{ form.bits }}
+            </div>
+            <button type="submit">Start Capture</button>
         </form>
+
+        <hr>
+
+        <span id="warning-span">
+            <p>You've currently selected the 'file' option.</p>
+            <p>This means you already have a server running (Reader_Sender.py for example) and sending data from a .osc file.</p>
+            <p>If you are not sure how to setup this server to read data from a previous experiment, feel free to visit the documentation at "(TBD)"</p>
+        </span>
     </main>
 
     <footer>
         <p>&copy; 2024 CNRS-IPHC. All rights reserved.</p>
     </footer>
+
+    <script>
+        function updateFormVisibility() {
+            let selectedMode = document.getElementById('id_mode').value;
+            let elementsToToggle = document.querySelectorAll('.toggle-visibility');
+            let spanElement = document.querySelector('#warning-span');
+            
+            elementsToToggle.forEach(function(element) {
+                if (selectedMode === 'FILE') {
+                    element.style.display = 'none';
+                    spanElement.style.display = 'block';
+                } else {
+                    element.style.display = 'block';
+                    spanElement.style.display = 'none';
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateFormVisibility();
+        });
+    </script>
 </body>
 </html>

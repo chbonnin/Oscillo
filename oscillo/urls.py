@@ -11,6 +11,7 @@ urlpatterns = [
     path('start/', main.index, name="start"),
     path("settings/", main.settings, name="settings"),
     path("data/", main.getData, name="data"),
+    path("dataF/", main.getFileData, name="dataF"),
     path("oscilloSelect/", main.oscilloSelect, name="oscilloSelect"),
 
     #User related patterns

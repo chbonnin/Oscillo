@@ -7,11 +7,13 @@ let config = {//Used to handle the configuration of the server, in case it chang
     bitsPerSample: null,
     verticalDivisions: 16,
     horizontalDivisions: 20,
+    mode: null,
 };
 
 let channelData = {}; //This dictionnary holds the data for each channel including points, status, color, etc..
 
 let horizontalOffset = 0;
+let horizontalScale = 50;
 
 const CANVAS = document.getElementById('oscilloscope_screen');
 
@@ -44,6 +46,7 @@ function getCurrentSettings(){
         const settings = JSON.parse(Http.responseText);
 
         // update the numChannels in config
+        config.mode = settings.mode
         config.numChannels = settings.channels;
         config.frequency = settings.freq;
         config.samplesPerFrame = settings.nb;
@@ -136,10 +139,59 @@ function fetchData(){
     Http.send();
 }
 
+function fetchDataFromFile(){
+    console.log("fetchDataFromFile starts");
+    const Http = new XMLHttpRequest();
+
+    Http.open("GET", '/oscillo/dataF/', true);
+    Http.responseType = 'json';
+
+    Http.onload = function() {
+        if (Http.status === 200) {
+            console.log("JSON data received : ");
+            console.log(Http.response);
+
+            //Here we now populate the channel data arrays with the data received
+            //We know .osc files take a max amount of 4 channels
+            for (let i = 1; i <= config.numChannels; i++) {
+                let channelKey = 'CH' + i;
+                channelData[channelKey].points = Http.response[i + 1];
+            }
+
+            config.samplesPerFrame = Http.response[2].length//We take the number of samples for ch.1 bc logically they all have the same amount given the .osc format
+
+            clearCanvas();
+            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+
+            Object.keys(channelData).forEach(key => {
+                // console.log(key, channelData[key].points);
+                if (channelData[key].display === true){
+                    drawSignalFromFile(key);
+                }
+            });
+
+            console.log(channelData);
+
+        } else if (Http.status === 408){
+            console.error("The server supposed to send the data (Reader_sender) did not send anything" + Http.status)
+        } else {
+            console.error("Failed to load data, status: " + Http.status);
+        }
+    }
+
+    Http.onerror = function() {
+        console.error("There was a network error.");
+    };
+
+    Http.send();
+    console.log("fetchDataFromFile ends");
+}
+
 function environmentSetup(){//This function sets up anything necessary for interacting with the oscilloscope (EVentlisteners, etc)
     let isDragging = false;
     
     const verticalScalingKnob = document.getElementById("vertical-scaling");
+    const horizontalScalingKnob = document.getElementById("horizontal-scaling");
     
     const scrollBar = document.getElementById("scroll-bar");
     const scroller = document.getElementById("scroller");
@@ -266,25 +318,49 @@ function environmentSetup(){//This function sets up anything necessary for inter
         isDragging = false;
     });
 
+    //===================== HORIZONTAL SCALING INTERACTIONS (KNOB) =====================
+
+    horizontalScalingKnob.addEventListener("input", function(){
+        isDragging = true;
+        horizontalScale = parseInt(this.value);
+    });
+
+    horizontalScalingKnob.addEventListener("mousedown", function(){
+        isDragging = false;
+    });
+
+    horizontalScalingKnob.addEventListener("mouseup", function(){
+        if (!isDragging){
+            horizontalScalingKnob.value = 50;
+            horizontalScale = 50;
+        }
+        isDragging = false;
+    });
+
+
+
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
     drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
 
     getCurrentSettings();
 }
 
-
 function MAINLOOP(){
-    
     LOOP = setInterval(function() {
-        if (config.numChannels != null) {
-            fetchData();
-            setScreenInformation();
+        if (config.mode != null){
+            if (config.mode == "FILE"){
+                fetchDataFromFile();
+                setScreenInformation();
+            }else if(config.mode == "FAKE-STARE"){
+                fetchData();
+                setScreenInformation();
+            }
         }else{
-            console.log("Waiting for settings retrieval...");
+            console.log("Still waiting on settings retrieval");
         }
-   }, 100);
-}
+    }, 200)
 
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     environmentSetup();//we load all the necessary event listeners for the oscilloscope
@@ -299,11 +375,6 @@ function showToast(message) {
     setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
 };
 
-function getCurrentHorizontalScale(){//This function will return the current value of the input 'horizontal-scale'
-    const horizontallKnob = document.getElementById('horizontal-scaling');
-    //Value between 1 and 1000000 representing the number of micro-seconds per pixel
-    return parseInt(horizontallKnob.value);
-};
 
 function clearCanvas(){
     let ctx = CANVAS.getContext('2d');
@@ -422,7 +493,6 @@ function drawGrid(gridColor, opacity, thickerLineWidth) {
 function drawSignal(channelKey) {
     const channel = channelData[channelKey];
     const points = channel.points;
-
     const ctx = CANVAS.getContext('2d');
     const width = CANVAS.width;
     const height = CANVAS.height;
@@ -433,20 +503,19 @@ function drawSignal(channelKey) {
     const amplitudeRange = maxValue - minValue;
 
     const verticalScalingFactor = channel.verticalScale; 
-    const horizontalScalingFactor = getCurrentHorizontalScale() / 50;//we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
 
     const verticalOffset = channel.verticalOffset;
 
     // Calculate the scaling factors based on actual data range
     const verticalScale = (height / amplitudeRange) * verticalScalingFactor;
-    const horizontalScale = (width / points.length) * horizontalScalingFactor;
+    const horizontalScaleFactor = (width / points.length) * (horizontalScale / 50);//we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
 
     // Start drawing the waveform
     ctx.beginPath();
 
     // Adjust the waveform to be centered vertically
     points.forEach((point, index) => {
-        const x = (index * (width / points.length) / horizontalScale) + horizontalOffset;//horizontalOffset is init at the start of the script and modified by an eventlistener (cursor)
+        const x = (index * (width / points.length) / horizontalScaleFactor) + horizontalOffset;//horizontalOffset is init at the start of the script and modified by an eventlistener (cursor)
         // Rescale and center the signal around the middle of the canvas
         const y = ((height / 2) - ((point - minValue) - (amplitudeRange / 2)) * verticalScale) + verticalOffset;
 
@@ -462,6 +531,44 @@ function drawSignal(channelKey) {
     ctx.stroke();
 };
 
+function drawSignalFromFile(channelKey){
+    const channel = channelData[channelKey];
+    const points = channel.points;
+    const ctx = CANVAS.getContext('2d');
+    const width = CANVAS.width;
+    const height = CANVAS.height;
+
+    const maxSignalValue = 16383;  // Max value of the signal
+    const verticalScalingFactor = channel.verticalScale; 
+
+    const verticalOffset = channel.verticalOffset;
+
+    // Calculate the scaling factors
+    const verticalScale = height / maxSignalValue * verticalScalingFactor;
+    const horizontalScaleFactor = width / points.length * (horizontalScale / 50);
+
+    const baselineY = height / 2  
+
+    // Start drawing the waveform
+    ctx.beginPath();
+
+    // Draw each point on the canvas
+    points.forEach((point, index) => {
+        const x = (index * horizontalScaleFactor) + horizontalOffset;
+        const y = baselineY - ((point - maxSignalValue / 2) * verticalScale) + verticalOffset;
+
+        if (index === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+
+    ctx.strokeStyle = channel.colorDark;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+
 function setScreenInformation(){
     //insert time scale to the screen
     const timePerDiv = getTimePerDiv();
@@ -475,20 +582,18 @@ function setScreenInformation(){
     }
 };
 
-
 function getVoltsPerDiv(channelVerticalScale) {
     const totalVoltageRange = config.voltage; //voltage range we get from the settings (-V to +V)
     const verticalDivisions = config.verticalDivisions;
 
     const voltsPerDivision = totalVoltageRange / (verticalDivisions * channelVerticalScale); 
 
-    return voltsPerDivision;//round here to 2 decimals
+    return voltsPerDivision.toFixed(4);//round here to 4 decimals
 };
 
-function getTimePerDiv() {
-    const horizontalScale = getCurrentHorizontalScale() / 50; //we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
-    const totalSamplingTime = config.samplesPerFrame / config.frequency;
-    const timePerDivision = (totalSamplingTime / config.horizontalDivisions) * horizontalScale;
+function getTimePerDiv() { 
+    const totalSamplingTime = config.samplesPerFrame * 1e-8;
+    const timePerDivision = (totalSamplingTime / config.horizontalDivisions) * (horizontalScale / 50);//we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
     let scale;
     let value;
 

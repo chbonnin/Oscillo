@@ -1,15 +1,22 @@
-import struct
-import time
+import struct, os, time, socket, pickle
 import matplotlib.pyplot as plt
 import numpy as np
 
-Headers = []
 ChannelPoints1 = []
 ChannelPoints2 = []
 ChannelPoints3 = []
 ChannelPoints4 = []
 
 currentPosition = 0
+
+def clear_console():
+    if os.name == 'nt':
+        os.system('cls')  #Windows (we never know..)
+    else:
+        os.system('clear') #Unix/Linux/MacOS
+
+
+
 
 def read_header(filename, position):
     with open(filename, 'rb') as file:
@@ -48,7 +55,13 @@ def read_data(filename, position):
         total_samples = 0
 
         currentChannel = None
-        firstLoop = True
+
+        #Here we make sure the arrays are empty and not full from a previous loop
+        ChannelPoints1.clear()
+        ChannelPoints2.clear()
+        ChannelPoints3.clear()
+        ChannelPoints4.clear()
+
 
         while True:
             bytes_read = file.read(2)
@@ -78,7 +91,7 @@ def read_data(filename, position):
                 elif currentChannel == 4:
                     currentChannel = None
                     CurrentPosition = file.tell()
-                    return CurrentPosition
+                    return CurrentPosition, total_samples
             elif value == 24575 or value == 24576:#positive / negative overflow
                 continue
             elif value >= 0 and value <= 16383:
@@ -100,53 +113,25 @@ def read_data(filename, position):
                 # elif currentChannel == 3:
                 #     ChannelPoints3.append(value)
                 # elif currentChannel == 4:
-                #     ChannelPoints4.append(value) 
-
-
-
-
-def plot_channel_data(channel_data):
-    # Calculate the 10th and 90th percentiles as the cutoffs to exclude very low and high values
-    low_cutoff = np.percentile(channel_data, 10)
-    high_cutoff = np.percentile(channel_data, 90)
-    # Filter out values below the low cutoff and above the high cutoff
-    filtered_data = [value for value in channel_data if low_cutoff <= value <= high_cutoff]
-    
-    # Check the number of points to plot and downsample if necessary
-    if len(filtered_data) > 10000:
-        downsample_rate = 10000
-        sampled_data = filtered_data[::downsample_rate]
-        x_values = range(0, len(filtered_data), downsample_rate)
-    else:
-        sampled_data = filtered_data
-        x_values = range(len(filtered_data))
-
-    # Finding the smallest and biggest values in the filtered channel_data
-    smallest_value = min(filtered_data) if filtered_data else None
-    biggest_value = max(filtered_data) if filtered_data else None
-    print("The smallest value in the filtered channel data is:", smallest_value)
-    print("The biggest value in the filtered channel data is:", biggest_value)
-
-    plt.figure(figsize=(18, 5))  # Set the figure size for better visibility
-    plt.plot(x_values, sampled_data, label='Channel 3 Data', linewidth=0.8, color='purple')
-    plt.title('Channel 3 Sample Points (Filtered)')
-    plt.xlabel('Sample Index')
-    plt.ylabel('Sample Value')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-
+                #     ChannelPoints4.append(value)
+                total_samples += 1
 
 
 
 def MAIN():
     global currentPosition
-    filename = '../data/Card1212_0139.osc'
-    #filename = '../data/testfile3.osc'
+    #filename = '../data/Card1212_0139.osc'
+    filename = '../data/Card1213_0008.osc'
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(("127.0.0.1", 7999))
+    server_address = ('127.0.0.1', 7888)
+    sock.settimeout(10)
 
     while True:
         try:
+            clear_console()
+
             #Here we get the header of that section of the file
             header = read_header(filename, currentPosition)
             triggers, ticks = rearrange_bytes_and_convert(header)
@@ -158,30 +143,65 @@ def MAIN():
                 "TriggerCountCH3": triggers[2],
                 "TriggerCountCH4": triggers[3]
             }
-
-            Headers.append(headerData)
-
+            
             #Then we get the data of said section
-            data = read_data(filename, currentPosition)
-            currentPosition = data
+            currentPosition, NbSamples = read_data(filename, currentPosition)
 
             #print("Channel1 data: ", ChannelPoints1)
-            # print("Header: ", Headers)
             print("Current position : ", currentPosition)
+            print("Number of samples: ", NbSamples)
 
-            #break
-        except EOFError as e:
-            print(str(e))
-            print("The data should be ready to be displayed.")
             print(f"Length of channel one array : {len(ChannelPoints1)}")
             print(f"Length of channel two array : {len(ChannelPoints2)}")
             print(f"Length of channel three array : {len(ChannelPoints3)}")
             print(f"Length of channel four array : {len(ChannelPoints4)}")
-            break
-        
+
+            print("The data should be ready to be sent !")
+
+            DataPacked = [NbSamples, headerData, ChannelPoints1, ChannelPoints2, ChannelPoints3, ChannelPoints4]
+
+            serializedData = pickle.dumps(DataPacked)
+            sizeInBytes = len(serializedData)
+
+            #Here we handle the data transfer to the web app part
+            #We start by waiting for a data request
+            #Then we send the total size of the current packet
+            #We wait for the ACK
+            #We send the complete data, etc, etc..
+
+            while True:
+                try:
+                    print("Waiting for data request..")
+                    request, _ = sock.recvfrom(4096)
+
+                    print(f"Message received -> {request.decode()}")
+
+                    if request.decode() == "ND":
+                        sock.sendto(str(sizeInBytes).encode(), server_address)
+
+                        print("Waiting for acknowledgment...")
+                        ack, _ = sock.recvfrom(4096)
+
+                        print(f"Message received -> {ack.decode()}")
+
+                        if ack.decode() == "ACK":
+                            print("Acknowledgment received. Sending data...")
+                            # Send the actual serialized data
+                            sock.sendto(serializedData, server_address)
+                            print(f"{sizeInBytes} Bytes of data sent !")
+                            break
+                except socket.timeout:
+                    print("Nobody asked for data, carrying on.")
+        except EOFError as e:
+            #End of file reached, we start over.
+            print(str(e))
+            currentPosition = 0
+
 
 if __name__ == "__main__":
-    MAIN()
-    plot_channel_data(ChannelPoints3)
+    MAIN()  
+
+
+    
 
 

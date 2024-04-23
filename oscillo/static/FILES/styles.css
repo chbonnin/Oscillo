@@ -7,6 +7,8 @@ body{
 
     margin: 0px;
     padding: 0px;
+
+    background-color: black;
 }
 
 section{
@@ -16,7 +18,7 @@ section{
     
     height: 100vh;
 
-    background-color: gray;
+    /* background-color: gray; */
 }
 
 #oscilloscope_screen{
@@ -44,7 +46,7 @@ aside{
     
     min-height: 100vh;
     
-    background-color: grey;
+    /* background-color: grey; */
 }
 
 
@@ -60,11 +62,19 @@ aside{
     flex-direction: column;
     flex-wrap: nowrap;
 
+    margin: 2em auto;
+    width: 90%;
 }
 
 #channel-select-div span{
-    margin: 5px auto
-    
+    margin: 5px auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+
+    width: 100%;
+    margin-bottom: 1em;
 }
 
 
@@ -72,6 +82,7 @@ aside{
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
+    justify-content: center;
 }
 
 
@@ -80,11 +91,34 @@ aside{
     flex-direction: column;
     flex-wrap: nowrap;
 
-    margin: 5px auto;
+    margin: 0px 1em;
 }
 
 #main-functions-div span button{
-    margin-bottom: 0.5em;
+    margin-bottom: 1em;
+    color: rgb(226, 226, 226);
+}
+
+#knobs-div{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+}
+
+#user-related-actions{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-evenly;
+    margin-top: 2em;
+}
+
+#user-related-actions button{
+    font-size: 1em;
+    padding: 0.3em 1.2em;
+    border-radius: 10px;
+    background-color: #4b4b4b;
 }
 
 #middle-line{
@@ -125,7 +159,7 @@ aside{
 }
 
 #scrollbar-horizontal{
-    width: 1024px;
+    width: 1200px;
     height: 20px;
     background-color: black;
 }
@@ -148,7 +182,7 @@ aside{
     background-color: turquoise;
 
     position: relative;
-    left: 507px;
+    left: 595px;
 
 }
 
@@ -486,17 +520,15 @@ aside{
     text-decoration: none;
     font-size: inherit;
     font-family: inherit;
-}
-.channel-displayed {
     touch-action: manipulation;
     font-weight: 600;
     color: #382b22;
     text-transform: uppercase;
-    padding: 1.25em 2em;
     border-radius: 0.75em;
     transform-style: preserve-3d;
     transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), background 150ms cubic-bezier(0, 0, 0.58, 1);
 }
+
 .channel-displayed::before {
     position: absolute;
     content: "";
@@ -507,7 +539,7 @@ aside{
     right: 0;
     bottom: 0;
     border-radius: inherit;
-    box-shadow: 0 0 0 2px grey, 0 0.625em 0 0 grey;
+    box-shadow: 0 0 0 2px black, 0 0.625em 0 0 black;
     transform: translate3d(0, 0.75em, -1em);
     transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
 }
@@ -515,14 +547,14 @@ aside{
     transform: translate(0, 0.25em);
 }
 .channel-displayed:hover::before {
-    box-shadow: 0 0 0 2px grey, 0 0.5em 0 0 grey;
+    box-shadow: 0 0 0 2px black, 0 0.5em 0 0 black;
     transform: translate3d(0, 0.5em, -1em);
 }
 .channel-displayed:active {
     transform: translate(0em, 0.75em);
 }
 .channel-displayed:active::before {
-    box-shadow: 0 0 0 2px grey, 0 0 grey;
+    box-shadow: 0 0 0 2px black, 0 0 black;
     transform: translate3d(0, 0, -1em);
 }
 
@@ -539,16 +571,10 @@ aside{
     text-decoration: none;
     font-size: inherit;
     font-family: inherit;
-
-    margin-bottom: 0.5em;
-}
-
-.channel-not-displayed {
     touch-action: manipulation;
     font-weight: 600;
     color: #382b22;
     text-transform: uppercase;
-    padding: 1.25em 2em;
     background: #585858;
     border: 2px solid #4b4b4b;
     border-radius: 0.75em;
@@ -567,7 +593,7 @@ aside{
     bottom: 0;
     background: #969696;
     border-radius: inherit;
-    box-shadow: 0 0 0 2px grey, 0 0.625em 0 0 grey;
+    box-shadow: 0 0 0 2px black, 0 0.625em 0 0 black;
     transform: translate3d(0, 0.75em, -1em);
     transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
 }
@@ -581,14 +607,73 @@ aside{
     transform: translate(0em, 0.75em);
 }
 .channel-not-displayed:active::before {
-    box-shadow: 0 0 0 2px grey, 0 0 grey;
+    box-shadow: 0 0 0 2px black, 0 0 black;
     transform: translate3d(0, 0, -1em);
 }
 
 .button-focused {
-    border: 3px solid white !important;
+    border: 2px solid white !important;
 }
 
+
+.channel-displayed, .channel-not-displayed{
+    padding: 1em 2em;
+
+    margin: 0px 0.2em 0px 0.2em;
+}
+
+
+.function-buttons {
+    padding: 0.5em 1em;
+
+    touch-action: manipulation;
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    outline: none;
+    vertical-align: middle;
+    text-decoration: none;
+    font-size: inherit;
+    font-family: inherit;
+    touch-action: manipulation;
+    font-weight: 600;
+    color: #382b22;
+    text-transform: uppercase;
+    background: #585858;
+    border: 2px solid #4b4b4b;
+    border-radius: 0.75em;
+    transform-style: preserve-3d;
+    transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), background 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.function-buttons::before {
+    position: absolute;
+    content: "";
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #969696;
+    border-radius: inherit;
+    box-shadow: 0 0 0 2px black, 0 0.625em 0 0 black;
+    transform: translate3d(0, 0.75em, -1em);
+    transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.function-buttons:hover {
+    background: #707070;
+}
+
+.function-buttons:active {
+    background: #a3a3a3;
+    transform: translate(0em, 0.75em);
+}
+.function-buttons:active::before {
+    box-shadow: 0 0 0 2px black, 0 0 black;
+    transform: translate3d(0, 0, -1em);
+}
 
 /*STYLES USED FOR THE TOAST (SMALL POPUP)*/
 

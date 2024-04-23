@@ -26,10 +26,20 @@ class CustomAuthenticationForm(AuthenticationForm):
     username = forms.CharField(label="Username or Email")
 
 
-
-from django import forms
-
 class OscilloSettingsForm(forms.Form):
+    MODE_CHOICES = (
+        ('REAL-TIME', 'Real-Time'),
+        ('FILE', 'File'),
+        ('FAKE-STARE', 'Fake-Stare'),
+    )
+
+    mode = forms.ChoiceField(
+        choices=MODE_CHOICES,
+        label='Mode',
+        initial='REAL-TIME',
+        widget=forms.Select(attrs={'onchange': 'updateFormVisibility();'}),
+    )
+
     channels = forms.IntegerField(
         label='Number of Channels',
         initial=3,
