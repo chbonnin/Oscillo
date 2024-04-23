@@ -681,7 +681,6 @@ aside{
     visibility: hidden;
     min-width: 250px;
     margin-left: -125px;
-    background-color: #333;
     color: #fff;
     text-align: center;
     border-radius: 15px;
@@ -699,6 +698,18 @@ aside{
     animation: fadein 0.5s, fadeout 0.5s 2.5s;
 }
 
+.toast-success {
+    background-color: lightgreen;
+}
+
+.toast-error {
+    background-color:crimson;
+}
+
+.toast-info {
+    background-color: lightskyblue;
+}
+
 @keyframes fadein {
     from {bottom: 0; opacity: 0;}
     to {bottom: 30px; opacity: 1;}
@@ -708,3 +719,63 @@ aside{
     from {bottom: 30px; opacity: 1;}
     to {bottom: 0; opacity: 0;}
 }
+
+
+
+/*============================= DEFAULT MODAL POPUP STYLES =============================*/
+
+/* modal background */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* modal content */
+.modal-content {
+    background-color: whitesmoke;
+    margin: auto;
+    padding: 20px;
+    border: 2px solid #888;
+    width: 20%; /* Could be more or less, depending on screen size */
+    height: 60%; /* Could be more or less, depending on screen size */
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 10px;
+}
+
+/* close button */
+.close {
+    color: #aaaaaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+  
+#modal-generated-content{
+    margin-top: 3em;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+
+    padding: 1.5em;
+}
+
+.modal-save-button{
+    margin-bottom: 0.5em;
+}   

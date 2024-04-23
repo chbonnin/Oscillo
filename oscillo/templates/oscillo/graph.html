@@ -88,7 +88,7 @@
         </div>
         <div id="main-functions-div" class="main-divs-aside"><!--Contains the buttons to interact with the oscilloscope-->
             <span>
-                <button id="run-stop" class="function-buttons">RUN/STOP</button>
+                <button id="run-stop" class="function-buttons">RUN</button>
                 <button id="cursors" class="function-buttons">CURSORS</button>
                 <button id="display" class="function-buttons">DISPLAY</button>
                 <button id="trigger" class="function-buttons">TRIGGER</button>
@@ -139,8 +139,17 @@
         </div>
     </aside>
 
-    {% comment %} <script src={% static 'FILES/index.js' %}></script> {% endcomment %}
-    {% comment %} <script src={% static 'FILES/getData.js' %}></script> {% endcomment %}
+    <!--Modal popup element (filled using javascript)-->
+    <div id="modal" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <div id="modal-generated-content">
+            
+          </div>
+        </div>
+      </div>
+
     <script src={% static 'FILES/main.js' %}></script>
 </body>
 </html>

@@ -15,7 +15,10 @@ let channelData = {}; //This dictionnary holds the data for each channel includi
 let horizontalOffset = 0;
 let horizontalScale = 50;
 
+let isRunning = false;
+
 const CANVAS = document.getElementById('oscilloscope_screen');
+const MODAL = document.getElementById('modal');
 
 const RUNSTOP = document.getElementById('run-stop');
 const CURSORS = document.getElementById('cursors');
@@ -140,7 +143,7 @@ function fetchData(){
 }
 
 function fetchDataFromFile(){
-    console.log("fetchDataFromFile starts");
+    // console.log("fetchDataFromFile starts");
     const Http = new XMLHttpRequest();
 
     Http.open("GET", '/oscillo/dataF/', true);
@@ -148,8 +151,8 @@ function fetchDataFromFile(){
 
     Http.onload = function() {
         if (Http.status === 200) {
-            console.log("JSON data received : ");
-            console.log(Http.response);
+            // console.log("JSON data received : ");
+            // console.log(Http.response);
 
             //Here we now populate the channel data arrays with the data received
             //We know .osc files take a max amount of 4 channels
@@ -184,7 +187,7 @@ function fetchDataFromFile(){
     };
 
     Http.send();
-    console.log("fetchDataFromFile ends");
+    // console.log("fetchDataFromFile ends");
 }
 
 function environmentSetup(){//This function sets up anything necessary for interacting with the oscilloscope (EVentlisteners, etc)
@@ -274,7 +277,7 @@ function environmentSetup(){//This function sets up anything necessary for inter
     function onMouseMoveHorizontal(event) {
         if (!isDragging) return;
         console.log("Curser is being dragged");
-
+        
         let newX = event.clientX - startX;
         newX = Math.max(newX, 0);
         newX = Math.min(newX, scrollBarHorizontal.clientWidth - scrollerHorizontal.clientWidth);
@@ -338,6 +341,33 @@ function environmentSetup(){//This function sets up anything necessary for inter
     });
 
 
+    //===================== RUN/STOP BUTTON INTERACTIONS =====================
+
+    RUNSTOP.addEventListener("click", function() {
+        if (isRunning) {
+            console.log("Stopping the oscilloscope");
+            isRunning = false;
+            RUNSTOP.innerHTML = "RUN";
+            clearCanvas(); //we delete the signals on screen
+            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);//we keep the grid however.
+            
+        } else {
+            console.log("Starting the oscilloscope");
+            isRunning = true;
+            RUNSTOP.innerHTML = "STOP";
+        }
+    });
+
+    //===================== PRINT BUTTON INTERACTIONS =====================
+
+    PRINT.addEventListener("click", function(){downloadCanvasAsImage("png")});
+
+    //===================== SAVE BUTTON INTERACTIONS =====================
+    
+    SAVE.addEventListener("click", function(){
+        populateModalForSave();
+        displayBaseModal();
+    });
 
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
     drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
@@ -348,17 +378,19 @@ function environmentSetup(){//This function sets up anything necessary for inter
 function MAINLOOP(){
     LOOP = setInterval(function() {
         if (config.mode != null){
-            if (config.mode == "FILE"){
-                fetchDataFromFile();
-                setScreenInformation();
-            }else if(config.mode == "FAKE-STARE"){
-                fetchData();
-                setScreenInformation();
+            if (isRunning){
+                if (config.mode == "FILE"){
+                    fetchDataFromFile();
+                    setScreenInformation();
+                }else if(config.mode == "FAKE-STARE"){
+                    fetchData();
+                    setScreenInformation();
+                }
             }
         }else{
             console.log("Still waiting on settings retrieval");
         }
-    }, 200)
+    }, 100)
 
 }
 
@@ -368,13 +400,12 @@ document.addEventListener('DOMContentLoaded', function() {
     MAINLOOP();
 });
 
-function showToast(message) {
+function showToast(message, status) {
     let toast = document.getElementById("toast");
     toast.innerHTML = message;
-    toast.className = "show";
+    toast.classList.add("show", status);
     setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
 };
-
 
 function clearCanvas(){
     let ctx = CANVAS.getContext('2d');
@@ -430,7 +461,7 @@ function changeChannelButtonStatus(channelKey) {
     } catch (error) {
         if (error instanceof TypeError) {//Button not linked to an active channel
             let text = "This channel is not active.";
-            showToast(text);
+            showToast(text, "toast-info");
         } else {
             alert("An unknown error occured, please look at the console.")
             console.error(error);
@@ -616,3 +647,168 @@ function getTimePerDiv() {
 
     return { value: parseFloat(value), scale: scale };
 };
+
+function downloadCanvasAsImage(imageType) {
+    try{
+        let imageUrl
+        let exportCanvas = document.createElement('canvas');
+        exportCanvas.width = CANVAS.width;
+        exportCanvas.height = CANVAS.height;
+    
+        let exportCtx = exportCanvas.getContext('2d');
+    
+        exportCtx.fillStyle = '#000000';
+        exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+        
+        exportCtx.drawImage(CANVAS, 0, 0);
+    
+        if (imageType === "png") {
+            imageUrl = exportCanvas.toDataURL("image/png");
+        }else if (imageType === "jpeg") {
+            imageUrl = exportCanvas.toDataURL("image/jpeg");
+        }
+        
+    
+        // Create temporary link element
+        let downloadLink = document.createElement('a');
+        downloadLink.href = imageUrl;
+    
+        // set the download filename
+        if (imageType === "png") {
+            downloadLink.download = "oscilloscope_snapshot.png";
+        }else if (imageType === "jpeg") {
+            downloadLink.download = "oscilloscope_snapshot.jpeg";
+        }
+        
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        showToast("Image downloaded successfully !", "toast-success");
+    } catch (error) {
+        console.error('Failed to download canvas as image', error);
+        showToast("Error while downloading the image..", "toast-error");
+        return;
+    }
+};
+
+function copyCanvasToClipboard() {
+    // first we check in case this browser does not have the clipboard API
+    if (!navigator.clipboard || !window.ClipboardItem) {
+        //console.error('Clipboard API not available');
+        showToast("Your browser does not support this feature", "toast-error");
+        return;
+    }
+  
+    CANVAS.toBlob(function(blob) {
+      try {
+        const item = new ClipboardItem({ "image/png": blob });
+        navigator.clipboard.write([item]).then(function() {
+          console.log('Canvas image copied to clipboard');
+          showToast("Image copied to your clipboard !", "toast-success");
+        }).catch(function(error) {
+          console.error('Copying to clipboard failed', error);
+          showToast("Error while copying to the clipboard..", "toast-error");
+        });
+      } catch (error) {
+        console.error('Failed to copy canvas to clipboard', error);
+        showToast("Error while copying to the clipboard..", "toast-error");
+      }
+    }, 'image/png');
+};
+
+function downloadDataToCsv() {
+    try {
+        const channelNames = Object.keys(channelData).sort();//get channel names and sort them
+        const csvHeader = channelNames.join(',') + '\n';//set csv header
+        const maxPointsLength = Math.max(...channelNames.map(name => channelData[name].points.length));//get each channel max length
+      
+        let csvRows = [];//create csv rows
+        for (let i = 0; i < maxPointsLength; i++) {
+          let row = channelNames.map(name => {
+            //we leave the row space blank if there are no samples at that index
+            return channelData[name].points[i] || '';
+          }).join(',');
+          csvRows.push(row);
+        }
+      
+        // combine headers w/ rows and create blob for the download
+        const csvString = csvHeader + csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      
+        //create the link for the download, then trigger it
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'channels_data.csv');
+        document.body.appendChild(link); // needed with firefox
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast("Data downloaded successfully !", "toast-success");
+    } catch (error) {
+        console.error('Failed to download data to CSV', error);
+        showToast("Error while downloading the data..", "toast-error");
+    }
+};
+
+function displayBaseModal(){
+    MODAL.style.display = "block";
+
+    let modalClose = document.getElementsByClassName("close")[0];
+
+
+    modalClose.onclick = function() {//if user clicks on the close button, we close the modal
+        MODAL.style.display = "none";
+        clearModal();
+    };
+
+    window.onclick = function(event) {
+        if (event.target == MODAL) {
+            MODAL.style.display = "none";
+            clearModal();
+        }
+    };
+};
+
+function populateModalForSave(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    title = document.createElement("h5");
+    csvButton = document.createElement("button");
+    pngButton = document.createElement("button");
+    jpegButton = document.createElement("button");
+    clipBoardButton = document.createElement("button");
+
+    title.innerHTML = "Choose a saving option";
+
+    csvButton.classList.add("modal-save-button");
+    pngButton.classList.add("modal-save-button");
+    jpegButton.classList.add("modal-save-button");
+    clipBoardButton.classList.add("modal-save-button");
+
+    csvButton.innerHTML = "Save as CSV";
+    pngButton.innerHTML = "Save as PNG";
+    jpegButton.innerHTML = "Save as JPEG";
+    clipBoardButton.innerHTML = "Copy to clipboard";
+
+    modalContentDiv.appendChild(title);
+    modalContentDiv.appendChild(csvButton);
+    modalContentDiv.appendChild(pngButton);
+    modalContentDiv.appendChild(jpegButton);
+    modalContentDiv.appendChild(clipBoardButton);
+
+
+    csvButton.addEventListener("click", downloadDataToCsv);
+    pngButton.addEventListener("click", function(){downloadCanvasAsImage("png")});
+    jpegButton.addEventListener("click", function(){downloadCanvasAsImage("jpeg")});
+    clipBoardButton.addEventListener("click", copyCanvasToClipboard);
+};
+
+function clearModal(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    //Here instead of just removing the children of this element, we clone it and replace it with the clone
+    //This ensures that the event listeners are also removed.
+    let modalClone = modalContentDiv.cloneNode(false);
+    modalContentDiv.parentNode.replaceChild(modalClone, modalContentDiv);
+}

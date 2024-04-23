@@ -189,6 +189,7 @@ def MAIN():
                             # Send the actual serialized data
                             sock.sendto(serializedData, server_address)
                             print(f"{sizeInBytes} Bytes of data sent !")
+                            time.sleep(500)
                             break
                 except socket.timeout:
                     print("Nobody asked for data, carrying on.")
