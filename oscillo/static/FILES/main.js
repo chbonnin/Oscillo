@@ -1,4 +1,3 @@
-
 let config = {//Used to handle the configuration of the server, in case it changes we can update it here
     numChannels: null,  // How many channels are expected. update if server configuration changes
     frequency: null,
@@ -10,12 +9,24 @@ let config = {//Used to handle the configuration of the server, in case it chang
     mode: null,
 };
 
+let triggerOptions = {
+    isTriggerOn: "off",
+    triggerMode: "edge", //edge trigger / window trigger
+    triggerChannel: "CH1", //CH1, CH2, CH3, CH4, etc
+    triggerLevel: "500", //value in volts from -1 to +1, that map to the values 0-16383 (if triggerMode = edgetrigger)
+    windowLevelMin: "500", //value in volts from -1 to +1, that map to the values 0-16383 (if triggerMode = windowtrigger)
+    windowLevelMax: "500",//value in volts from -1 to +1, that map to the values 0-16383 (if triggerMode = windowtrigger) + must be higher than windowLevelMin
+    triggerSlope: "both", //rising, falling, both
+    holdOff: "3600", //default: stop for 1h | value : time in seconds
+}
+
 let channelData = {}; //This dictionnary holds the data for each channel including points, status, color, etc..
 
 let horizontalOffset = 0;
 let horizontalScale = 50;
 
 let isRunning = false;
+let triggered = false;
 
 const CANVAS = document.getElementById('oscilloscope_screen');
 const MODAL = document.getElementById('modal');
@@ -115,9 +126,6 @@ function fetchData(){
                 channelData[channelKey].points.push(point);
             }
 
-            clearCanvas();
-            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
-
             Object.keys(channelData).forEach(key => {
                 // console.log(key, channelData[key].points);
                 if (channelData[key].display === true){
@@ -163,18 +171,20 @@ function fetchDataFromFile(){
 
             config.samplesPerFrame = Http.response[2].length//We take the number of samples for ch.1 bc logically they all have the same amount given the .osc format
 
-            clearCanvas();
-            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
-
             Object.keys(channelData).forEach(key => {
-                // console.log(key, channelData[key].points);
+                //We start by checking wether or not the trigger is set and if so we check the trigger conditions to freeze or not this part of the signal.
+                if (triggerOptions.isTriggerOn == "on"){
+                    if (triggerOptions.triggerChannel == key){//we check the trigger options only for the channel specified in the settings.
+                        triggered = triggerCheck(channelData[key].points);
+                    };
+                };
+
+                // Here we display the signal on the screen (if the button for this channel is active)
                 if (channelData[key].display === true){
                     drawSignalFromFile(key);
                 }
             });
-
-            console.log(channelData);
-
+            //console.log(channelData);
         } else if (Http.status === 408){
             console.error("The server supposed to send the data (Reader_sender) did not send anything" + Http.status)
         } else {
@@ -369,6 +379,23 @@ function environmentSetup(){//This function sets up anything necessary for inter
         displayBaseModal();
     });
 
+
+    //===================== MEASURE BUTTON INTERACTIONS =====================
+
+    MEASURE.addEventListener("click", function(){
+        populateModalForMeasure();
+        displayBaseModal();
+    });
+
+
+    //===================== TRIGGER BUTTON INTERACTIONS =====================
+
+    TRIGGER.addEventListener("click", function(){
+        console.log("Trigger button clicked");
+        populateModalForTrigger();
+        displayBaseModal();
+    });
+
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
     drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
 
@@ -378,19 +405,32 @@ function environmentSetup(){//This function sets up anything necessary for inter
 function MAINLOOP(){
     LOOP = setInterval(function() {
         if (config.mode != null){
-            if (isRunning){
+            if (isRunning && !triggered){
                 if (config.mode == "FILE"){
+                    clearCanvas();
+                    drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
                     fetchDataFromFile();
                     setScreenInformation();
                 }else if(config.mode == "FAKE-STARE"){
+                    clearCanvas();
+                    drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
                     fetchData();
                     setScreenInformation();
                 }
+            }else if(triggered){
+                clearCanvas();
+                drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+                Object.keys(channelData).forEach(key => {
+                    if (channelData[key].display === true){
+                        drawSignalFromFile(key);
+                        setScreenInformation();
+                    }
+                });
             }
         }else{
             console.log("Still waiting on settings retrieval");
         }
-    }, 100)
+    }, 150)
 
 }
 
@@ -403,6 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function showToast(message, status) {
     let toast = document.getElementById("toast");
     toast.innerHTML = message;
+    toast.className = "";
     toast.classList.add("show", status);
     setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
 };
@@ -471,7 +512,6 @@ function changeChannelButtonStatus(channelKey) {
 
     // console.log(channelData);
 };
-
 
 // Function to draw a grid composed of full squares on the canvas
 function drawGrid(gridColor, opacity, thickerLineWidth) {
@@ -624,7 +664,7 @@ function getVoltsPerDiv(channelVerticalScale) {
 
 function getTimePerDiv() { 
     const totalSamplingTime = config.samplesPerFrame * 1e-8;
-    const timePerDivision = (totalSamplingTime / config.horizontalDivisions) * (horizontalScale / 50);//we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
+    const timePerDivision = (totalSamplingTime / config.horizontalDivisions) / (horizontalScale / 50);//we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
     let scale;
     let value;
 
@@ -758,17 +798,29 @@ function displayBaseModal(){
 
 
     modalClose.onclick = function() {//if user clicks on the close button, we close the modal
-        MODAL.style.display = "none";
-        clearModal();
+        hideModal();
     };
 
     window.onclick = function(event) {
         if (event.target == MODAL) {
-            MODAL.style.display = "none";
-            clearModal();
+            hideModal();
         }
     };
 };
+
+function hideModal() {
+    MODAL.style.display = "none"; // Hide the modal by setting display to 'none'
+    clearModal(); // Assuming clearModal() is a function to clear the modal content
+}
+
+function clearModal(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    //Here instead of just removing the children of this element, we clone it and replace it with the clone
+    //This ensures that the event listeners are also removed.
+    let modalClone = modalContentDiv.cloneNode(false);
+    modalContentDiv.parentNode.replaceChild(modalClone, modalContentDiv);
+}
 
 function populateModalForSave(){
     let modalContentDiv = document.getElementById("modal-generated-content");
@@ -804,11 +856,253 @@ function populateModalForSave(){
     clipBoardButton.addEventListener("click", copyCanvasToClipboard);
 };
 
-function clearModal(){
+function populateModalForMeasure(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+};
+
+function populateModalForTrigger(){
+    console.log("Trigger settings : ", triggerOptions);
     let modalContentDiv = document.getElementById("modal-generated-content");
 
-    //Here instead of just removing the children of this element, we clone it and replace it with the clone
-    //This ensures that the event listeners are also removed.
-    let modalClone = modalContentDiv.cloneNode(false);
-    modalContentDiv.parentNode.replaceChild(modalClone, modalContentDiv);
+    function createSelect(options){
+        const selectElement = document.createElement("select");
+        options.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option.value;
+            optionElement.textContent = option.text;
+            selectElement.appendChild(optionElement)
+        });
+        selectElement.classList.add("modal-select-trigger");
+        return selectElement;
+    }
+
+    const triggerOnOffOptions = [
+        {value: "off", text: "Off"},
+        {value: "on", text: "On"},
+    ]
+
+    const triggerModeOptions = [
+        {value: "edge", text: "Edge-Trigger"},
+        {value: "window", text: "Window-Trigger"},
+    ]
+
+    const triggerChannelOptions = [];
+    for (let i = 1; i < config.numChannels + 1; i++) {
+        triggerChannelOptions.push({value: "CH" + i, text: "Channel " + i});
+    };
+
+    const triggerSlopeOptions = [
+        {value: "both", text: "Both"},
+        {value: "rising", text: "Rising"},
+        {value: "falling", text: "Falling"},
+    ]
+
+    title = document.createElement("h5");
+    title.innerHTML = "Trigger options";
+    modalContentDiv.appendChild(title);
+
+    const label1 = document.createElement("label"); //Trigger on/off
+    label1.textContent = "Trigger on/off";
+    modalContentDiv.appendChild(label1);
+
+    const selectOnOffStatus = createSelect(triggerOnOffOptions);
+    selectOnOffStatus.id = "selectOnOffStatus";
+    selectOnOffStatus.value = triggerOptions.isTriggerOn;
+    modalContentDiv.appendChild(selectOnOffStatus);
+
+    const label2 = document.createElement("label"); //Trigger mode
+    label2.textContent = "Trigger mode";
+    modalContentDiv.appendChild(label2);
+
+    const selectTriggerMode = createSelect(triggerModeOptions);
+    selectTriggerMode.id = "selectTriggerMode";
+    selectTriggerMode.value = triggerOptions.triggerMode;
+    modalContentDiv.appendChild(selectTriggerMode);
+
+    const label3 = document.createElement("label"); //Trigger channel
+    label3.textContent = "Trigger channel";
+    modalContentDiv.appendChild(label3);
+
+    const selectTriggerChannel = createSelect(triggerChannelOptions);
+    selectTriggerChannel.id = "selectTriggerChannel";
+    selectTriggerChannel.value = triggerOptions.triggerChannel;
+    modalContentDiv.appendChild(selectTriggerChannel);
+
+    const label4 = document.createElement("label"); //Trigger slope
+    label4.textContent = "Trigger slope";
+    modalContentDiv.appendChild(label4);
+
+    const selectTriggerSlope = createSelect(triggerSlopeOptions);
+    selectTriggerSlope.id = "selectTriggerSlope";
+    selectTriggerSlope.value = triggerOptions.triggerSlope;
+    modalContentDiv.appendChild(selectTriggerSlope);
+
+
+    const label5 = document.createElement("label"); //Trigger level
+    label5.textContent = "Trigger level (mV)";
+    modalContentDiv.appendChild(label5);
+
+    const TriggerLevelInput = document.createElement("input");
+    TriggerLevelInput.type = "number";
+    TriggerLevelInput.min = -(config.voltage / 2) * 1000;
+    TriggerLevelInput.max = (config.voltage / 2) * 1000;
+    TriggerLevelInput.value = triggerOptions.triggerLevel;
+    TriggerLevelInput.classList.add("modal-select-trigger");
+    TriggerLevelInput.id = "TriggerLevelInput";
+    modalContentDiv.appendChild(TriggerLevelInput);
+
+    const label6 = document.createElement("label"); //Window level min
+    label6.textContent = "Window level min (mV)";
+    modalContentDiv.appendChild(label6);
+
+    const WindowLevelMinInput = document.createElement("input");
+    WindowLevelMinInput.type = "number";
+    WindowLevelMinInput.min = -(config.voltage / 2) * 1000;
+    WindowLevelMinInput.max = (config.voltage / 2) * 1000;
+    WindowLevelMinInput.value = triggerOptions.windowLevelMin;
+    WindowLevelMinInput.disabled = true;
+    WindowLevelMinInput.classList.add("modal-select-trigger");
+    WindowLevelMinInput.id = "WindowLevelMinInput";
+    modalContentDiv.appendChild(WindowLevelMinInput);
+
+    const label7 = document.createElement("label"); //Window level max
+    label7.textContent = "Window level max (mV)";
+    modalContentDiv.appendChild(label7);
+
+    const WindowLevelMaxInput = document.createElement("input");
+    WindowLevelMaxInput.type = "number";
+    WindowLevelMaxInput.min = -(config.voltage / 2) * 1000;
+    WindowLevelMaxInput.max = (config.voltage / 2) * 1000;
+    WindowLevelMaxInput.value = triggerOptions.windowLevelMax;
+    WindowLevelMaxInput.disabled = true;
+    WindowLevelMaxInput.classList.add("modal-select-trigger");
+    WindowLevelMaxInput.id = "WindowLevelMaxInput";
+    modalContentDiv.appendChild(WindowLevelMaxInput);
+
+    selectTriggerMode.addEventListener("change", function(){
+        console.log("Trigger mode changed to : ", selectTriggerMode.value);
+        if (selectTriggerMode.value === "edge"){
+            WindowLevelMinInput.disabled = true;
+            WindowLevelMaxInput.disabled = true;
+            TriggerLevelInput.disabled = false;
+        } else if (selectTriggerMode.value === "window"){
+            WindowLevelMinInput.disabled = false;
+            WindowLevelMaxInput.disabled = false;
+            TriggerLevelInput.disabled = true;
+        }
+    });
+
+    const label8 = document.createElement("label"); //Hold off
+    label8.textContent = "Hold off (s)";
+    modalContentDiv.appendChild(label8);
+
+    const holdOffInput = document.createElement("input");
+    holdOffInput.type = "number";
+    holdOffInput.min = 0;
+    holdOffInput.max = 3600;
+    holdOffInput.value = triggerOptions.holdOff;
+    holdOffInput.classList.add("modal-select-trigger");
+    holdOffInput.id = "holdOffInput";
+    modalContentDiv.appendChild(holdOffInput);
+
+    const button = document.createElement("button");// SAVE CHANGES
+    button.textContent = "Apply Trigger Settings";
+    button.classList.add("modal-trigger-button");
+    modalContentDiv.appendChild(button);
+
+    button.addEventListener("click", function(){
+        updateTriggerSettings(modalContentDiv);
+        hideModal();
+    });
+};
+
+function updateTriggerSettings(modalElement){
+    console.log("Updating trigger settings");
+    console.log(modalElement);
+
+    triggerOptions.isTriggerOn = modalElement.querySelector("#selectOnOffStatus").value;
+    triggerOptions.triggerMode = modalElement.querySelector("#selectTriggerMode").value;
+    triggerOptions.triggerChannel = modalElement.querySelector("#selectTriggerChannel").value;
+    triggerOptions.triggerLevel = modalElement.querySelector("#TriggerLevelInput").value;
+    triggerOptions.windowLevelMin = modalElement.querySelector("#WindowLevelMinInput").value;
+    triggerOptions.windowLevelMax = modalElement.querySelector("#WindowLevelMaxInput").value;
+    triggerOptions.triggerSlope = modalElement.querySelector("#selectTriggerSlope").value;
+    triggerOptions.holdOff = modalElement.querySelector("#holdOffInput").value;
+
+    showToast("Trigger settings updated !", "toast-info");
+};
+
+//converts an absolute value (from 0 to 16383) to the corresponding voltage value (-1.1 to +1.1v or else if the config changes).
+function voltage_from_raw(raw_value, max_raw=16383){
+    let voltage_range = [-(config.voltage/2), config.voltage/2]
+    let span = voltage_range[1] - voltage_range[0]
+    normalized = raw_value / max_raw
+    return voltage_range[0] + (normalized * span)
+};
+
+//converts a voltage to the equivalent absolute raw value of a 14-bit ADC
+function mapVoltageToRaw(voltage) {
+    return (voltage + 1.1) / 2.2 * 16383;
+}
+
+function triggerCheck(channelPoints){
+    let isTriggerValueReached = false;
+    let triggerValueIndex = 0;//in case isTriggerValueReadched is true, we store the index of the value that triggered the oscilloscope
+    let currentSlope = null; //falling | rising | both
+
+    //Here we transform the trigger level(s) from mV to raw values
+    let trigLevelEdge = mapVoltageToRaw((triggerOptions.triggerLevel / 1000));//divide by 1000 to convert mV to V
+    let trigLevelWindowMin = mapVoltageToRaw((triggerOptions.windowLevelMin / 1000));
+    let trigLevelWindowMax = mapVoltageToRaw((triggerOptions.windowLevelMax / 1000));
+
+
+    //First we check wether or not any of the points exceed the trigger value(s) set up by the user
+    if (triggerOptions.triggerMode == "edge"){
+        for (let i = 0; i < channelPoints.length - 1; i++){
+            if (triggerOptions.triggerLevel >= 0){ //if the trigLevel is positive
+                if (channelPoints[i] > trigLevelEdge){
+                    console.log("Point Value exceeds trigger level ! ");
+                    isTriggerValueReached = true;
+                    triggerValueIndex = i;
+                    break
+                };
+            }else{ //if the trigLevel is negative
+                if (channelPoints[i] < trigLevelEdge){
+                    console.log("Point Value exceeds trigger level ! ");
+                    isTriggerValueReached = true;
+                    triggerValueIndex = i;
+                    break
+                };
+            };
+        };
+    }else{
+        console.log(`Checking for values between ${trigLevelWindowMin} and ${trigLevelWindowMax}`);
+        for (let i = 0; i < channelPoints.length - 1; i++){
+            if (trigLevelWindowMin < trigLevelWindowMax){
+                if (channelPoints[i] > trigLevelWindowMin && channelPoints[i] < trigLevelWindowMax){
+                    console.log("Point value is within the trigger window !");
+                    isTriggerValueReached = true;
+                    triggerValueIndex = i;
+                    break
+                }
+            }else{
+                if (channelPoints[i] < trigLevelWindowMin && channelPoints[i] > trigLevelWindowMax){
+                    console.log("Point value is within the trigger window !");
+                    isTriggerValueReached = true;
+                    triggerValueIndex = i;
+                    break
+                }
+            }
+        };
+    };
+
+    //Now if the triggerLevel has been exceeded, we check if the slope is in accord with what the user selected.
+
+
+    
+    
+    //finally we return the boolean to state wether or not to stop the image according to the checks we did.
+    if (isTriggerValueReached){
+        return true;
+    }
 }

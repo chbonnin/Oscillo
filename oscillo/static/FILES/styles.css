@@ -745,9 +745,9 @@ aside{
     padding: 20px;
     border: 2px solid #888;
     width: 20%; /* Could be more or less, depending on screen size */
-    height: 60%; /* Could be more or less, depending on screen size */
+    height: 65%; /* Could be more or less, depending on screen size */
     position: relative;
-    top: 50%;
+    top: 45%;
     transform: translateY(-50%);
     border-radius: 10px;
 }
@@ -768,14 +768,24 @@ aside{
 }
   
 #modal-generated-content{
-    margin-top: 3em;
+    margin-top: 1.5em;
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
+    justify-content: left;
 
     padding: 1.5em;
 }
 
 .modal-save-button{
     margin-bottom: 0.5em;
-}   
+}
+
+.modal-select-trigger{
+    margin: 0.3em 0em 1em 0em;
+}
+
+.modal-trigger-button{
+    margin-bottom: 1em;
+}
+
