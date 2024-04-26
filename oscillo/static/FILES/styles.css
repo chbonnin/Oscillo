@@ -8,7 +8,14 @@ body{
     margin: 0px;
     padding: 0px;
 
-    background-color: black;
+    /* Below are the possible backgrounds for the oscillo page. Mostly dark colors to try and mimic the real aspect of an oscilloscope*/
+    background-image: url("../IMAGES/bg-option-1.jpg");  /*yep, rugged plastic aspect with good depth*/
+    /* background-image: url("../IMAGES/bg-option-2.jpg"); */ /*yep, dark contrats / really discreet gradient - mat plastic aspect*/
+    /* background-image: url("../IMAGES/bg-option-3.jpg"); */ /*nope*/
+    /* background-image: url("../IMAGES/bg-option-4.webp"); */ /*nope*/
+    /* background-image: url("../IMAGES/bg-option-5.png"); */ /*nope*/
+    background-repeat:no-repeat;
+    background-size: cover;
 }
 
 section{
@@ -36,6 +43,27 @@ section{
     flex-grow: 1;
 }
 
+#auto-measures-display{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: start;
+
+    width: 100%;
+    background-color: black;
+    min-height: 19px;
+}
+
+.auto-measure{
+    width: fit-content;
+    height: fit-content;
+    margin: 0px 1em 0.2em 0px;
+
+    border-width: 1px;
+    border-style: solid;
+
+    font-size: small;
+}
 
 
 aside{
@@ -95,7 +123,7 @@ aside{
 }
 
 #main-functions-div span button{
-    margin-bottom: 1em;
+    margin-bottom: 1.7em;
     color: rgb(226, 226, 226);
 }
 
@@ -208,9 +236,9 @@ aside{
     flex-wrap: wrap;
 }
 
-#vpdiv-mesurements p{
-    width: 18%;
-
+.chanmeasures{
+    width: 22%;
+    font-size: smaller;
     margin: 0px 2% 0px 0px;
 }
 
@@ -735,7 +763,7 @@ aside{
     height: 100%; /* Full height */
     overflow: auto; /* Enable scroll if needed */
     background-color: rgb(0,0,0); /* Fallback color */
-    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    background-color: rgba(0, 0, 0, 0.089); /* Black w/ opacity */
 }
 
 /* modal content */
@@ -789,3 +817,38 @@ aside{
     margin-bottom: 1em;
 }
 
+#buttonContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between; /* Changes to 'space-between' to allow alone buttons to center */
+    align-items: flex-start;
+    gap: 10px; /* Adjust the space between rows and between buttons in a row */
+}
+
+#buttonContainer button {
+    flex: 1 1 48%; /* Allows buttons to grow and shrink but not exceed half of the container's width minus gap */
+    max-width: calc(50% - 10px); /* Ensures the button doesn't exceed half the width minus half the gap */
+}
+
+#buttonContainer::after {
+    content: "";
+    flex: 1 1 48%; /* Mimics a button to maintain spacing */
+    visibility: hidden; /* Invisible but maintains space */
+}
+
+
+.modal-measure-button{
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+
+    border-radius: 5px;
+    border: 1px solid black;
+}
+
+.active-measure-button{
+    background-color: lightgreen;
+}
+
+.inactive-measure-button{
+    background-color: #e9e9ed;
+}

@@ -18,15 +18,37 @@ let triggerOptions = {
     windowLevelMax: "500",//value in volts from -1 to +1, that map to the values 0-16383 (if triggerMode = windowtrigger) + must be higher than windowLevelMin
     triggerSlope: "both", //rising, falling, both
     holdOff: "3600", //default: stop for 1h | value : time in seconds
-}
+};
+
+let autoMeasureOptions = {
+    //each option has a boolean associated representing whether or not the measure is to be made depending on the user selection
+    associatedChannel: "CH1", //null / CH1 (default) / CH2 / CH3, etc etc..
+    min: {set: false}, //Min value in channel (mV)
+    max: {set: false}, //Max value in channel (mV)
+    vpp: {set: false}, //Value from highest to lowest point (mV)
+    mean: {set: false}, //Average of all values (mV)
+    rms: {set: false}, //Root Mean Square (mV)
+    freq: {set: false}, //Avg frequency throughout signal (Hz)
+    highFreq: {set: false}, //Highest freq throughout signal (Hz)
+    lowFreq: {set: false}, //Lowest freq throughout signal (Hz)
+    mid: {set: false},// middle Value of the signal (mV)
+};
+
+let mathMeasureOptions = {
+
+};
 
 let channelData = {}; //This dictionnary holds the data for each channel including points, status, color, etc..
 
 let horizontalOffset = 0;
 let horizontalScale = 50;
 
+let loopDelay = 150//ms
 let isRunning = false;
 let triggered = false;
+let triggerClock = 0;
+
+const autoMeasures = calculateAutoMeasures();
 
 const CANVAS = document.getElementById('oscilloscope_screen');
 const MODAL = document.getElementById('modal');
@@ -126,6 +148,9 @@ function fetchData(){
                 channelData[channelKey].points.push(point);
             }
 
+            clearCanvas();
+            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+
             Object.keys(channelData).forEach(key => {
                 // console.log(key, channelData[key].points);
                 if (channelData[key].display === true){
@@ -171,6 +196,9 @@ function fetchDataFromFile(){
 
             config.samplesPerFrame = Http.response[2].length//We take the number of samples for ch.1 bc logically they all have the same amount given the .osc format
 
+            clearCanvas();
+            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+            
             Object.keys(channelData).forEach(key => {
                 //We start by checking wether or not the trigger is set and if so we check the trigger conditions to freeze or not this part of the signal.
                 if (triggerOptions.isTriggerOn == "on"){
@@ -383,7 +411,7 @@ function environmentSetup(){//This function sets up anything necessary for inter
     //===================== MEASURE BUTTON INTERACTIONS =====================
 
     MEASURE.addEventListener("click", function(){
-        populateModalForMeasure();
+        populateModalForMeasure_MATHS();
         displayBaseModal();
     });
 
@@ -396,6 +424,7 @@ function environmentSetup(){//This function sets up anything necessary for inter
         displayBaseModal();
     });
 
+
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
     drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
 
@@ -407,17 +436,14 @@ function MAINLOOP(){
         if (config.mode != null){
             if (isRunning && !triggered){
                 if (config.mode == "FILE"){
-                    clearCanvas();
-                    drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
                     fetchDataFromFile();
                     setScreenInformation();
                 }else if(config.mode == "FAKE-STARE"){
-                    clearCanvas();
-                    drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
                     fetchData();
                     setScreenInformation();
                 }
             }else if(triggered){
+                console.log("clearing canvas");
                 clearCanvas();
                 drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
                 Object.keys(channelData).forEach(key => {
@@ -426,11 +452,17 @@ function MAINLOOP(){
                         setScreenInformation();
                     }
                 });
+                if ((triggerClock / 1000) > triggerOptions.holdOff){
+                    triggerClock = 0;
+                    triggered = false;
+                }else{
+                    triggerClock = triggerClock + loopDelay;
+                }
             }
         }else{
             console.log("Still waiting on settings retrieval");
         }
-    }, 150)
+    }, loopDelay)
 
 }
 
@@ -647,19 +679,266 @@ function setScreenInformation(){
     //console.log(`Time per division is : ${timePerDiv.value} ${timePerDiv.scale}`);
 
     for (let i = 1; i < config.numChannels + 1; i++) {
-        const voltsPerDiv = getVoltsPerDiv(channelData['CH' + i].verticalScale);
-        document.getElementById('mes-CH' + i).innerHTML = voltsPerDiv + ' V/div';
+        const voltsPerDiv = getMilliVoltsPerDiv(channelData['CH' + i].verticalScale);
+        document.getElementById('mes-CH' + i).innerHTML = voltsPerDiv + ' mv/dv';
         document.getElementById('mes-CH' + i).style.color = channelData['CH' + i].colorDark;
     }
+
+    if (triggerOptions.isTriggerOn == "on"){
+        if (triggered){
+            TRIGGER.style.color = "lightgreen"
+        }else{
+            TRIGGER.style.color = "chocolate"
+        }
+    }else{
+        TRIGGER.style.color = "#e2e2e2"//white
+    }
+
+    //This section is about the auto-measures display.
+    //These are put on screen below the voltages display.
+    valuesToDisplay = []; // format inside : {text: "textToDisplay", color: "colorOfTheChannel", value: "valueToDisplay"}
+
+    let min, max//we declare them here to reuse in case vpp and either min or max are set, it prevent another call to the function.
+    
+    
+    if (autoMeasureOptions.vpp.set){// get min, max, vpp
+        min = autoMeasures.getMinValue(channelData[autoMeasureOptions.associatedChannel].points);
+        max = autoMeasures.getMaxValue(channelData[autoMeasureOptions.associatedChannel].points);
+        let vpp = autoMeasures.getVppValue(channelData[autoMeasureOptions.associatedChannel].points);
+
+        valuesToDisplay.push({
+            text: "Vpp", 
+            color: channelData[autoMeasureOptions.associatedChannel].colorDark, 
+            value: vpp.toFixed(1) + "mV",
+            id: "vpp-measure",
+        });
+    };
+
+    if (autoMeasureOptions.min.set){// get only min
+        if (min == undefined){
+            min = autoMeasures.getMinValue(channelData[autoMeasureOptions.associatedChannel].points);
+        }
+        valuesToDisplay.push({
+            text: "Min", 
+            color: channelData[autoMeasureOptions.associatedChannel].colorDark, 
+            value: min.toFixed(1) + "mV",
+            id: "min-measure",
+        });
+    };
+
+    if (autoMeasureOptions.max.set){// get only max
+        if (max == undefined){
+            max = autoMeasures.getMaxValue(channelData[autoMeasureOptions.associatedChannel].points);
+        }
+        valuesToDisplay.push({
+            text: "Max", 
+            color: channelData[autoMeasureOptions.associatedChannel].colorDark, 
+            value: max.toFixed(1) + "mV",
+            id: "max-measure",
+        });
+    };
+
+    if (autoMeasureOptions.mean.set){// get avg value
+        let mean = autoMeasures.getMeanValue(channelData[autoMeasureOptions.associatedChannel].points);
+        valuesToDisplay.push({
+            text: "Avg", 
+            color: channelData[autoMeasureOptions.associatedChannel].colorDark, 
+            value: mean.toFixed(1) + "mV",
+            id: "avg-measure",
+        });
+    };
+
+    if (autoMeasureOptions.mid.set){// get middle value
+        let middle = autoMeasures.getMiddleValue(channelData[autoMeasureOptions.associatedChannel].points);
+        valuesToDisplay.push({
+            text: "Mid", 
+            color: channelData[autoMeasureOptions.associatedChannel].colorDark, 
+            value: middle.toFixed(1) + "mV",
+            id: "mid-measure",
+        });
+    };
+
+    if (autoMeasureOptions.rms.set){// get rms value
+        let rms = autoMeasures.getRMS(channelData[autoMeasureOptions.associatedChannel].points);
+        valuesToDisplay.push({
+            text: "RMS", 
+            color: channelData[autoMeasureOptions.associatedChannel].colorDark, 
+            value: rms.toFixed(1) + "mV",
+            id: "rms-measure",
+        });
+    };
+
+    function formatFrequency(frequency) {
+        if (frequency >= 1e9) {  // gte to 1 Gigahertz
+            return (frequency / 1e9).toFixed(1) + " GHz";
+        } else if (frequency >= 1e6) {  // gte to 1 Megahertz
+            return (frequency / 1e6).toFixed(1) + " MHz";
+        } else if (frequency >= 1e3) {  // gte to 1 Kilohertz
+            return (frequency / 1e3).toFixed(1) + " kHz";
+        } else {
+            return frequency.toFixed(1) + " Hz";  // lt 1 Kilohertz, display in Hertz (Very very very unlikely but still, we never know)
+        }
+    }
+
+    if (autoMeasureOptions.freq.set){// get avg frequency
+        let freq = autoMeasures.getAverageFrequency(channelData[autoMeasureOptions.associatedChannel].points, config.frequency);
+        valuesToDisplay.push({
+            text: "Freq", 
+            color: channelData[autoMeasureOptions.associatedChannel].colorDark, 
+            value: formatFrequency(freq),
+            id: "avg-freq-measure",
+        });
+    };
+
+    if (autoMeasureOptions.highFreq.set || autoMeasureOptions.lowFreq.set){// get min and max frequencies
+        let freqs = autoMeasures.getFrequenciesMaxMin(channelData[autoMeasureOptions.associatedChannel].points, config.frequency);
+        if (autoMeasureOptions.highFreq.set){// high freq
+            valuesToDisplay.push({
+                text: "Max Freq", 
+                color: channelData[autoMeasureOptions.associatedChannel].colorDark, 
+                value: formatFrequency(freqs.highestFrequency),
+                id: "max-freq-measure",
+            });
+        };
+
+        if (autoMeasureOptions.lowFreq.set){//low freq
+            valuesToDisplay.push({
+                text: "Min Freq", 
+                color: channelData[autoMeasureOptions.associatedChannel].colorDark, 
+                value: formatFrequency(freqs.lowestFrequency),
+                id: "min-freq-measure",
+            });
+        };
+    };
+
+    //now we inject the calculated values to the html page.
+    const valuesContainer = document.getElementById('auto-measures-display');
+    valuesContainer.querySelectorAll('p').forEach(p => p.style.display = 'none');
+    for (let i = 0; i < valuesToDisplay.length; i++) {
+        let paragraph = document.getElementById(valuesToDisplay[i].id);
+        paragraph.style.display = 'block';
+        paragraph.style.color = valuesToDisplay[i].color;
+        paragraph.style.borderColor = valuesToDisplay[i].color;
+        paragraph.textContent = valuesToDisplay[i].text + " : " + valuesToDisplay[i].value;
+    };
 };
 
-function getVoltsPerDiv(channelVerticalScale) {
+function calculateAutoMeasures(){
+    //converts an absolute value (from 0 to 16383) to the corresponding voltage value (-1.1 to +1.1v or else if the config changes).
+    function voltage_from_raw(raw_value, max_raw=16383){
+        let voltage_range = [-(config.voltage/2), config.voltage/2]
+        let span = voltage_range[1] - voltage_range[0]
+        normalized = raw_value / max_raw
+        return voltage_range[0] + (normalized * span)
+    };
+
+    function getMinValue(points){
+        let minAbsValue = Math.min(...points); // get smallest value from array
+        minAbsValue = voltage_from_raw(minAbsValue); //convert abs value to V
+        return minAbsValue * 1000;//convert V to mV
+    }
+
+    function getMaxValue(points){
+        let maxAbsValue = Math.max(...points); // get biggest value from array
+        maxAbsValue = voltage_from_raw(maxAbsValue); //convert abs value to V
+        return maxAbsValue * 1000;//convert V to mV
+    }
+
+    function getVppValue(points){
+        const maxVoltage = getMinValue(points);//mV
+        const minVoltage = getMaxValue(points);//mV
+        const vpp = maxVoltage - minVoltage;//mV
+        return vpp;
+    }
+
+    function getMeanValue(points){
+        const average = getMedian(points);//Get the average abs value of the array
+        const averageInVolts = voltage_from_raw(average); //convert abs value to V
+        return averageInVolts * 1000;//convert V to mV
+    }
+
+    function getMiddleValue(points){
+        let middleAbs = Math.round(points.length / 2); //get the middle of the point array
+        middleInVolts = voltage_from_raw(points[middleAbs]);//convert the value in volts
+        return middleInVolts * 1000; //convert V to mV
+    }
+
+    function getRMS(points){
+        let sum = 0;
+        points.forEach(point => {//add each point squared to the total sum
+            sum += point * point;
+        });
+        const rmsAbs = Math.sqrt(sum / points.length);//take the square root of the average of the points
+        const rmsInVolts = voltage_from_raw(rmsAbs);//convert the value in volts
+        return rmsInVolts * 1000;//convert final value to mV
+    }
+
+    function getAverageFrequency(points, sampleRate) {
+        const threshold = calculateThreshold(points); // Define a suitable threshold
+        let cycleCount = 0;
+        let isInCycle = false;
+    
+        for (let i = 0; i < points.length; i++) {
+            if (points[i] > threshold && !isInCycle) {
+                cycleCount++;  // start of a new cycle
+                isInCycle = true;
+            } else if (points[i] < threshold && isInCycle) {
+                isInCycle = false;  // end of a cycle
+            }
+        }
+        const totalDuration = points.length / sampleRate;  // total duration in seconds (sample rate will be at 1e8 Hz since agata has a sampling period of 10ns)
+        return cycleCount / totalDuration;  // average frequency in Hz
+    }
+    
+    function calculateThreshold(points) {
+        let mean = points.reduce((acc, val) => acc + val, 0) / points.length;
+        let sumOfSquares = points.reduce((acc, val) => acc + (val - mean) ** 2, 0);
+        let standardDeviation = Math.sqrt(sumOfSquares / points.length);
+        return mean + standardDeviation;  // Threshold at mean + 1 SD
+    }
+
+    function getFrequenciesMaxMin(points, sampleRate) {
+        const threshold = calculateThreshold(points);
+        let cycleStart = null;
+        let frequencies = [];
+    
+        for (let i = 0; i < points.length; i++) {
+            if (points[i] > threshold && cycleStart === null) {
+                cycleStart = i;  //new cycle
+            } else if ((points[i] < threshold || i === points.length - 1) && cycleStart !== null) {
+                const cycleEnd = i;
+                const cycleDuration = (cycleEnd - cycleStart) / sampleRate;  // one cycle in seconds
+                if (cycleDuration > 0) {  // avoid division by zero
+                    const frequency = 1 / cycleDuration;
+                    frequencies.push(frequency);
+                }
+                cycleStart = null;  // look for new cycle in the next loop
+            }
+        }
+    
+        if (frequencies.length === 0) {
+            return {lowestFrequency: 0, highestFrequency: 0};  // no cycles found
+        }
+    
+        const lowestFrequency = Math.min(...frequencies);
+        const highestFrequency = Math.max(...frequencies);
+    
+        return {
+            lowestFrequency: lowestFrequency,
+            highestFrequency: highestFrequency
+        };
+    }
+
+    return {getMinValue, getMaxValue, getVppValue, getMeanValue, getMiddleValue, getRMS, getAverageFrequency, getFrequenciesMaxMin, voltage_from_raw};
+};
+
+function getMilliVoltsPerDiv(channelVerticalScale) {
     const totalVoltageRange = config.voltage; //voltage range we get from the settings (-V to +V)
     const verticalDivisions = config.verticalDivisions;
 
     const voltsPerDivision = totalVoltageRange / (verticalDivisions * channelVerticalScale); 
 
-    return voltsPerDivision.toFixed(4);//round here to 4 decimals
+    return (voltsPerDivision * 1000).toFixed(1);
 };
 
 function getTimePerDiv() { 
@@ -822,6 +1101,18 @@ function clearModal(){
     modalContentDiv.parentNode.replaceChild(modalClone, modalContentDiv);
 }
 
+function createSelect(options){
+    const selectElement = document.createElement("select");
+    options.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option.value;
+        optionElement.textContent = option.text;
+        selectElement.appendChild(optionElement)
+    });
+    selectElement.classList.add("modal-select-trigger");
+    return selectElement;
+}
+
 function populateModalForSave(){
     let modalContentDiv = document.getElementById("modal-generated-content");
 
@@ -856,25 +1147,230 @@ function populateModalForSave(){
     clipBoardButton.addEventListener("click", copyCanvasToClipboard);
 };
 
-function populateModalForMeasure(){
+function populateModalForMeasure_MATHS(){
     let modalContentDiv = document.getElementById("modal-generated-content");
+
+    const channelOptions = [];
+    for (let i = 1; i < config.numChannels + 1; i++){
+        channelOptions.push({value: "CH" + i, text: "Channel " + i});
+    }
+
+    const operationOptions = [
+        {value: "none", text: "None"},
+        {value: "add", text: "+"},
+        {value: "sub", text: "-"},
+        {value: "mult", text: "*"},
+        {value: "div", text: "/"},
+        {value: "squared", text: "²"},
+        {value: "deriv", text: "derivative"},
+        {value: "integral", text: "integral"},
+        {value: "fft", text: "FFT"},
+    ]
+
+    const title = document.createElement("h5");
+    title.innerHTML = "Math functions";
+    modalContentDiv.appendChild(title);
+
+    const container1 = document.createElement("span");
+
+    const label1 = document.createElement("label");
+    label1.textContent = "Channel : ";
+    container1.appendChild(label1);
+
+    const selectChannel = createSelect(channelOptions);
+    selectChannel.id = "selectChannel";
+    container1.appendChild(selectChannel);
+
+    modalContentDiv.appendChild(container1);
+    const container2 = document.createElement("span");
+
+    const label2 = document.createElement("label");
+    label2.textContent = "Operation : ";
+    container2.appendChild(label2);
+
+    const selectOperation = createSelect(operationOptions);
+    selectOperation.id = "selectOperation";
+    container2.appendChild(selectOperation);
+
+    modalContentDiv.appendChild(container2);
+
+    const container3 = document.createElement("span");
+
+    const label3 = document.createElement("label");
+    label3.textContent = "Channel 2 : ";
+    container3.appendChild(label3);
+
+    const selectSecondChannel = createSelect(channelOptions);
+    selectSecondChannel.id = "selectSecondChannel";
+    container3.style.display = "none";//hidden by default until user chooses an operation requiring a 2nd channel
+    container3.appendChild(selectSecondChannel);
+
+    modalContentDiv.appendChild(container3);
+
+    selectOperation.addEventListener("change", function(){
+        console.log("Operation change ! ")
+        const value = selectOperation.value;
+        if (value == "add" || value == "sub" || value == "mult" || value == "div"){
+            container3.style.display = "block";
+        }else{
+            container3.style.display = "none";
+        }
+    });
+
+    const saveButton = document.createElement("button");
+    saveButton.textContent = "SAVE";
+    saveButton.id = "saveButton";
+    saveButton.classList.add("modal-measure-button");
+
+    const autoSwitchButton = document.createElement("button");
+    autoSwitchButton.textContent = "Auto-Measures →";
+    autoSwitchButton.id = "autoSwitchButton";
+    autoSwitchButton.classList.add("modal-measure-button");
+
+    //function to check wether we can indeed generate the math signal
+    //and then include it in a channel object
+    saveButton.addEventListener("click", function(){
+        let channel1 = selectChannel.value;
+        let channel2 = selectSecondChannel.value;
+        let operation = selectOperation.value;
+
+        checkAndGenerateMathSignal(channel1, channel2, operation);
+    });
+    
+    autoSwitchButton.addEventListener("click", function(){
+        console.log("switch to auto-measurements")
+        clearModal();
+        populateModalForMeasure_AUTO();
+    });
+
+    modalContentDiv.appendChild(saveButton);
+    modalContentDiv.appendChild(autoSwitchButton);
+};
+
+function checkAndGenerateMathSignal(channel1, channel2, operation){
+    console.log(`Checking and generating math signal for the operation : ${operation} between ${channel1} and ${channel2}`);
+};
+
+function toggleMeasurement(measureKey, buttonId) {
+    let measure = autoMeasureOptions[measureKey];
+    if (measure) {
+        measure.set = !measure.set; // Toggle the 'set' value
+        //change button class depending on wether the measure is set or not
+        document.getElementById(buttonId).className = measure.set ? 'modal-measure-button active-measure-button' : 'modal-measure-button inactive-measure-button';
+        console.log(`${measureKey} set to ${measure.set}`);
+    }
+};
+
+function resetMeasurements(){
+    try{
+        autoMeasureOptions.associatedChannel = "CH1";
+        Object.keys(autoMeasureOptions).forEach(key => {
+            if (key !== "associatedChannel") {
+                autoMeasureOptions[key].set = false;
+                autoMeasureOptions[key].value = null;
+                document.querySelectorAll('.modal-measure-button').forEach(button => {
+                    button.className = 'modal-measure-button inactive-measure-button';
+                });
+            }
+        });
+        document.getElementById("selectChannel").value = "CH1";
+    
+        showToast("Auto Measurements values reset !", "toast-info");
+    } catch (error) {
+        console.error('Failed to reset measurements', error);
+        showToast("Error while resetting the measurements..", "toast-error");
+    }
+};
+
+function populateModalForMeasure_AUTO(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    const channelOptions = [];
+    for (let i = 1; i < config.numChannels + 1; i++){
+        channelOptions.push({value: "CH" + i, text: "Channel " + i});
+    }
+
+    const measureOptions = [
+        {text: "Min", varKey: "min", id: "minButton", onClick: () => { toggleMeasurement('min', "minButton"); }},
+        {text: "Max", varKey: "max", id: "maxButton", onClick: () => { toggleMeasurement('max', "maxButton") }},
+        {text: "Vpp", varKey: "vpp", id: "vppButton", onClick: () => { toggleMeasurement('vpp', "vppButton") }},
+        {text: "Avg", varKey: "mean", id: "avgButton", onClick: () => { toggleMeasurement('mean', "avgButton") }},
+        {text: "RMS", varKey: "rms", id: "rmsButton", onClick: () => { toggleMeasurement('rms', "rmsButton") }},
+        {text: "F Avg", varKey: "freq", id: "freqButton", onClick: () => { toggleMeasurement('freq', "freqButton") }},
+        {text: "High", varKey: "highFreq", id: "highButton", onClick: () => { toggleMeasurement('highFreq', "highButton") }},
+        {text: "Low", varKey: "lowFreq", id: "lowButton", onClick: () => { toggleMeasurement('lowFreq', "lowButton") }},
+        {text: "Mid", varKey: "mid", id: "midButton", onClick: () => { toggleMeasurement('mid', "midButton") }},
+    ];
+
+    const title = document.createElement("h5");
+    title.innerHTML = "Auto Measurements";
+    modalContentDiv.appendChild(title);
+
+    const container1 = document.createElement("span");
+
+    const label1 = document.createElement("label");
+    label1.textContent = "Channel : ";
+    container1.appendChild(label1);
+
+    const selectChannel = createSelect(channelOptions);
+    selectChannel.id = "selectChannel";
+    selectChannel.value = autoMeasureOptions.associatedChannel;
+    container1.appendChild(selectChannel);
+
+    selectChannel.addEventListener("change", function(){
+        autoMeasureOptions.associatedChannel = selectChannel.value;
+    });
+
+    modalContentDiv.appendChild(container1);
+
+    const buttonContainer = document.createElement("span");
+    buttonContainer.id = "buttonContainer";
+
+    measureOptions.forEach(option => {
+        const button = document.createElement("button");
+        button.textContent = option.text;
+        button.id = option.id;
+        button.classList.add("modal-measure-button");
+        button.addEventListener("click", option.onClick);
+        buttonContainer.appendChild(button);
+
+        //set the buttons green if this measure is set
+        if (autoMeasureOptions[option.varKey].set) {
+            button.className = 'modal-measure-button active-measure-button';
+        }else{
+            button.className = 'modal-measure-button inactive-measure-button';
+        }
+    });
+
+    modalContentDiv.appendChild(buttonContainer);
+
+    const resetButton = document.createElement("button");
+    resetButton.textContent = "RESET";
+    resetButton.id = "resetButton";
+    resetButton.classList.add("modal-measure-button");
+
+    resetButton.addEventListener("click", function(){
+        resetMeasurements();
+    });
+
+    const autoSwitchButton = document.createElement("button");
+    autoSwitchButton.textContent = "← Math Functions";
+    autoSwitchButton.id = "autoSwitchButton";
+    autoSwitchButton.classList.add("modal-measure-button");
+
+    autoSwitchButton.addEventListener("click", function(){
+        console.log("switch to Math functions")
+        clearModal();
+        populateModalForMeasure_MATHS();
+    });
+
+    modalContentDiv.appendChild(resetButton);
+    modalContentDiv.appendChild(autoSwitchButton);
 };
 
 function populateModalForTrigger(){
     console.log("Trigger settings : ", triggerOptions);
     let modalContentDiv = document.getElementById("modal-generated-content");
-
-    function createSelect(options){
-        const selectElement = document.createElement("select");
-        options.forEach(option => {
-            const optionElement = document.createElement('option');
-            optionElement.value = option.value;
-            optionElement.textContent = option.text;
-            selectElement.appendChild(optionElement)
-        });
-        selectElement.classList.add("modal-select-trigger");
-        return selectElement;
-    }
 
     const triggerOnOffOptions = [
         {value: "off", text: "Off"},
@@ -897,7 +1393,7 @@ function populateModalForTrigger(){
         {value: "falling", text: "Falling"},
     ]
 
-    title = document.createElement("h5");
+    const title = document.createElement("h5");
     title.innerHTML = "Trigger options";
     modalContentDiv.appendChild(title);
 
@@ -960,7 +1456,6 @@ function populateModalForTrigger(){
     WindowLevelMinInput.min = -(config.voltage / 2) * 1000;
     WindowLevelMinInput.max = (config.voltage / 2) * 1000;
     WindowLevelMinInput.value = triggerOptions.windowLevelMin;
-    WindowLevelMinInput.disabled = true;
     WindowLevelMinInput.classList.add("modal-select-trigger");
     WindowLevelMinInput.id = "WindowLevelMinInput";
     modalContentDiv.appendChild(WindowLevelMinInput);
@@ -974,10 +1469,19 @@ function populateModalForTrigger(){
     WindowLevelMaxInput.min = -(config.voltage / 2) * 1000;
     WindowLevelMaxInput.max = (config.voltage / 2) * 1000;
     WindowLevelMaxInput.value = triggerOptions.windowLevelMax;
-    WindowLevelMaxInput.disabled = true;
     WindowLevelMaxInput.classList.add("modal-select-trigger");
     WindowLevelMaxInput.id = "WindowLevelMaxInput";
     modalContentDiv.appendChild(WindowLevelMaxInput);
+
+    if (triggerOptions.triggerMode == "edge"){
+        WindowLevelMinInput.disabled = true;
+        WindowLevelMaxInput.disabled = true;
+        TriggerLevelInput.disabled = false;
+    }else{
+        WindowLevelMinInput.disabled = false;
+        WindowLevelMaxInput.disabled = false;
+        TriggerLevelInput.disabled = true;
+    }
 
     selectTriggerMode.addEventListener("change", function(){
         console.log("Trigger mode changed to : ", selectTriggerMode.value);
@@ -1032,18 +1536,18 @@ function updateTriggerSettings(modalElement){
     showToast("Trigger settings updated !", "toast-info");
 };
 
-//converts an absolute value (from 0 to 16383) to the corresponding voltage value (-1.1 to +1.1v or else if the config changes).
-function voltage_from_raw(raw_value, max_raw=16383){
-    let voltage_range = [-(config.voltage/2), config.voltage/2]
-    let span = voltage_range[1] - voltage_range[0]
-    normalized = raw_value / max_raw
-    return voltage_range[0] + (normalized * span)
-};
-
 //converts a voltage to the equivalent absolute raw value of a 14-bit ADC
 function mapVoltageToRaw(voltage) {
     return (voltage + 1.1) / 2.2 * 16383;
-}
+};
+
+function getMedian(array){
+    let total = 0;
+    for (let i = 0; i < array.length; i++){
+        total = total + array[i];
+    }
+    return total / array.length
+};
 
 function triggerCheck(channelPoints){
     let isTriggerValueReached = false;
@@ -1061,14 +1565,14 @@ function triggerCheck(channelPoints){
         for (let i = 0; i < channelPoints.length - 1; i++){
             if (triggerOptions.triggerLevel >= 0){ //if the trigLevel is positive
                 if (channelPoints[i] > trigLevelEdge){
-                    console.log("Point Value exceeds trigger level ! ");
+                    //console.log("Point Value exceeds trigger level ! ");
                     isTriggerValueReached = true;
                     triggerValueIndex = i;
                     break
                 };
             }else{ //if the trigLevel is negative
                 if (channelPoints[i] < trigLevelEdge){
-                    console.log("Point Value exceeds trigger level ! ");
+                    //console.log("Point Value exceeds trigger level ! ");
                     isTriggerValueReached = true;
                     triggerValueIndex = i;
                     break
@@ -1080,14 +1584,14 @@ function triggerCheck(channelPoints){
         for (let i = 0; i < channelPoints.length - 1; i++){
             if (trigLevelWindowMin < trigLevelWindowMax){
                 if (channelPoints[i] > trigLevelWindowMin && channelPoints[i] < trigLevelWindowMax){
-                    console.log("Point value is within the trigger window !");
+                    //console.log("Point value is within the trigger window !");
                     isTriggerValueReached = true;
                     triggerValueIndex = i;
                     break
                 }
             }else{
                 if (channelPoints[i] < trigLevelWindowMin && channelPoints[i] > trigLevelWindowMax){
-                    console.log("Point value is within the trigger window !");
+                    //console.log("Point value is within the trigger window !");
                     isTriggerValueReached = true;
                     triggerValueIndex = i;
                     break
@@ -1098,11 +1602,40 @@ function triggerCheck(channelPoints){
 
     //Now if the triggerLevel has been exceeded, we check if the slope is in accord with what the user selected.
 
-
-    
-    
-    //finally we return the boolean to state wether or not to stop the image according to the checks we did.
-    if (isTriggerValueReached){
-        return true;
+    if (!isTriggerValueReached){//no need to check the slope type if the value hasn't been exceeded.
+        return false;
     }
-}
+    
+    function getHundredItemsBeforeAfter(array, index) {
+        let before = [];
+        let after = [];
+        for (let j = index - 1; j >= Math.max(0, index - 100); j--) {
+            before.push(array[j]);
+        }
+        for (let j = index + 1; j <= Math.min(array.length - 1, index + 100); j++) {
+            after.push(array[j]);
+        }
+        return { before, after };
+    }
+
+    let medians = getHundredItemsBeforeAfter(channelPoints, triggerValueIndex);
+    let medianBeforeTriggerPoint = getMedian(medians['before']);
+    let medianAfterTriggerPoint = getMedian(medians['after']);
+
+    if (triggerOptions.triggerSlope != "both"){
+        if (medianBeforeTriggerPoint > medianAfterTriggerPoint){
+            currentSlope = "falling"
+        }else if (medianBeforeTriggerPoint < medianAfterTriggerPoint){
+            currentSlope = "rising"
+        }
+    }else{
+        currentSlope = "both"
+    }
+
+    //finally we return the boolean to state wether or not to stop the image according to the checks we did.
+    if (isTriggerValueReached && currentSlope == triggerOptions.triggerSlope){
+        return true;
+    }else{
+        return false;
+    }
+};
