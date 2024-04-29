@@ -34,16 +34,12 @@ let autoMeasureOptions = {
     mid: {set: false},// middle Value of the signal (mV)
 };
 
-let mathMeasureOptions = {
-
-};
-
 let channelData = {}; //This dictionnary holds the data for each channel including points, status, color, etc..
 
 let horizontalOffset = 0;
 let horizontalScale = 50;
 
-let loopDelay = 150//ms
+let loopDelay = 500//ms
 let isRunning = false;
 let triggered = false;
 let triggerClock = 0;
@@ -97,11 +93,12 @@ function getCurrentSettings(){
             channelData['CH' + ch] = {
                 points: [],
                 display: true,
+                type: 'baseData',
                 focused: false,
                 colorDark: channelsMetaData['CH' + ch].colorDark, //channelsMetaData is passed from the backend to here via the html page
                 colorLight: channelsMetaData['CH' + ch].colorLight,
                 verticalOffset: 0,
-                verticalScale: 1, //default value from the knob on the page is 50px p volt so here we set it to 25 so the signals only take half the screen and not the complete height.
+                verticalScale: 1, //default value
                 verticalOffsetRelativeCursorPosition: 395,
             };
 
@@ -134,10 +131,9 @@ function fetchData(){
             console.log(dataView);
 
             // Clear the channel data before parsing the new data
-            for (let i = 1; i <= config.numChannels; i++) {
-                let channelKey = 'CH' + i;
-                channelData[channelKey].points = [];
-            }
+            Object.keys(channelData).forEach(key => {
+                channelData[key].points = [];
+            });
         
             // Parse buffer into channel data
             for (let i = 0; i < totalSamples; i++) {
@@ -154,7 +150,11 @@ function fetchData(){
             Object.keys(channelData).forEach(key => {
                 // console.log(key, channelData[key].points);
                 if (channelData[key].display === true){
-                    drawSignal(key);
+                    if (channelData[key].type == "generatedData" && channelData[key].operation == "fft"){
+                        drawFFT(key);
+                    } else {
+                        drawSignal(key);
+                    }
                 }
             });
 
@@ -189,10 +189,10 @@ function fetchDataFromFile(){
 
             //Here we now populate the channel data arrays with the data received
             //We know .osc files take a max amount of 4 channels
-            for (let i = 1; i <= config.numChannels; i++) {
-                let channelKey = 'CH' + i;
-                channelData[channelKey].points = Http.response[i + 1];
-            }
+            Object.keys(channelData).forEach(key => {
+                let channelNumber = parseInt(key.substring(2), 10)
+                channelData[key].points = Http.response[channelNumber + 1];   
+            });
 
             config.samplesPerFrame = Http.response[2].length//We take the number of samples for ch.1 bc logically they all have the same amount given the .osc format
 
@@ -207,9 +207,18 @@ function fetchDataFromFile(){
                     };
                 };
 
+                //Here we generate the points array for the math signals
+                if (channelData[key].type == "generatedData"){
+                    generatePoints(key);
+                }
+
                 // Here we display the signal on the screen (if the button for this channel is active)
                 if (channelData[key].display === true){
-                    drawSignalFromFile(key);
+                    if (channelData[key].type == "generatedData" && channelData[key].operation == "fft"){
+                        drawFFT(key);
+                    } else {
+                        drawSignalFromFile(key);
+                    }
                 }
             });
             //console.log(channelData);
@@ -277,11 +286,11 @@ function environmentSetup(){//This function sets up anything necessary for inter
         verticalOffset = Math.round(verticalOffset);
 
         //and now we actually update the vertical offset of the focused channel
-        for (let i = 1; i < config.numChannels + 1; i++) {
-            if (channelData['CH' + i].focused) {
-                channelData['CH' + i].verticalOffset = verticalOffset;
+        Object.keys(channelData).forEach(key => {
+            if (channelData[key].focused) {
+                channelData[key].verticalOffset = verticalOffset;
             }
-        }
+        });
     };
 
     function onMouseUp(event) {
@@ -296,11 +305,11 @@ function environmentSetup(){//This function sets up anything necessary for inter
         newY = Math.max(newY, 0);
         newY = Math.min(newY, scrollBar.clientHeight - scroller.clientHeight);
 
-        for (let i = 1; i < config.numChannels + 1; i++) {
-            if (channelData['CH' + i].focused) {
-                channelData['CH' + i].verticalOffsetRelativeCursorPosition = newY;
+        Object.keys(channelData).forEach(key => {
+            if (channelData[key].focused) {
+                channelData[key].verticalOffsetRelativeCursorPosition = newY;
             }
-        }   
+        });
     };
 
     //===================== HORIZONTAL OFFSET INTERACTIONS (MOUSE) =====================
@@ -337,11 +346,11 @@ function environmentSetup(){//This function sets up anything necessary for inter
     //===================== VERTICAL SCALING INTERACTIONS (KNOB) =====================
     verticalScalingKnob.addEventListener("input", function() {
         isDragging = true;
-        for (let i = 1; i < config.numChannels + 1; i++) {
-            if (channelData['CH' + i].focused) {
-                channelData['CH' + i].verticalScale = parseFloat(this.value);//convert from str to int (base10)
+        Object.keys(channelData).forEach(key => {
+            if (channelData[key].focused) {
+                channelData[key].verticalScale = parseFloat(this.value);//convert from str to int (base10)
             }
-        }
+        });
     });
 
     verticalScalingKnob.addEventListener("mousedown", function() {
@@ -350,12 +359,12 @@ function environmentSetup(){//This function sets up anything necessary for inter
 
     //Setup listener to detect a click on the knob and reinitialize the vertical scale to the default value.
     verticalScalingKnob.addEventListener("mouseup", function(){
-        for (let i = 1; i < config.numChannels + 1; i++) {
-            if (channelData['CH' + i].focused && !isDragging) {
+        Object.keys(channelData).forEach(key => {
+            if (channelData[key].focused && !isDragging) {
                 verticalScalingKnob.value = 1;
-                channelData['CH' + i].verticalScale = 1;//convert from str to int (base10)
+                channelData[key].verticalScale = 1;//convert from str to int (base10)
             }
-        }
+        });
         isDragging = false;
     });
 
@@ -443,14 +452,23 @@ function MAINLOOP(){
                     setScreenInformation();
                 }
             }else if(triggered){
-                console.log("clearing canvas");
                 clearCanvas();
                 drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
                 Object.keys(channelData).forEach(key => {
+                    //We check here wether there could be a signal to generate from a math function that has been set during a trigger.
+                    //In which case it wouldn't be drawn directly because the 'generatepoints' function is called when fetching data which we aren't when triggered.
+                    if (channelData[key].type == "generatedData" && channelData[key].points.length == 0){
+                        generatePoints(key);
+                    };
+
                     if (channelData[key].display === true){
-                        drawSignalFromFile(key);
-                        setScreenInformation();
-                    }
+                        if (channelData[key].type == "generatedData" && channelData[key].operation == "fft"){
+                            drawFFT(key);
+                        }else{
+                            drawSignalFromFile(key);
+                            setScreenInformation();
+                        }
+                    };
                 });
                 if ((triggerClock / 1000) > triggerOptions.holdOff){
                     triggerClock = 0;
@@ -672,17 +690,72 @@ function drawSignalFromFile(channelKey){
     ctx.stroke();
 }
 
+function drawFFT(channelKey) {
+    console.log("Drawing FFT for channel", channelKey);
+    const channel = channelData[channelKey];
+    const points = channel.points;
+    const ctx = CANVAS.getContext('2d');
+    const width = CANVAS.width;
+    const height = CANVAS.height;
+    
+    //Enable access for the user to the RATE variable so they can choose the rate themselves.
+    const RATE = 1; // how many points to skip when drawing the FFT (min=1)
+
+    const validPoints = points.filter(p => p.magnitude !== null);
+
+    if (validPoints.length > 10) {
+        const maxFrequency = validPoints[validPoints.length / 2 - 1].frequency;
+        const maxMagnitude = Math.max(...validPoints.map(p => p.magnitude));
+
+        const verticalOffset = channel.verticalOffset;
+        const verticalScale = channel.verticalScale;
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'purple';
+        ctx.lineWidth = 1;
+        ctx.font = "bold 18px Arial";
+        ctx.fillStyle = 'purple';
+        ctx.textBaseline = 'middle';
+        ctx.globalAlpha = 1.0;
+
+        let previousX = 0; // Initial value to compare against
+
+        validPoints.slice(0, validPoints.length / 2).forEach((point, index) => {
+            if (index % RATE === 0) { // draw only every RATE-th point
+                const x = (point.frequency / maxFrequency) * width + horizontalOffset ;
+                const y = height * (1 - Math.log10(point.magnitude + 1) / (Math.log10(maxMagnitude + 1) * verticalScale)) + verticalOffset;
+
+                if (index === 0) {
+                    ctx.moveTo(0, 500); // Move to initial x, y (possibly needs adjustment)
+                } else {
+                    ctx.lineTo(x, y);
+                }
+
+                if (x >= previousX + 200) {
+                    previousX = x;
+                    const text = `${point.frequency.toFixed(0)} Hz`;
+                    ctx.fillText(text, x, y - 60);
+                }
+            }
+        });
+        ctx.stroke();
+    } else {
+        console.log("Not enough valid data to display.");
+    }
+}
+
 function setScreenInformation(){
     //insert time scale to the screen
     const timePerDiv = getTimePerDiv();
     document.getElementById('tpdiv-value').innerHTML = timePerDiv.value + ' ' + timePerDiv.scale + '/div';
     //console.log(`Time per division is : ${timePerDiv.value} ${timePerDiv.scale}`);
 
-    for (let i = 1; i < config.numChannels + 1; i++) {
-        const voltsPerDiv = getMilliVoltsPerDiv(channelData['CH' + i].verticalScale);
-        document.getElementById('mes-CH' + i).innerHTML = voltsPerDiv + ' mv/dv';
-        document.getElementById('mes-CH' + i).style.color = channelData['CH' + i].colorDark;
-    }
+    Object.keys(channelData).forEach(key => {
+        const voltsPerDiv = getMilliVoltsPerDiv(channelData[key].verticalScale);
+        let channelNumber = parseInt(key.substring(2), 10)
+        document.getElementById('mes-CH' + channelNumber).innerHTML = voltsPerDiv + ' mv/dv';
+        document.getElementById('mes-CH' + channelNumber).style.color = channelData[key].colorDark;
+    });
 
     if (triggerOptions.isTriggerOn == "on"){
         if (triggered){
@@ -821,6 +894,122 @@ function setScreenInformation(){
         paragraph.style.borderColor = valuesToDisplay[i].color;
         paragraph.textContent = valuesToDisplay[i].text + " : " + valuesToDisplay[i].value;
     };
+};
+
+function generatePoints(channelKey){
+    console.log("Generating points for channel", channelKey);
+
+    const originChannel1 = channelData[channelKey].originChannel1;
+    const originChannel2 = channelData[channelKey].originChannel2;
+    const operation = channelData[channelKey].operation;
+
+    if (operation == "squared"){
+        const pointsSquared = channelData[originChannel1].points.map(point => {
+            const voltage = autoMeasures.voltage_from_raw(point);
+            const squaredVoltage = voltage * voltage;
+            return mapVoltageToRaw(squaredVoltage);
+        });
+
+        channelData[channelKey].points = pointsSquared;
+        return
+    };
+
+    if (operation == "deriv"){
+        function getDerivative(points) {
+            let derivative = [];
+            for (let i = 0; i < points.length - 1; i++) {
+                difference = points[i + 1] - points[i];
+                //Since the derivative show the difference between two points on the graph we need to add the equivalent of 1/2 the height of the graph 
+                //so that it doesn't start being drawn at the bottom of the screen.
+                derivative[i] = difference + 8191;
+            }
+            return derivative;
+        };
+        
+        channelData[channelKey].points = getDerivative(channelData[originChannel1].points);
+        return
+    }
+
+    if (operation == "integral"){
+    
+        function getIntegral(points) {
+            const scale = 1e5; //arbitratry scaling factor which has to be added in order to work with the types of values we have. Without it the integral curve will never display any real variations unless we're talking spikes from -1 to +1 V on the data..
+            const deltaTime = 10e-9 * scale;
+            let integralValues = [];
+            let currentIntegral = 8192;
+        
+            for (let i = 0; i < points.length - 1; i++) {
+                let voltage1 = points[i];
+                let voltage2 = points[i+1];
+                currentIntegral += (voltage2 + voltage1) / 2 * deltaTime;
+                integralValues.push(currentIntegral);
+            }
+            return integralValues;
+        }
+        
+        channelData[channelKey].points = getIntegral(channelData[originChannel1].points);
+        return
+    };
+
+    if (operation == "fft") {
+        function fillArrayToNextPowerOfTwo(array) {
+            // check if the length of the array is already a power of two
+            function isPowerOfTwo(n) {
+                return n && (n & (n - 1)) === 0;
+            }
+        
+            let targetLength = array.length;
+            if (!isPowerOfTwo(targetLength)) {
+                // if not a power of two, find the next power of two
+                targetLength = Math.pow(2, Math.ceil(Math.log2(targetLength)));
+                // fill the array with zeros until it reaches the target length
+                while (array.length < targetLength) {
+                    array.push(0);
+                }
+            }
+        
+            return array;
+        }
+
+        function calculateFFT(points, sampleRate) {
+            //===============================================================
+            // FFT calculation - credit : https://github.com/indutny/fft.js/
+            //===============================================================
+            const fft = new FFT(points.length);
+        
+            const complexInput = fft.toComplexArray(points);
+            const complexOutput = fft.createComplexArray();
+        
+            fft.realTransform(complexOutput, complexInput);
+            fft.completeSpectrum(complexOutput);
+        
+            const magnitudes = complexOutput.map((value, index) => {
+                if (index % 2 === 0) {
+                    // even index, real part
+                    const re = value;
+                    // odd index, imaginary part (since the array is [re, im, re, im, ...]) => see fft.js doc
+                    const im = complexOutput[index + 1];
+                    return Math.sqrt(re * re + im * im);
+                }
+                return null;
+            })
+
+            const displayData = magnitudes.map((magnitude, index) => {
+                const frequency = index * sampleRate / points.length;
+                return { frequency: frequency, magnitude: magnitude };
+            });
+        
+            const halfDisplayData = displayData.slice(0, displayData.length / 2);
+            return halfDisplayData;
+        }
+        //we have to fill the gaps in the array until the next power of 2 (required by the library)
+        channelData[channelKey].points = fillArrayToNextPowerOfTwo(channelData[originChannel1].points);
+        channelData[channelKey].points = calculateFFT(channelData[channelKey].points, config.frequency);
+
+        return
+    };
+
+    
 };
 
 function calculateAutoMeasures(){
@@ -1150,10 +1339,17 @@ function populateModalForSave(){
 function populateModalForMeasure_MATHS(){
     let modalContentDiv = document.getElementById("modal-generated-content");
 
-    const channelOptions = [];
-    for (let i = 1; i < config.numChannels + 1; i++){
-        channelOptions.push({value: "CH" + i, text: "Channel " + i});
+    const emptySlotOptions = [];
+    for (let i = 1; i < 11; i++){
+        if (channelData["CH" + i] == undefined){//this condition is to avoid overwriting a maths channel that is already in use
+            emptySlotOptions.push({value: "CH" + i, text: "Channel " + i});
+        }; 
     }
+
+    const channelOptions = [];
+    Object.keys(channelData).forEach(key => {
+        channelOptions.push({value: key, text: key});
+    });
 
     const operationOptions = [
         {value: "none", text: "None"},
@@ -1165,7 +1361,7 @@ function populateModalForMeasure_MATHS(){
         {value: "deriv", text: "derivative"},
         {value: "integral", text: "integral"},
         {value: "fft", text: "FFT"},
-    ]
+    ];
 
     const title = document.createElement("h5");
     title.innerHTML = "Math functions";
@@ -1174,46 +1370,58 @@ function populateModalForMeasure_MATHS(){
     const container1 = document.createElement("span");
 
     const label1 = document.createElement("label");
-    label1.textContent = "Channel : ";
+    label1.textContent = "Channel slot : ";
     container1.appendChild(label1);
 
-    const selectChannel = createSelect(channelOptions);
-    selectChannel.id = "selectChannel";
-    container1.appendChild(selectChannel);
+    const selectSlotChannel = createSelect(emptySlotOptions);
+    selectSlotChannel.id = "selectSlotChannel";
+    container1.appendChild(selectSlotChannel);
 
     modalContentDiv.appendChild(container1);
     const container2 = document.createElement("span");
 
     const label2 = document.createElement("label");
-    label2.textContent = "Operation : ";
+    label2.textContent = "Channel : ";
     container2.appendChild(label2);
 
-    const selectOperation = createSelect(operationOptions);
-    selectOperation.id = "selectOperation";
-    container2.appendChild(selectOperation);
+    const selectChannel = createSelect(channelOptions);
+    selectChannel.id = "selectChannel";
+    container2.appendChild(selectChannel);
 
     modalContentDiv.appendChild(container2);
-
     const container3 = document.createElement("span");
 
     const label3 = document.createElement("label");
-    label3.textContent = "Channel 2 : ";
+    label3.textContent = "Operation : ";
     container3.appendChild(label3);
+
+    const selectOperation = createSelect(operationOptions);
+    selectOperation.id = "selectOperation";
+    container3.appendChild(selectOperation);
+
+    modalContentDiv.appendChild(container3);
+
+    const container4 = document.createElement("span");
+
+    const label4 = document.createElement("label");
+    label4.textContent = "Channel 2 : ";
+    container4.appendChild(label4);
 
     const selectSecondChannel = createSelect(channelOptions);
     selectSecondChannel.id = "selectSecondChannel";
-    container3.style.display = "none";//hidden by default until user chooses an operation requiring a 2nd channel
-    container3.appendChild(selectSecondChannel);
+    selectSecondChannel.value = "none";
+    container4.style.display = "none";//hidden by default until user chooses an operation requiring a 2nd channel
+    container4.appendChild(selectSecondChannel);
 
-    modalContentDiv.appendChild(container3);
+    modalContentDiv.appendChild(container4);
 
     selectOperation.addEventListener("change", function(){
         console.log("Operation change ! ")
         const value = selectOperation.value;
         if (value == "add" || value == "sub" || value == "mult" || value == "div"){
-            container3.style.display = "block";
+            container4.style.display = "block";
         }else{
-            container3.style.display = "none";
+            container4.style.display = "none";
         }
     });
 
@@ -1230,13 +1438,75 @@ function populateModalForMeasure_MATHS(){
     //function to check wether we can indeed generate the math signal
     //and then include it in a channel object
     saveButton.addEventListener("click", function(){
+        let slotChannel = selectSlotChannel.value;
         let channel1 = selectChannel.value;
         let channel2 = selectSecondChannel.value;
         let operation = selectOperation.value;
 
-        checkAndGenerateMathSignal(channel1, channel2, operation);
+        if (operation == "none"){
+            showToast("Please select an operation", "toast-error");
+        }else{
+            if (channel1 == channel2){
+                if (operation == "add" || operation == "sub" || operation == "mult" || operation == "div"){
+                    showToast("Please select two different channels", "toast-error");
+                }else{
+                    updateGeneratedMathSignalsData(slotChannel, channel1, channel2, operation);
+                    clearModal();
+                    populateModalForMeasure_MATHS();
+                }
+            }else{
+                updateGeneratedMathSignalsData(slotChannel, channel1, channel2, operation);
+                clearModal();
+                populateModalForMeasure_MATHS();
+            }
+        };
     });
     
+    //this section is to display the currently generated math signals
+    //and offer the opportunity to the user delete one if he wants to
+    const generatedSignalsDiv = document.createElement("div");
+
+    const generatedSignals = []
+    Object.keys(channelData).forEach(key => {
+        if (channelData[key].type == "generatedData"){
+            generatedSignals.push(key);
+        }
+    });
+
+    if (generatedSignals.length != 0){
+        const generatedSignalsTitle = document.createElement("h6");
+        generatedSignalsTitle.textContent = "Maths Channels in-use : ";
+        generatedSignalsDiv.appendChild(generatedSignalsTitle);
+
+        generatedSignals.forEach(signal => {
+            const signalSpan = document.createElement("span");
+            const signalText = document.createElement("p");
+            const deleteButton = document.createElement("button");
+
+            signalSpan.classList.add("generated-signal");
+            signalText.textContent = signal + " → ";
+            deleteButton.textContent = "X";
+            deleteButton.classList.add("delete-button");
+
+            signalSpan.appendChild(signalText);
+            signalSpan.appendChild(deleteButton);
+            generatedSignalsDiv.appendChild(signalSpan);
+
+            deleteButton.addEventListener("click", function(){
+                delete channelData[signal];
+                signalSpan.remove();
+
+                channelButton = document.getElementById(signal);
+
+                channelButton.className = "channel-not-displayed";
+                config.numChannels -= 1;
+
+                clearModal();
+                populateModalForMeasure_MATHS();
+            });
+        });
+    };
+
     autoSwitchButton.addEventListener("click", function(){
         console.log("switch to auto-measurements")
         clearModal();
@@ -1244,11 +1514,38 @@ function populateModalForMeasure_MATHS(){
     });
 
     modalContentDiv.appendChild(saveButton);
+    if (generatedSignals.length != 0){modalContentDiv.appendChild(generatedSignalsDiv);};
     modalContentDiv.appendChild(autoSwitchButton);
 };
 
-function checkAndGenerateMathSignal(channel1, channel2, operation){
-    console.log(`Checking and generating math signal for the operation : ${operation} between ${channel1} and ${channel2}`);
+function updateGeneratedMathSignalsData(slotChannel, channel1, channel2, operation){
+    //console.log(`Updating math signal in slot ${slotChannel} for the operation : ${operation} between ${channel1} and ${channel2}`);
+
+    channelData[slotChannel] = {
+        points: [],
+        display: true,
+        type: "generatedData",
+        focused: false,
+        colorDark: channelsMetaData[slotChannel].colorDark,
+        colorLight: channelsMetaData[slotChannel].colorLight,
+        verticalOffset: 0,
+        verticalScale: 1,
+        verticalOffsetRelativeCursorPosition: 395,
+        //these attributes are specific to generated signals from a function
+        originChannel1: channel1,
+        originChannel2: channel2,//none if operation does not require 2 channels
+        operation: operation,
+    };
+
+    //Here we set the button styles to make it show up as available
+    channelButton = document.getElementById(slotChannel);
+
+    channelButton.classList.remove("channel-not-displayed");
+    channelButton.classList.add("channel-displayed");
+    channelButton.classList.add(channelData[slotChannel].colorDark);
+
+    //we update the global config to reflect the new channel
+    config.numChannels += 1;
 };
 
 function toggleMeasurement(measureKey, buttonId) {
@@ -1286,9 +1583,10 @@ function populateModalForMeasure_AUTO(){
     let modalContentDiv = document.getElementById("modal-generated-content");
 
     const channelOptions = [];
-    for (let i = 1; i < config.numChannels + 1; i++){
-        channelOptions.push({value: "CH" + i, text: "Channel " + i});
-    }
+    Object.keys(channelData).forEach(key => {
+        let channelNumber = parseInt(key.substring(2), 10)
+        channelOptions.push({value: key, text: "Channel " + channelNumber});
+    });
 
     const measureOptions = [
         {text: "Min", varKey: "min", id: "minButton", onClick: () => { toggleMeasurement('min', "minButton"); }},
@@ -1383,9 +1681,10 @@ function populateModalForTrigger(){
     ]
 
     const triggerChannelOptions = [];
-    for (let i = 1; i < config.numChannels + 1; i++) {
-        triggerChannelOptions.push({value: "CH" + i, text: "Channel " + i});
-    };
+    Object.keys(channelData).forEach(key => {
+        let channelNumber = parseInt(key.substring(2), 10)
+        triggerChannelOptions.push({value: key, text: "Channel " + channelNumber});
+    });
 
     const triggerSlopeOptions = [
         {value: "both", text: "Both"},

@@ -796,13 +796,14 @@ aside{
 }
   
 #modal-generated-content{
-    margin-top: 1.5em;
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
     justify-content: left;
 
     padding: 1.5em;
+
+    height: 100%;
 }
 
 .modal-save-button{
@@ -851,4 +852,27 @@ aside{
 
 .inactive-measure-button{
     background-color: #e9e9ed;
+}
+
+#autoSwitchButton{
+    margin-top: auto;
+}
+
+.generated-signal{
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+    justify-content: flex-start;
+}
+
+.generated-signal button{
+    background-color: crimson;
+    font-weight: 900;
+    font-size: 1em;
+    padding: 0px;
+    height: fit-content;
+}
+
+.generated-signal p {
+    margin: 0px;
 }
