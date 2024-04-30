@@ -433,6 +433,11 @@ function environmentSetup(){//This function sets up anything necessary for inter
         displayBaseModal();
     });
 
+    //===================== AUTOSET BUTTON INTERACTIONS =====================
+
+    AUTOSET.addEventListener("click", function(){
+        autoset();
+    });
 
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
     drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
@@ -1009,7 +1014,53 @@ function generatePoints(channelKey){
         return
     };
 
-    
+    if (operation == "add"){
+        const points1 = channelData[originChannel1].points;
+        const points2 = channelData[originChannel2].points;
+        const pointsAdded = points1.map((point, index) => {
+            point = autoMeasures.voltage_from_raw(point);
+            let point2 = autoMeasures.voltage_from_raw(points2[index]);
+            return mapVoltageToRaw(point + point2).toFixed(0);
+        });
+        channelData[channelKey].points = pointsAdded;
+    };
+
+    if (operation == "mult"){
+        const points1 = channelData[originChannel1].points;
+        const points2 = channelData[originChannel2].points;
+        const pointsMultiplied = points1.map((point, index) => {
+            point = autoMeasures.voltage_from_raw(point);
+            let point2 = autoMeasures.voltage_from_raw(points2[index]);
+            return mapVoltageToRaw(point * point2).toFixed(0);
+        });
+        channelData[channelKey].points = pointsMultiplied;
+    };
+
+    if (operation == "sub"){
+        const points1 = channelData[originChannel1].points;
+        const points2 = channelData[originChannel2].points;
+        const pointsSubtracted = points1.map((point, index) => {
+            point = autoMeasures.voltage_from_raw(point);
+            let point2 = autoMeasures.voltage_from_raw(points2[index]);
+            return mapVoltageToRaw(point - point2).toFixed(0);
+        });
+        channelData[channelKey].points = pointsSubtracted;
+    };
+
+    if (operation == "div"){
+        const points1 = channelData[originChannel1].points;
+        const points2 = channelData[originChannel2].points;
+        const pointsDivided = points1.map((point, index) => {
+            point = autoMeasures.voltage_from_raw(point);
+            let point2 = autoMeasures.voltage_from_raw(points2[index]);
+            if (point2 === 0){
+                return 8192;// = 0V 
+            }else{
+                return mapVoltageToRaw(point / point2).toFixed(0);
+            }
+        });
+        channelData[channelKey].points = pointsDivided;
+    };
 };
 
 function calculateAutoMeasures(){
@@ -1938,3 +1989,7 @@ function triggerCheck(channelPoints){
         return false;
     }
 };
+
+function autoset(){
+    console.log("Autoset function called ! ");
+}
