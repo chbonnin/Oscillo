@@ -35,13 +35,13 @@ class OscilloSettingsForm(forms.Form):
 
     mode = forms.ChoiceField(
         choices=MODE_CHOICES,
-        label='Mode',
+        label='Mode :',
         initial='REAL-TIME',
         widget=forms.Select(attrs={'onchange': 'updateFormVisibility();'}),
     )
 
     channels = forms.IntegerField(
-        label='Number of Channels',
+        label='Number of Channels : ',
         initial=3,
         min_value=1,
         max_value=10,
@@ -49,7 +49,7 @@ class OscilloSettingsForm(forms.Form):
         required=False
     )
     freq = forms.FloatField(
-        label='Frequency (Hz)',
+        label='Frequency (Hz) : ',
         initial=1e8,
         min_value=1.0,
         max_value=1e9,
@@ -57,7 +57,7 @@ class OscilloSettingsForm(forms.Form):
         required=False
     )
     nb = forms.IntegerField(
-        label='Samples per frame',
+        label='Samples per frame : ',
         initial=1024,
         min_value=32,
         max_value=4096,
@@ -65,7 +65,7 @@ class OscilloSettingsForm(forms.Form):
         required=False
     )
     voltage = forms.FloatField(
-        label='Voltage (V)',
+        label='Voltage (V) : ',
         initial=10,
         min_value=0.1,
         max_value=50,
@@ -73,7 +73,7 @@ class OscilloSettingsForm(forms.Form):
         required=False
     )
     bits = forms.IntegerField(
-        label='Bit Depth',
+        label='Bit Depth : ',
         initial=16,
         min_value=14,
         max_value=64,

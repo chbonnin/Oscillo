@@ -39,7 +39,7 @@ let channelData = {}; //This dictionnary holds the data for each channel includi
 let horizontalOffset = 0;
 let horizontalScale = 50;
 
-let loopDelay = 500//ms
+let loopDelay = 200//ms
 let isRunning = false;
 let triggered = false;
 let triggerClock = 0;
@@ -429,8 +429,12 @@ function environmentSetup(){//This function sets up anything necessary for inter
 
     TRIGGER.addEventListener("click", function(){
         console.log("Trigger button clicked");
-        populateModalForTrigger();
-        displayBaseModal();
+        if (triggered){
+            triggered = false;
+        }else{
+            populateModalForTrigger();
+            displayBaseModal();
+        }
     });
 
     //===================== AUTOSET BUTTON INTERACTIONS =====================
@@ -665,12 +669,9 @@ function drawSignalFromFile(channelKey){
     const height = CANVAS.height;
 
     const maxSignalValue = 16383;  // Max value of the signal
-    const verticalScalingFactor = channel.verticalScale; 
-
-    const verticalOffset = channel.verticalOffset;
 
     // Calculate the scaling factors
-    const verticalScale = height / maxSignalValue * verticalScalingFactor;
+    const verticalScale = height / maxSignalValue * channel.verticalScale;
     const horizontalScaleFactor = width / points.length * (horizontalScale / 50);
 
     const baselineY = height / 2  
@@ -681,7 +682,7 @@ function drawSignalFromFile(channelKey){
     // Draw each point on the canvas
     points.forEach((point, index) => {
         const x = (index * horizontalScaleFactor) + horizontalOffset;
-        const y = baselineY - ((point - maxSignalValue / 2) * verticalScale) + verticalOffset;
+        const y = baselineY - ((point - maxSignalValue / 2) * verticalScale) + channel.verticalOffset;
 
         if (index === 0) {
             ctx.moveTo(x, y);
@@ -696,7 +697,6 @@ function drawSignalFromFile(channelKey){
 }
 
 function drawFFT(channelKey) {
-    console.log("Drawing FFT for channel", channelKey);
     const channel = channelData[channelKey];
     const points = channel.points;
     const ctx = CANVAS.getContext('2d');
@@ -902,8 +902,6 @@ function setScreenInformation(){
 };
 
 function generatePoints(channelKey){
-    console.log("Generating points for channel", channelKey);
-
     const originChannel1 = channelData[channelKey].originChannel1;
     const originChannel2 = channelData[channelKey].originChannel2;
     const operation = channelData[channelKey].operation;
@@ -1011,6 +1009,7 @@ function generatePoints(channelKey){
         channelData[channelKey].points = fillArrayToNextPowerOfTwo(channelData[originChannel1].points);
         channelData[channelKey].points = calculateFFT(channelData[channelKey].points, config.frequency);
 
+        channelData[channelKey].verticalScale = 2.5; // We set the vertical scale to 2.5 to make the fft thinner than other signals. This can still be modified by the user oc.
         return
     };
 
@@ -1991,5 +1990,110 @@ function triggerCheck(channelPoints){
 };
 
 function autoset(){
+    function updateCursorPosition(channel) {
+        let totalHeight = document.getElementById("scroll-bar").clientHeight - scroller.clientHeight;
+        let percent = (channel.verticalOffset / 1000) + 0.5; // reverse offset mapping
+        let newY = percent * totalHeight;
+    
+        newY = Math.max(newY, 0);
+        newY = Math.min(newY, totalHeight);
+    
+        if (channel.focused){document.getElementById("scroller").style.top = newY + 'px';};
+        channel.verticalOffsetRelativeCursorPosition = newY;
+    }
+    
     console.log("Autoset function called ! ");
-}
+
+    //We start by making sure everything is horizontally aligned.
+    if (horizontalOffset != 0){
+        horizontalOffset = 0;
+        document.getElementById("scroller-Horizontal").style.left = "595px";
+    };
+    if (horizontalScale != 50){
+        horizontalScale = 50;
+        document.getElementById("horizontal-scaling").value = 50;
+    };
+
+    //Now we check every single channel to see if it is fitted within the window or not.
+    Object.keys(channelData).forEach(key => {
+        if (channelData[key].display == true && channelData[key].operation != "fft"){
+            console.log(`Autosetting this channel [${key}], is displayed and no fft`);
+
+            const channel = channelData[key];
+            const highestValuePoint = Math.max(...channel.points);
+            const lowestValuePoint = Math.min(...channel.points);
+
+            isSignalClipping = true;
+            adjustementsCounter = 0;
+
+            while (isSignalClipping && adjustementsCounter < 15) { //This gives a max of 5 offset adjustements and 10 scaling adjsutements. After which there's no point in trying to autoset.
+                previewedYPositionHighestPoint = ((CANVAS.height / 2) - ((highestValuePoint - 16383 / 2) * (CANVAS.height / 16383 * channel.verticalScale))) + channel.verticalOffset;
+                previewedYPositionLowestPoint = ((CANVAS.height / 2) - ((lowestValuePoint - 16383 / 2) * (CANVAS.height / 16383 * channel.verticalScale))) + channel.verticalOffset;
+
+                //check wether the signal is clipping or not
+                if (previewedYPositionHighestPoint < 0 || previewedYPositionLowestPoint > CANVAS.height){
+                    console.log("Signal is clipping ! ");
+                    
+                    //See if it is possible to simply adjust the offset to make the signal fit
+                    if (previewedYPositionHighestPoint < 0 && previewedYPositionLowestPoint > CANVAS.height){
+                        console.log("Can't simply adjust the offset, signal is clipping through both ends !");
+                        if (channel.verticalScale > 1){
+                            channel.verticalScale = channel.verticalScale - 1;
+                        }else{
+                            channel.verticalScale = channel.verticalScale / 2;
+                        }
+                        if (channel.focused){
+                            document.getElementById("vertical-scaling").value = channel.verticalScale;
+                        }
+                    //If the signal is clipping through the top of the screen
+                    }else if (previewedYPositionHighestPoint < 0){
+                        console.log("Signal is clipping through the top of the screen.")
+                        if (channel.verticalOffset != 0 && adjustementsCounter < 3){//CHANGE 3 TO 5 ONCE SCALING IS FUNCTIONNAL
+                            //We first try to offset the signal to make it fit
+                            // we add 100 px to the offset every loop max 5 times
+                            console.log("Adding 100 px to offset");
+                            channel.verticalOffset += 100;
+                            updateCursorPosition(channel);
+                        }else {
+                            //If the signal is already without any offset, we scale it back
+                            if (channel.verticalScale > 1){
+                                channel.verticalScale = channel.verticalScale - 1;
+                            }else{
+                                channel.verticalScale = channel.verticalScale / 2;
+                            }
+                            if (channel.focused){
+                                document.getElementById("vertical-scaling").value = channel.verticalScale;
+                            }
+                        }
+                    //If the signal is clipping through the bottom of the screen
+                    }else if (previewedYPositionLowestPoint > CANVAS.height){
+                        console.log("Signal is clipping through the bottom of the screen.")
+                        if (channel.verticalOffset != 0 && adjustementsCounter < 3){//CHANGE 3 TO 5 ONCE SCALING IS FUNCTIONNAL
+                            //We first try to offset the signal to make it fit
+                            // we remove 100 px to the offset every loop max 5 times
+                            console.log("Removing 100 px to offset");
+                            channel.verticalOffset -= 100;
+                            updateCursorPosition(channel);
+                        }else {
+                            //If the signal is already without any offset, we scale it back
+                            console.log("Changing the offset did not work, scaling back..");
+                            if (channel.verticalScale > 1){
+                                channel.verticalScale = channel.verticalScale - 1;
+                            }else{
+                                channel.verticalScale = channel.verticalScale / 2;
+                            }
+                            if (channel.focused){
+                                document.getElementById("vertical-scaling").value = channel.verticalScale;
+                            }
+                        }
+                    }
+                }else{
+                    console.log("No clipping detected.")
+                    isSignalClipping = false;
+                    break;
+                }
+                adjustementsCounter += 1;
+            }
+        };
+    });
+};
