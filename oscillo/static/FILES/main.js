@@ -1,3 +1,10 @@
+/*
+╔══════════════════════════════════════════════════════╗
+║            GLOBAL VARIABLES DECLARATIONS             ║
+╚══════════════════════════════════════════════════════╝
+*/
+
+
 let config = {//Used to handle the configuration of the server, in case it changes we can update it here
     numChannels: null,  // How many channels are expected. update if server configuration changes
     frequency: null,
@@ -20,6 +27,16 @@ let triggerOptions = {
     holdOff: "3600", //default: stop for 1h | value : time in seconds
 };
 
+let cursorOptions = {
+    isVerticalCursorOn: "false",
+    isHorizontalCursorOn: "false",
+    cursorsValueDisplay: "oncursor", // oncursor (default) / indisplay
+    horizontalAPoistion: 266,//value in pixels
+    horizontalBPosition: 533,//value in pixels
+    verticalAPosition: 400,//value in pixels
+    verticalBPosition: 800,//value in pixels
+};
+
 let autoMeasureOptions = {
     //each option has a boolean associated representing whether or not the measure is to be made depending on the user selection
     associatedChannel: "CH1", //null / CH1 (default) / CH2 / CH3, etc etc..
@@ -39,7 +56,7 @@ let channelData = {}; //This dictionnary holds the data for each channel includi
 let horizontalOffset = 0;
 let horizontalScale = 50;
 
-let loopDelay = 200//ms
+let loopDelay = 100//ms
 let isRunning = false;
 let triggered = false;
 let triggerClock = 0;
@@ -60,6 +77,11 @@ const PRINT = document.getElementById('print');
 const SETUP = document.getElementById('setup');
 const SIZE = document.getElementById('size');
 
+/*
+╔══════════════════════════════════════════════════════╗
+║              DATA FETCHING & SETTINGS                ║
+╚══════════════════════════════════════════════════════╝
+*/
 
 function getCurrentSettings(){
     const Http = new XMLHttpRequest();
@@ -195,10 +217,13 @@ function fetchDataFromFile(){
             });
 
             config.samplesPerFrame = Http.response[2].length//We take the number of samples for ch.1 bc logically they all have the same amount given the .osc format
-
+        
             clearCanvas();
             drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
-            
+            if (cursorOptions.isVerticalCursorOn == "true" || cursorOptions.isHorizontalCursorOn == "true"){
+                drawCursors();
+            }
+
             Object.keys(channelData).forEach(key => {
                 //We start by checking wether or not the trigger is set and if so we check the trigger conditions to freeze or not this part of the signal.
                 if (triggerOptions.isTriggerOn == "on"){
@@ -236,6 +261,12 @@ function fetchDataFromFile(){
     Http.send();
     // console.log("fetchDataFromFile ends");
 }
+
+/*
+╔══════════════════════════════════════════════════════╗
+║        CODE FLOW (START - LOOP - EVENTS)             ║
+╚══════════════════════════════════════════════════════╝
+*/
 
 function environmentSetup(){//This function sets up anything necessary for interacting with the oscilloscope (EVentlisteners, etc)
     let isDragging = false;
@@ -439,8 +470,14 @@ function environmentSetup(){//This function sets up anything necessary for inter
 
     //===================== AUTOSET BUTTON INTERACTIONS =====================
 
-    AUTOSET.addEventListener("click", function(){
-        autoset();
+    AUTOSET.addEventListener("click", autoset);
+
+    //===================== CURSORS BUTTON INTERACTIONS =====================
+
+    CURSORS.addEventListener("click", function(){
+        console.log("Cursors Button clicked ! ");
+        populateModalForCursors();
+        displayBaseModal();
     });
 
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
@@ -455,11 +492,10 @@ function MAINLOOP(){
             if (isRunning && !triggered){
                 if (config.mode == "FILE"){
                     fetchDataFromFile();
-                    setScreenInformation();
                 }else if(config.mode == "FAKE-STARE"){
                     fetchData();
-                    setScreenInformation();
                 }
+                setScreenInformation();
             }else if(triggered){
                 clearCanvas();
                 drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
@@ -479,6 +515,9 @@ function MAINLOOP(){
                         }
                     };
                 });
+                if (cursorOptions.isVerticalCursorOn == "true" || cursorOptions.isHorizontalCursorOn == "true"){
+                    drawCursors();
+                }
                 if ((triggerClock / 1000) > triggerOptions.holdOff){
                     triggerClock = 0;
                     triggered = false;
@@ -499,125 +538,76 @@ document.addEventListener('DOMContentLoaded', function() {
     MAINLOOP();
 });
 
-function showToast(message, status) {
-    let toast = document.getElementById("toast");
-    toast.innerHTML = message;
-    toast.className = "";
-    toast.classList.add("show", status);
-    setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
-};
+/*
+╔══════════════════════════════════════════════════════╗
+║              CANVAS DRAWINGS & RELATED               ║
+╚══════════════════════════════════════════════════════╝
+*/
 
 function clearCanvas(){
     let ctx = CANVAS.getContext('2d');
     ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
 };
 
-function changeChannelButtonStatus(channelKey) {
-    let button = document.getElementById(channelKey);
+function drawCursors(){
+    const ctx = CANVAS.getContext('2d');
+    const scrollerA = document.getElementById("vertical-scroller-A");
+    const scrollerB = document.getElementById("vertical-scroller-B");
 
-    // Here we make sure only one button can be focused
-    Object.keys(channelData).forEach(key => {
-        let otherButton = document.getElementById(key);
-        otherButton.classList.remove('button-focused');
-        
-        if (key !== channelKey) {
-            channelData[key].focused = false;
-        }
-    });
+    ctx.setLineDash([12, 8]);/*dashes are 12px and spaces are 8px*/
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.6;
+    ctx.font = "bold 18px Arial";
+    ctx.fillStyle = 'red';
+
+    //draw first line
+    ctx.beginPath();
+    ctx.moveTo(cursorOptions.verticalAPosition, 0);
+    ctx.lineTo(cursorOptions.verticalAPosition, CANVAS.height);
+    const cursorATime = getTimeForACursor(cursorOptions.verticalAPosition)
+    const text = `${cursorATime.value} ${cursorATime.scale}`;
+    ctx.fillText(text, cursorOptions.verticalAPosition + 10, 50);
+    ctx.stroke();
 
 
-    try {//in case the channel clicked is not active (= not in the channelData dictionnary)
-        if (!channelData[channelKey].focused) {//if channel is not focused, then
-            // console.log("Focusing on channel:", channelKey);
-            button.classList.add('button-focused');
-            channelData[channelKey].focused = true;
+    //draw second line
+    ctx.beginPath();
+    ctx.moveTo(cursorOptions.verticalBPosition, 0);
+    ctx.lineTo(cursorOptions.verticalBPosition, CANVAS.height);
+    const cursorBTime = getTimeForACursor(cursorOptions.verticalBPosition)
+    const text2 = `${cursorBTime.value} ${cursorBTime.scale}`;
+    ctx.fillText(text2, cursorOptions.verticalBPosition - 70, 50);
+    ctx.stroke();
 
-            //Here we also set the correct values for the vertical scaling of this channel to the knob of the html page
-            document.getElementById('vertical-scaling').value = channelData[channelKey].verticalScale;
-            //And we do the same for the vertical offset (little cursor)
-            document.getElementById('scroller').style.top = channelData[channelKey].verticalOffsetRelativeCursorPosition + 'px';
-            document.getElementById('scroller').style.backgroundColor = channelData[channelKey].colorDark;
-
-            // If channel is not displayed, display it
-            if (!channelData[channelKey].display) {
-                // console.log("Displaying channel:", channelKey);
-                button.classList.remove("channel-not-displayed");
-                button.classList.add("channel-displayed");
-                button.classList.add(channelData[channelKey].colorDark);
-                channelData[channelKey].display = true;
-            }
-        } else {
-            if (channelData[channelKey].display) {//if channel is focused, then
-                // console.log("Hiding channel:", channelKey);
-                button.classList.remove("channel-displayed");
-                button.classList.add("channel-not-displayed");
-                button.classList.remove(channelData[channelKey].colorDark);
-                channelData[channelKey].display = false;
-            }
-            // remove the focus since the button was clicked a second time
-            button.classList.remove('button-focused');
-            channelData[channelKey].focused = false;
-        }
-    } catch (error) {
-        if (error instanceof TypeError) {//Button not linked to an active channel
-            let text = "This channel is not active.";
-            showToast(text, "toast-info");
-        } else {
-            alert("An unknown error occured, please look at the console.")
-            console.error(error);
-        }
-    }
+    //draw perpendicular line
+    ctx.beginPath();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = 'white';
     
 
-    // console.log(channelData);
-};
 
-// Function to draw a grid composed of full squares on the canvas
-function drawGrid(gridColor, opacity, thickerLineWidth) {
-    let ctx = CANVAS.getContext('2d');
-    ctx.globalAlpha = opacity;
-
-    const gridSizeVertical = CANVAS.width / config.horizontalDivisions;
-    const gridSizeHorizontal = CANVAS.height / config.verticalDivisions;
-    const centerVertical = CANVAS.width / 2;
-    const centerHorizontal = CANVAS.height / 2;
-    //We need the tolerance for a little wiggle room when detecting the two central lines.
-    //Otherwise we might not get a perfect == when checking the position of the drawer compared to CANVAS.width/2 or CANVAS.height/2.
-    const tolerance = 0.5;
-
-    // Draw vertical grid lines
-    for (let x = gridSizeVertical; x < CANVAS.width; x += gridSizeVertical) {
-        if (Math.abs(x - centerVertical) <= tolerance) {
-            // Make the central vertical line thicker
-            ctx.strokeStyle = gridColor;
-            ctx.lineWidth = thickerLineWidth;
-        } else {
-            // Reset the line width to the default value
-            ctx.strokeStyle = gridColor;
-            ctx.lineWidth = 1;
-        }
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, CANVAS.height);
-        ctx.stroke();
+    let pixelsBetweenCursors;
+    if (cursorOptions.verticalAPosition > cursorOptions.verticalBPosition){
+        pixelsBetweenCursors = cursorOptions.verticalAPosition - cursorOptions.verticalBPosition;
+    }else{
+        pixelsBetweenCursors = cursorOptions.verticalBPosition - cursorOptions.verticalAPosition;
     }
+    const timeBetweenCursors = getTimeBetweenCursors(pixelsBetweenCursors);
 
-    // Draw horizontal grid lines
-    for (let y = gridSizeHorizontal; y < CANVAS.height; y += gridSizeHorizontal) {
-        if (Math.abs(y - centerHorizontal) <= tolerance) {
-            // Make the central horizontal line thicker
-            ctx.strokeStyle = gridColor;
-            ctx.lineWidth = thickerLineWidth;
-        } else {
-            // Reset the line width to the default value
-            ctx.strokeStyle = gridColor;
-            ctx.lineWidth = 1;
-        }
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(CANVAS.width, y);
-        ctx.stroke();
-    }
+    const text3 = `Δ ${timeBetweenCursors.value} ${timeBetweenCursors.scale}`;
+    let X = (cursorOptions.verticalAPosition + cursorOptions.verticalBPosition) / 2;
+    let Y = CANVAS.height * 0.80 - 10;
+    ctx.fillText(text3, X -80, Y);
+    
+    ctx.setLineDash([8, 4]);
+    ctx.moveTo(Math.min(cursorOptions.verticalAPosition, cursorOptions.verticalBPosition), CANVAS.height * 0.80);
+    ctx.lineTo(Math.max(cursorOptions.verticalAPosition, cursorOptions.verticalBPosition), CANVAS.height * 0.80);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
 };
 
 function drawSignal(channelKey) {
@@ -693,8 +683,9 @@ function drawSignalFromFile(channelKey){
 
     ctx.strokeStyle = channel.colorDark;
     ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.8;
     ctx.stroke();
-}
+};
 
 function drawFFT(channelKey) {
     const channel = channelData[channelKey];
@@ -747,7 +738,868 @@ function drawFFT(channelKey) {
     } else {
         console.log("Not enough valid data to display.");
     }
+};
+
+// Function to draw a grid composed of full squares on the canvas
+function drawGrid(gridColor, opacity, thickerLineWidth) {
+    let ctx = CANVAS.getContext('2d');
+    ctx.globalAlpha = opacity;
+
+    const gridSizeVertical = CANVAS.width / config.horizontalDivisions;
+    const gridSizeHorizontal = CANVAS.height / config.verticalDivisions;
+    const centerVertical = CANVAS.width / 2;
+    const centerHorizontal = CANVAS.height / 2;
+    //We need the tolerance for a little wiggle room when detecting the two central lines.
+    //Otherwise we might not get a perfect == when checking the position of the drawer compared to CANVAS.width/2 or CANVAS.height/2.
+    const tolerance = 0.5;
+
+    // Draw vertical grid lines
+    for (let x = gridSizeVertical; x < CANVAS.width; x += gridSizeVertical) {
+        if (Math.abs(x - centerVertical) <= tolerance) {
+            // Make the central vertical line thicker
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = thickerLineWidth;
+        } else {
+            // Reset the line width to the default value
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 1;
+        }
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, CANVAS.height);
+        ctx.stroke();
+    }
+
+    // Draw horizontal grid lines
+    for (let y = gridSizeHorizontal; y < CANVAS.height; y += gridSizeHorizontal) {
+        if (Math.abs(y - centerHorizontal) <= tolerance) {
+            // Make the central horizontal line thicker
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = thickerLineWidth;
+        } else {
+            // Reset the line width to the default value
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 1;
+        }
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(CANVAS.width, y);
+        ctx.stroke();
+    }
+};
+
+/*
+╔══════════════════════════════════════════════════════╗
+║              MODAL GENERATION & FILLING              ║
+╚══════════════════════════════════════════════════════╝
+*/
+
+function createSelect(options){
+    const selectElement = document.createElement("select");
+    options.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option.value;
+        optionElement.textContent = option.text;
+        selectElement.appendChild(optionElement)
+    });
+    selectElement.classList.add("modal-select-trigger");
+    return selectElement;
 }
+
+function displayBaseModal(){
+    MODAL.style.display = "block";
+
+    let modalClose = document.getElementsByClassName("close")[0];
+
+
+    modalClose.onclick = function() {//if user clicks on the close button, we close the modal
+        hideModal();
+    };
+
+    window.onclick = function(event) {
+        if (event.target == MODAL) {
+            hideModal();
+        }
+    };
+};
+
+function hideModal() {
+    MODAL.style.display = "none"; // Hide the modal by setting display to 'none'
+    clearModal(); // Assuming clearModal() is a function to clear the modal content
+}
+
+function clearModal(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    //Here instead of just removing the children of this element, we clone it and replace it with the clone
+    //This ensures that the event listeners are also removed.
+    let modalClone = modalContentDiv.cloneNode(false);
+    modalContentDiv.parentNode.replaceChild(modalClone, modalContentDiv);
+}
+
+function populateModalForMeasure_AUTO(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    const channelOptions = [];
+    Object.keys(channelData).forEach(key => {
+        let channelNumber = parseInt(key.substring(2), 10)
+        channelOptions.push({value: key, text: "Channel " + channelNumber});
+    });
+
+    const measureOptions = [
+        {text: "Min", varKey: "min", id: "minButton", onClick: () => { toggleMeasurement('min', "minButton"); }},
+        {text: "Max", varKey: "max", id: "maxButton", onClick: () => { toggleMeasurement('max', "maxButton") }},
+        {text: "Vpp", varKey: "vpp", id: "vppButton", onClick: () => { toggleMeasurement('vpp', "vppButton") }},
+        {text: "Avg", varKey: "mean", id: "avgButton", onClick: () => { toggleMeasurement('mean', "avgButton") }},
+        {text: "RMS", varKey: "rms", id: "rmsButton", onClick: () => { toggleMeasurement('rms', "rmsButton") }},
+        {text: "F Avg", varKey: "freq", id: "freqButton", onClick: () => { toggleMeasurement('freq', "freqButton") }},
+        {text: "High", varKey: "highFreq", id: "highButton", onClick: () => { toggleMeasurement('highFreq', "highButton") }},
+        {text: "Low", varKey: "lowFreq", id: "lowButton", onClick: () => { toggleMeasurement('lowFreq', "lowButton") }},
+        {text: "Mid", varKey: "mid", id: "midButton", onClick: () => { toggleMeasurement('mid', "midButton") }},
+    ];
+
+    const title = document.createElement("h5");
+    title.innerHTML = "Auto Measurements";
+    modalContentDiv.appendChild(title);
+
+    const container1 = document.createElement("span");
+
+    const label1 = document.createElement("label");
+    label1.textContent = "Channel : ";
+    container1.appendChild(label1);
+
+    const selectChannel = createSelect(channelOptions);
+    selectChannel.id = "selectChannel";
+    selectChannel.value = autoMeasureOptions.associatedChannel;
+    container1.appendChild(selectChannel);
+
+    selectChannel.addEventListener("change", function(){
+        autoMeasureOptions.associatedChannel = selectChannel.value;
+    });
+
+    modalContentDiv.appendChild(container1);
+
+    const buttonContainer = document.createElement("span");
+    buttonContainer.id = "buttonContainer";
+
+    measureOptions.forEach(option => {
+        const button = document.createElement("button");
+        button.textContent = option.text;
+        button.id = option.id;
+        button.classList.add("modal-measure-button");
+        button.addEventListener("click", option.onClick);
+        buttonContainer.appendChild(button);
+
+        //set the buttons green if this measure is set
+        if (autoMeasureOptions[option.varKey].set) {
+            button.className = 'modal-measure-button active-measure-button';
+        }else{
+            button.className = 'modal-measure-button inactive-measure-button';
+        }
+    });
+
+    modalContentDiv.appendChild(buttonContainer);
+
+    const resetButton = document.createElement("button");
+    resetButton.textContent = "RESET";
+    resetButton.id = "resetButton";
+    resetButton.classList.add("modal-measure-button");
+
+    resetButton.addEventListener("click", function(){
+        resetMeasurements();
+    });
+
+    const autoSwitchButton = document.createElement("button");
+    autoSwitchButton.textContent = "← Math Functions";
+    autoSwitchButton.id = "autoSwitchButton";
+    autoSwitchButton.classList.add("modal-measure-button");
+
+    autoSwitchButton.addEventListener("click", function(){
+        console.log("switch to Math functions")
+        clearModal();
+        populateModalForMeasure_MATHS();
+    });
+
+    modalContentDiv.appendChild(resetButton);
+    modalContentDiv.appendChild(autoSwitchButton);
+};
+
+function populateModalForSave(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    title = document.createElement("h5");
+    csvButton = document.createElement("button");
+    pngButton = document.createElement("button");
+    jpegButton = document.createElement("button");
+    clipBoardButton = document.createElement("button");
+
+    title.innerHTML = "Choose a saving option";
+
+    csvButton.classList.add("modal-save-button");
+    pngButton.classList.add("modal-save-button");
+    jpegButton.classList.add("modal-save-button");
+    clipBoardButton.classList.add("modal-save-button");
+
+    csvButton.innerHTML = "Save as CSV";
+    pngButton.innerHTML = "Save as PNG";
+    jpegButton.innerHTML = "Save as JPEG";
+    clipBoardButton.innerHTML = "Copy to clipboard";
+
+    modalContentDiv.appendChild(title);
+    modalContentDiv.appendChild(csvButton);
+    modalContentDiv.appendChild(pngButton);
+    modalContentDiv.appendChild(jpegButton);
+    modalContentDiv.appendChild(clipBoardButton);
+
+
+    csvButton.addEventListener("click", downloadDataToCsv);
+    pngButton.addEventListener("click", function(){downloadCanvasAsImage("png")});
+    jpegButton.addEventListener("click", function(){downloadCanvasAsImage("jpeg")});
+    clipBoardButton.addEventListener("click", copyCanvasToClipboard);
+};
+
+function populateModalForMeasure_MATHS(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    const emptySlotOptions = [];
+    for (let i = 1; i < 11; i++){
+        if (channelData["CH" + i] == undefined){//this condition is to avoid overwriting a maths channel that is already in use
+            emptySlotOptions.push({value: "CH" + i, text: "Channel " + i});
+        }; 
+    }
+
+    const channelOptions = [];
+    Object.keys(channelData).forEach(key => {
+        channelOptions.push({value: key, text: key});
+    });
+
+    const operationOptions = [
+        {value: "none", text: "None"},
+        {value: "add", text: "+"},
+        {value: "sub", text: "-"},
+        {value: "mult", text: "*"},
+        {value: "div", text: "/"},
+        {value: "squared", text: "²"},
+        {value: "deriv", text: "derivative"},
+        {value: "integral", text: "integral"},
+        {value: "fft", text: "FFT"},
+    ];
+
+    const title = document.createElement("h5");
+    title.innerHTML = "Math functions";
+    modalContentDiv.appendChild(title);
+
+    const container1 = document.createElement("span");
+
+    const label1 = document.createElement("label");
+    label1.textContent = "Channel slot : ";
+    container1.appendChild(label1);
+
+    const selectSlotChannel = createSelect(emptySlotOptions);
+    selectSlotChannel.id = "selectSlotChannel";
+    container1.appendChild(selectSlotChannel);
+
+    modalContentDiv.appendChild(container1);
+    const container2 = document.createElement("span");
+
+    const label2 = document.createElement("label");
+    label2.textContent = "Channel : ";
+    container2.appendChild(label2);
+
+    const selectChannel = createSelect(channelOptions);
+    selectChannel.id = "selectChannel";
+    container2.appendChild(selectChannel);
+
+    modalContentDiv.appendChild(container2);
+    const container3 = document.createElement("span");
+
+    const label3 = document.createElement("label");
+    label3.textContent = "Operation : ";
+    container3.appendChild(label3);
+
+    const selectOperation = createSelect(operationOptions);
+    selectOperation.id = "selectOperation";
+    container3.appendChild(selectOperation);
+
+    modalContentDiv.appendChild(container3);
+
+    const container4 = document.createElement("span");
+
+    const label4 = document.createElement("label");
+    label4.textContent = "Channel 2 : ";
+    container4.appendChild(label4);
+
+    const selectSecondChannel = createSelect(channelOptions);
+    selectSecondChannel.id = "selectSecondChannel";
+    selectSecondChannel.value = "none";
+    container4.style.display = "none";//hidden by default until user chooses an operation requiring a 2nd channel
+    container4.appendChild(selectSecondChannel);
+
+    modalContentDiv.appendChild(container4);
+
+    selectOperation.addEventListener("change", function(){
+        console.log("Operation change ! ")
+        const value = selectOperation.value;
+        if (value == "add" || value == "sub" || value == "mult" || value == "div"){
+            container4.style.display = "block";
+        }else{
+            container4.style.display = "none";
+        }
+    });
+
+    const saveButton = document.createElement("button");
+    saveButton.textContent = "SAVE";
+    saveButton.id = "saveButton";
+    saveButton.classList.add("modal-measure-button");
+
+    const autoSwitchButton = document.createElement("button");
+    autoSwitchButton.textContent = "Auto-Measures →";
+    autoSwitchButton.id = "autoSwitchButton";
+    autoSwitchButton.classList.add("modal-measure-button");
+
+    //function to check wether we can indeed generate the math signal
+    //and then include it in a channel object
+    saveButton.addEventListener("click", function(){
+        let slotChannel = selectSlotChannel.value;
+        let channel1 = selectChannel.value;
+        let channel2 = selectSecondChannel.value;
+        let operation = selectOperation.value;
+
+        if (operation == "none"){
+            showToast("Please select an operation", "toast-error");
+        }else{
+            if (channel1 == channel2){
+                if (operation == "add" || operation == "sub" || operation == "mult" || operation == "div"){
+                    showToast("Please select two different channels", "toast-error");
+                }else{
+                    updateGeneratedMathSignalsData(slotChannel, channel1, channel2, operation);
+                    clearModal();
+                    populateModalForMeasure_MATHS();
+                }
+            }else{
+                updateGeneratedMathSignalsData(slotChannel, channel1, channel2, operation);
+                clearModal();
+                populateModalForMeasure_MATHS();
+            }
+        };
+    });
+    
+    //this section is to display the currently generated math signals
+    //and offer the opportunity to the user delete one if he wants to
+    const generatedSignalsDiv = document.createElement("div");
+
+    const generatedSignals = []
+    Object.keys(channelData).forEach(key => {
+        if (channelData[key].type == "generatedData"){
+            generatedSignals.push(key);
+        }
+    });
+
+    if (generatedSignals.length != 0){
+        const generatedSignalsTitle = document.createElement("h6");
+        generatedSignalsTitle.textContent = "Maths Channels in-use : ";
+        generatedSignalsDiv.appendChild(generatedSignalsTitle);
+
+        generatedSignals.forEach(signal => {
+            const signalSpan = document.createElement("span");
+            const signalText = document.createElement("p");
+            const deleteButton = document.createElement("button");
+
+            signalSpan.classList.add("generated-signal");
+            signalText.textContent = signal + " → ";
+            deleteButton.textContent = "X";
+            deleteButton.classList.add("delete-button");
+
+            signalSpan.appendChild(signalText);
+            signalSpan.appendChild(deleteButton);
+            generatedSignalsDiv.appendChild(signalSpan);
+
+            deleteButton.addEventListener("click", function(){
+                delete channelData[signal];
+                signalSpan.remove();
+
+                channelButton = document.getElementById(signal);
+
+                channelButton.className = "channel-not-displayed";
+                config.numChannels -= 1;
+
+                clearModal();
+                populateModalForMeasure_MATHS();
+            });
+        });
+    };
+
+    autoSwitchButton.addEventListener("click", function(){
+        console.log("switch to auto-measurements")
+        clearModal();
+        populateModalForMeasure_AUTO();
+    });
+
+    modalContentDiv.appendChild(saveButton);
+    if (generatedSignals.length != 0){modalContentDiv.appendChild(generatedSignalsDiv);};
+    modalContentDiv.appendChild(autoSwitchButton);
+};
+
+function populateModalForTrigger(){
+    console.log("Trigger settings : ", triggerOptions);
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    const triggerOnOffOptions = [
+        {value: "off", text: "Off"},
+        {value: "on", text: "On"},
+    ]
+
+    const triggerModeOptions = [
+        {value: "edge", text: "Edge-Trigger"},
+        {value: "window", text: "Window-Trigger"},
+    ]
+
+    const triggerChannelOptions = [];
+    Object.keys(channelData).forEach(key => {
+        let channelNumber = parseInt(key.substring(2), 10)
+        triggerChannelOptions.push({value: key, text: "Channel " + channelNumber});
+    });
+
+    const triggerSlopeOptions = [
+        {value: "both", text: "Both"},
+        {value: "rising", text: "Rising"},
+        {value: "falling", text: "Falling"},
+    ]
+
+    const title = document.createElement("h5");
+    title.innerHTML = "Trigger options";
+    modalContentDiv.appendChild(title);
+
+    const label1 = document.createElement("label"); //Trigger on/off
+    label1.textContent = "Trigger on/off";
+    modalContentDiv.appendChild(label1);
+
+    const selectOnOffStatus = createSelect(triggerOnOffOptions);
+    selectOnOffStatus.id = "selectOnOffStatus";
+    selectOnOffStatus.value = triggerOptions.isTriggerOn;
+    modalContentDiv.appendChild(selectOnOffStatus);
+
+    const label2 = document.createElement("label"); //Trigger mode
+    label2.textContent = "Trigger mode";
+    modalContentDiv.appendChild(label2);
+
+    const selectTriggerMode = createSelect(triggerModeOptions);
+    selectTriggerMode.id = "selectTriggerMode";
+    selectTriggerMode.value = triggerOptions.triggerMode;
+    modalContentDiv.appendChild(selectTriggerMode);
+
+    const label3 = document.createElement("label"); //Trigger channel
+    label3.textContent = "Trigger channel";
+    modalContentDiv.appendChild(label3);
+
+    const selectTriggerChannel = createSelect(triggerChannelOptions);
+    selectTriggerChannel.id = "selectTriggerChannel";
+    selectTriggerChannel.value = triggerOptions.triggerChannel;
+    modalContentDiv.appendChild(selectTriggerChannel);
+
+    const label4 = document.createElement("label"); //Trigger slope
+    label4.textContent = "Trigger slope";
+    modalContentDiv.appendChild(label4);
+
+    const selectTriggerSlope = createSelect(triggerSlopeOptions);
+    selectTriggerSlope.id = "selectTriggerSlope";
+    selectTriggerSlope.value = triggerOptions.triggerSlope;
+    modalContentDiv.appendChild(selectTriggerSlope);
+
+
+    const label5 = document.createElement("label"); //Trigger level
+    label5.textContent = "Trigger level (mV)";
+    modalContentDiv.appendChild(label5);
+
+    const TriggerLevelInput = document.createElement("input");
+    TriggerLevelInput.type = "number";
+    TriggerLevelInput.min = -(config.voltage / 2) * 1000;
+    TriggerLevelInput.max = (config.voltage / 2) * 1000;
+    TriggerLevelInput.value = triggerOptions.triggerLevel;
+    TriggerLevelInput.classList.add("modal-select-trigger");
+    TriggerLevelInput.id = "TriggerLevelInput";
+    modalContentDiv.appendChild(TriggerLevelInput);
+
+    const label6 = document.createElement("label"); //Window level min
+    label6.textContent = "Window level min (mV)";
+    modalContentDiv.appendChild(label6);
+
+    const WindowLevelMinInput = document.createElement("input");
+    WindowLevelMinInput.type = "number";
+    WindowLevelMinInput.min = -(config.voltage / 2) * 1000;
+    WindowLevelMinInput.max = (config.voltage / 2) * 1000;
+    WindowLevelMinInput.value = triggerOptions.windowLevelMin;
+    WindowLevelMinInput.classList.add("modal-select-trigger");
+    WindowLevelMinInput.id = "WindowLevelMinInput";
+    modalContentDiv.appendChild(WindowLevelMinInput);
+
+    const label7 = document.createElement("label"); //Window level max
+    label7.textContent = "Window level max (mV)";
+    modalContentDiv.appendChild(label7);
+
+    const WindowLevelMaxInput = document.createElement("input");
+    WindowLevelMaxInput.type = "number";
+    WindowLevelMaxInput.min = -(config.voltage / 2) * 1000;
+    WindowLevelMaxInput.max = (config.voltage / 2) * 1000;
+    WindowLevelMaxInput.value = triggerOptions.windowLevelMax;
+    WindowLevelMaxInput.classList.add("modal-select-trigger");
+    WindowLevelMaxInput.id = "WindowLevelMaxInput";
+    modalContentDiv.appendChild(WindowLevelMaxInput);
+
+    if (triggerOptions.triggerMode == "edge"){
+        WindowLevelMinInput.disabled = true;
+        WindowLevelMaxInput.disabled = true;
+        TriggerLevelInput.disabled = false;
+    }else{
+        WindowLevelMinInput.disabled = false;
+        WindowLevelMaxInput.disabled = false;
+        TriggerLevelInput.disabled = true;
+    }
+
+    selectTriggerMode.addEventListener("change", function(){
+        console.log("Trigger mode changed to : ", selectTriggerMode.value);
+        if (selectTriggerMode.value === "edge"){
+            WindowLevelMinInput.disabled = true;
+            WindowLevelMaxInput.disabled = true;
+            TriggerLevelInput.disabled = false;
+        } else if (selectTriggerMode.value === "window"){
+            WindowLevelMinInput.disabled = false;
+            WindowLevelMaxInput.disabled = false;
+            TriggerLevelInput.disabled = true;
+        }
+    });
+
+    const label8 = document.createElement("label"); //Hold off
+    label8.textContent = "Hold off (s)";
+    modalContentDiv.appendChild(label8);
+
+    const holdOffInput = document.createElement("input");
+    holdOffInput.type = "number";
+    holdOffInput.min = 0;
+    holdOffInput.max = 3600;
+    holdOffInput.value = triggerOptions.holdOff;
+    holdOffInput.classList.add("modal-select-trigger");
+    holdOffInput.id = "holdOffInput";
+    modalContentDiv.appendChild(holdOffInput);
+
+    const button = document.createElement("button");// SAVE CHANGES
+    button.textContent = "Apply Trigger Settings";
+    button.classList.add("modal-trigger-button");
+    modalContentDiv.appendChild(button);
+
+    button.addEventListener("click", function(){
+        updateTriggerSettings(modalContentDiv);
+        hideModal();
+    });
+};
+
+function populateModalForCursors(){
+    console.log("Setting up the modal for the cursors options");
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    const horizontalOptions = [
+        {text: "On", value: "true"},
+        {text: "Off", value: "false"}
+    ];
+
+    const verticalOptions = [
+        {text: "On", value: "true"},
+        {text: "Off", value: "false"}
+    ];
+
+    const valueOptions = [
+        {text: "On cursor", value: "oncursor"},
+        {text: "In display", value: "indisplay"}
+    ];
+
+    const title = document.createElement("h5");
+    title.innerHTML = "Cursor Options";
+    modalContentDiv.appendChild(title);
+
+    const container1 = document.createElement("span");
+
+    const label1 = document.createElement("label");
+    label1.textContent = "Horizontal : ";
+    container1.appendChild(label1);
+
+    const selectHorizontal = createSelect(horizontalOptions);
+    selectHorizontal.id = "selectHorizontal";
+    selectHorizontal.value = cursorOptions.isHorizontalCursorOn;
+    container1.appendChild(selectHorizontal);
+
+    selectHorizontal.addEventListener("change", function(){
+        cursorOptions.isHorizontalCursorOn = this.value;
+
+    });
+
+    modalContentDiv.appendChild(container1);
+    const container2 = document.createElement("span");
+
+    const label2 = document.createElement("label");
+    label2.textContent = "Vertical : ";
+    container2.appendChild(label2);
+
+    const selectVertical = createSelect(verticalOptions);
+    selectVertical.id = "selectVertical";
+    selectVertical.value = cursorOptions.isVerticalCursorOn;
+    container2.appendChild(selectVertical);
+
+    selectVertical.addEventListener("change", function(){
+        cursorOptions.isVerticalCursorOn = this.value;
+        toggleDisplayForVerticalCursorScrollers();
+    });
+
+    modalContentDiv.appendChild(container2);
+    const container3 = document.createElement("span");
+
+    const label3 = document.createElement("label");
+    label3.textContent = "Value : ";
+    container3.appendChild(label3);
+
+    const selectValue = createSelect(valueOptions);
+    selectValue.id = "selectValue";
+    selectValue.value = cursorOptions.cursorsValueDisplay;
+    container3.appendChild(selectValue);
+
+    selectValue.addEventListener("change", function(){
+        cursorOptions.cursorsValueDisplay = this.value;
+    });
+
+    modalContentDiv.appendChild(container3);
+
+    const resetButton = document.createElement("button");
+    resetButton.textContent = "Reset Cursors";
+    resetButton.id = "resetButton";
+    resetButton.classList.add("modal-measure-button");
+
+    modalContentDiv.appendChild(resetButton);
+
+    resetButton.addEventListener("click", function(){
+        console.log("Reset the cursors.");
+        cursorOptions.isVerticalCursorOn = "false";
+        cursorOptions.isHorizontalCursorOn = "false";
+        cursorOptions.cursorsValueDisplay = "oncursor";
+        cursorOptions.horizontalAPoistion = 266;
+        cursorOptions.horizontalBPosition = 533;
+        cursorOptions.verticalAPosition = 400;
+        cursorOptions.verticalBPosition = 800;
+    });
+};
+
+/*
+╔══════════════════════════════════════════════════════╗
+║                UI INTERACTIONS HANDLERS              ║
+╚══════════════════════════════════════════════════════╝
+*/
+
+function changeChannelButtonStatus(channelKey) {
+    let button = document.getElementById(channelKey);
+
+    // Here we make sure only one button can be focused
+    Object.keys(channelData).forEach(key => {
+        let otherButton = document.getElementById(key);
+        otherButton.classList.remove('button-focused');
+        
+        if (key !== channelKey) {
+            channelData[key].focused = false;
+        }
+    });
+
+
+    try {//in case the channel clicked is not active (= not in the channelData dictionnary)
+        if (!channelData[channelKey].focused) {//if channel is not focused, then
+            // console.log("Focusing on channel:", channelKey);
+            button.classList.add('button-focused');
+            channelData[channelKey].focused = true;
+
+            //Here we also set the correct values for the vertical scaling of this channel to the knob of the html page
+            document.getElementById('vertical-scaling').value = channelData[channelKey].verticalScale;
+            //And we do the same for the vertical offset (little cursor)
+            document.getElementById('scroller').style.top = channelData[channelKey].verticalOffsetRelativeCursorPosition + 'px';
+            document.getElementById('scroller').style.backgroundColor = channelData[channelKey].colorDark;
+
+            // If channel is not displayed, display it
+            if (!channelData[channelKey].display) {
+                // console.log("Displaying channel:", channelKey);
+                button.classList.remove("channel-not-displayed");
+                button.classList.add("channel-displayed");
+                button.classList.add(channelData[channelKey].colorDark);
+                channelData[channelKey].display = true;
+            }
+        } else {
+            if (channelData[channelKey].display) {//if channel is focused, then
+                // console.log("Hiding channel:", channelKey);
+                button.classList.remove("channel-displayed");
+                button.classList.add("channel-not-displayed");
+                button.classList.remove(channelData[channelKey].colorDark);
+                channelData[channelKey].display = false;
+
+                document.getElementById('scroller').style.top = '395px';
+                document.getElementById('scroller').style.backgroundColor = "gray";
+            }
+            // remove the focus since the button was clicked a second time
+            button.classList.remove('button-focused');
+            channelData[channelKey].focused = false;
+        }
+    } catch (error) {
+        if (error instanceof TypeError) {//Button not linked to an active channel
+            let text = "This channel is not active.";
+            showToast(text, "toast-info");
+        } else {
+            alert("An unknown error occured, please look at the console.")
+            console.error(error);
+        }
+    }
+    
+
+    // console.log(channelData);
+};
+
+let isVerticalMouseDownListenerSet = false;
+
+function toggleDisplayForVerticalCursorScrollers(){
+    console.log(`Current value for 'cursorOptions.isVerticalCursorOn' : ${cursorOptions.isVerticalCursorOn} | Type : ${typeof cursorOptions.isVerticalCursorOn}`);
+
+    const scrollerA = document.getElementById("vertical-scroller-A");
+    const scrollerB = document.getElementById("vertical-scroller-B");
+    const scrollBar = document.getElementById("scrollbar-horizontal");
+    let isDragging = false;
+    let currentMoveListener = null;
+    let currentUpListener = null;
+
+    function onMouseMoveScrollerVertical(scroller, startX, whichCursor){
+        return function(event) {
+            let newX = event.clientX - startX;
+            newX = Math.max(newX, 0);
+            newX = Math.min(newX, scrollBar.clientWidth - scroller.clientWidth);
+            scroller.style.left = newX + 'px';
+            if (whichCursor == "A"){
+                cursorOptions.verticalAPosition = newX + ((parseInt(window.getComputedStyle(scrollerA).width)) / 2);
+            }else{
+                cursorOptions.verticalBPosition = newX + ((parseInt(window.getComputedStyle(scrollerA).width)) / 2);
+            }
+        };
+    }
+
+    function onMouseUpScrollerVertical(){
+        if (!isDragging) return;
+        isDragging = false;
+        console.log("Mouse released");
+
+        document.removeEventListener('mousemove', currentMoveListener);
+        document.removeEventListener('mouseup', currentUpListener);
+        currentMoveListener = null;
+        currentUpListener = null;
+    }
+
+    function setupDragListeners(scroller, whichCursor) {
+        scroller.addEventListener('mousedown', function(event) {
+            if (isDragging) return; // Prevents adding multiple listeners during an active drag
+            console.log("Mouse click on scroller", scroller.id);
+            isDragging = true;
+            let startX = event.clientX - scroller.getBoundingClientRect().left + scrollBar.getBoundingClientRect().left;
+
+            currentMoveListener = onMouseMoveScrollerVertical(scroller, startX, whichCursor);
+            currentUpListener = onMouseUpScrollerVertical;
+
+            document.addEventListener('mousemove', currentMoveListener);
+            document.addEventListener('mouseup', currentUpListener);
+        });
+    }
+
+    if (cursorOptions.isVerticalCursorOn === "true"){
+        console.log("Show the scrollers for the vertical cursors");
+        scrollerA.style.display = "block";
+        scrollerA.style.left = (cursorOptions.verticalAPosition - (parseInt(window.getComputedStyle(scrollerA).width)) / 2) + "px";
+    
+        scrollerB.style.display = "block";
+        scrollerB.style.left = (cursorOptions.verticalBPosition - (parseInt(window.getComputedStyle(scrollerB).width)) / 2) + "px";
+
+        if (!isVerticalMouseDownListenerSet){
+            setupDragListeners(scrollerA, "A");
+            setupDragListeners(scrollerB, "B");
+        }
+
+        isVerticalMouseDownListenerSet = true;
+    } else {
+        console.log("Hide the scrollers for the vertical cursors");
+        // Hide scrollers (A & B)
+        scrollerA.style.display = "none";
+        scrollerB.style.display = "none";
+    }
+};
+
+function toggleDisplayForVerticalCursorScrollers(){
+
+};
+
+/*
+╔══════════════════════════════════════════════════════╗
+║           INFORMATION COMPUTING & DISPLAY            ║
+╚══════════════════════════════════════════════════════╝
+*/
+
+function getTimeScale(timeInSeconds){
+    let scale;
+    let value;
+
+    //convert timeInSeconds to ms as a base unit to simplify the logic of the function
+    const microseconds = timeInSeconds * 1e6;
+
+    if (microseconds < 1) {// nanoseconds
+        scale = 'ns'; 
+        value = (microseconds * 1000).toFixed(2); // convert to nanoseconds
+    } else if (microseconds < 1000) {// microseconds
+        scale = 'µs'; 
+        value = microseconds.toFixed(2);
+    } else if (microseconds < 1e6) {// Milliseconds
+        scale = 'ms'; 
+        value = (microseconds / 1000).toFixed(2); // convert microseconds to milliseconds
+    } else { // Seconds
+        scale = 's';
+        value = (microseconds / 1e6).toFixed(2); // convert microseconds to seconds
+    }
+
+    return { value: parseFloat(value), scale: scale };
+};
+
+function getTimePerDiv() { 
+    const totalSamplingTime = config.samplesPerFrame * 1e-8;
+    const timePerDivision = (totalSamplingTime / config.horizontalDivisions) * (horizontalScale / 50);//we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
+    
+    const resultScaled = getTimeScale(timePerDivision);
+    return resultScaled;
+};
+
+//converts a voltage to the equivalent absolute raw value of a 14-bit ADC
+function mapVoltageToRaw(voltage) {
+    return (voltage + 1.1) / 2.2 * 16383;
+};
+
+function getTimeBetweenCursors(pixelsBetweenCursors){
+    const totalSamplingTime = config.samplesPerFrame * 1e-8;
+    const sizeOfOneDivisionInPixels = CANVAS.width / config.horizontalDivisions;
+    const DivisionsBetweenCursors = pixelsBetweenCursors / sizeOfOneDivisionInPixels;
+    
+    const TimeBetweenCursors = totalSamplingTime * (DivisionsBetweenCursors / config.horizontalDivisions) * (horizontalScale / 50);
+
+    const resultScaled = getTimeScale(TimeBetweenCursors);
+    return resultScaled;
+};
+
+function getTimeForACursor(cursorPosition){
+    const totalSamplingTime = config.samplesPerFrame * 1e-8; // Total time for all divisions.
+    const sizeOfOneDivisionInPixels = CANVAS.width / config.horizontalDivisions; // Pixel width of one division.
+
+    // Calculate how many divisions the cursor is from the left of the canvas.
+    const divisionsFromLeft = cursorPosition / sizeOfOneDivisionInPixels;
+
+    // Calculate the time at the cursor position using the proportion of the total time.
+    const timeAtCursor = totalSamplingTime * (divisionsFromLeft / config.horizontalDivisions) * (horizontalScale / 50);
+
+    const resultScaled = getTimeScale(timeAtCursor);
+    return resultScaled;
+};
 
 function setScreenInformation(){
     //insert time scale to the screen
@@ -1180,31 +2032,88 @@ function getMilliVoltsPerDiv(channelVerticalScale) {
     return (voltsPerDivision * 1000).toFixed(1);
 };
 
-function getTimePerDiv() { 
-    const totalSamplingTime = config.samplesPerFrame * 1e-8;
-    const timePerDivision = (totalSamplingTime / config.horizontalDivisions) / (horizontalScale / 50);//we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
-    let scale;
-    let value;
+function updateGeneratedMathSignalsData(slotChannel, channel1, channel2, operation){
+    //console.log(`Updating math signal in slot ${slotChannel} for the operation : ${operation} between ${channel1} and ${channel2}`);
 
-    //convert timePerDivision to ms as a base unit to simplify the logic of the function
-    const microseconds = timePerDivision * 1e6;
+    channelData[slotChannel] = {
+        points: [],
+        display: true,
+        type: "generatedData",
+        focused: false,
+        colorDark: channelsMetaData[slotChannel].colorDark,
+        colorLight: channelsMetaData[slotChannel].colorLight,
+        verticalOffset: 0,
+        verticalScale: 1,
+        verticalOffsetRelativeCursorPosition: 395,
+        //these attributes are specific to generated signals from a function
+        originChannel1: channel1,
+        originChannel2: channel2,//none if operation does not require 2 channels
+        operation: operation,
+    };
 
-    if (microseconds < 1) {// nanoseconds
-        scale = 'ns'; 
-        value = (microseconds * 1000).toFixed(2); // convert to nanoseconds
-    } else if (microseconds < 1000) {// microseconds
-        scale = 'µs'; 
-        value = microseconds.toFixed(2);
-    } else if (microseconds < 1e6) {// Milliseconds
-        scale = 'ms'; 
-        value = (microseconds / 1000).toFixed(2); // convert microseconds to milliseconds
-    } else { // Seconds
-        scale = 's';
-        value = (microseconds / 1e6).toFixed(2); // convert microseconds to seconds
-    }
+    //Here we set the button styles to make it show up as available
+    channelButton = document.getElementById(slotChannel);
 
-    return { value: parseFloat(value), scale: scale };
+    channelButton.classList.remove("channel-not-displayed");
+    channelButton.classList.add("channel-displayed");
+    channelButton.classList.add(channelData[slotChannel].colorDark);
+
+    //we update the global config to reflect the new channel
+    config.numChannels += 1;
 };
+
+function toggleMeasurement(measureKey, buttonId) {
+    let measure = autoMeasureOptions[measureKey];
+    if (measure) {
+        measure.set = !measure.set; // Toggle the 'set' value
+        //change button class depending on wether the measure is set or not
+        document.getElementById(buttonId).className = measure.set ? 'modal-measure-button active-measure-button' : 'modal-measure-button inactive-measure-button';
+        console.log(`${measureKey} set to ${measure.set}`);
+    }
+};
+
+function resetMeasurements(){
+    try{
+        autoMeasureOptions.associatedChannel = "CH1";
+        Object.keys(autoMeasureOptions).forEach(key => {
+            if (key !== "associatedChannel") {
+                autoMeasureOptions[key].set = false;
+                autoMeasureOptions[key].value = null;
+                document.querySelectorAll('.modal-measure-button').forEach(button => {
+                    button.className = 'modal-measure-button inactive-measure-button';
+                });
+            }
+        });
+        document.getElementById("selectChannel").value = "CH1";
+    
+        showToast("Auto Measurements values reset !", "toast-info");
+    } catch (error) {
+        console.error('Failed to reset measurements', error);
+        showToast("Error while resetting the measurements..", "toast-error");
+    }
+};
+
+function updateTriggerSettings(modalElement){
+    console.log("Updating trigger settings");
+    console.log(modalElement);
+
+    triggerOptions.isTriggerOn = modalElement.querySelector("#selectOnOffStatus").value;
+    triggerOptions.triggerMode = modalElement.querySelector("#selectTriggerMode").value;
+    triggerOptions.triggerChannel = modalElement.querySelector("#selectTriggerChannel").value;
+    triggerOptions.triggerLevel = modalElement.querySelector("#TriggerLevelInput").value;
+    triggerOptions.windowLevelMin = modalElement.querySelector("#WindowLevelMinInput").value;
+    triggerOptions.windowLevelMax = modalElement.querySelector("#WindowLevelMaxInput").value;
+    triggerOptions.triggerSlope = modalElement.querySelector("#selectTriggerSlope").value;
+    triggerOptions.holdOff = modalElement.querySelector("#holdOffInput").value;
+
+    showToast("Trigger settings updated !", "toast-info");
+};
+
+/*
+╔══════════════════════════════════════════════════════╗
+║                  INFORMATION EXPORT                  ║
+╚══════════════════════════════════════════════════════╝
+*/
 
 function downloadCanvasAsImage(imageType) {
     try{
@@ -1309,594 +2218,11 @@ function downloadDataToCsv() {
     }
 };
 
-function displayBaseModal(){
-    MODAL.style.display = "block";
-
-    let modalClose = document.getElementsByClassName("close")[0];
-
-
-    modalClose.onclick = function() {//if user clicks on the close button, we close the modal
-        hideModal();
-    };
-
-    window.onclick = function(event) {
-        if (event.target == MODAL) {
-            hideModal();
-        }
-    };
-};
-
-function hideModal() {
-    MODAL.style.display = "none"; // Hide the modal by setting display to 'none'
-    clearModal(); // Assuming clearModal() is a function to clear the modal content
-}
-
-function clearModal(){
-    let modalContentDiv = document.getElementById("modal-generated-content");
-
-    //Here instead of just removing the children of this element, we clone it and replace it with the clone
-    //This ensures that the event listeners are also removed.
-    let modalClone = modalContentDiv.cloneNode(false);
-    modalContentDiv.parentNode.replaceChild(modalClone, modalContentDiv);
-}
-
-function createSelect(options){
-    const selectElement = document.createElement("select");
-    options.forEach(option => {
-        const optionElement = document.createElement('option');
-        optionElement.value = option.value;
-        optionElement.textContent = option.text;
-        selectElement.appendChild(optionElement)
-    });
-    selectElement.classList.add("modal-select-trigger");
-    return selectElement;
-}
-
-function populateModalForSave(){
-    let modalContentDiv = document.getElementById("modal-generated-content");
-
-    title = document.createElement("h5");
-    csvButton = document.createElement("button");
-    pngButton = document.createElement("button");
-    jpegButton = document.createElement("button");
-    clipBoardButton = document.createElement("button");
-
-    title.innerHTML = "Choose a saving option";
-
-    csvButton.classList.add("modal-save-button");
-    pngButton.classList.add("modal-save-button");
-    jpegButton.classList.add("modal-save-button");
-    clipBoardButton.classList.add("modal-save-button");
-
-    csvButton.innerHTML = "Save as CSV";
-    pngButton.innerHTML = "Save as PNG";
-    jpegButton.innerHTML = "Save as JPEG";
-    clipBoardButton.innerHTML = "Copy to clipboard";
-
-    modalContentDiv.appendChild(title);
-    modalContentDiv.appendChild(csvButton);
-    modalContentDiv.appendChild(pngButton);
-    modalContentDiv.appendChild(jpegButton);
-    modalContentDiv.appendChild(clipBoardButton);
-
-
-    csvButton.addEventListener("click", downloadDataToCsv);
-    pngButton.addEventListener("click", function(){downloadCanvasAsImage("png")});
-    jpegButton.addEventListener("click", function(){downloadCanvasAsImage("jpeg")});
-    clipBoardButton.addEventListener("click", copyCanvasToClipboard);
-};
-
-function populateModalForMeasure_MATHS(){
-    let modalContentDiv = document.getElementById("modal-generated-content");
-
-    const emptySlotOptions = [];
-    for (let i = 1; i < 11; i++){
-        if (channelData["CH" + i] == undefined){//this condition is to avoid overwriting a maths channel that is already in use
-            emptySlotOptions.push({value: "CH" + i, text: "Channel " + i});
-        }; 
-    }
-
-    const channelOptions = [];
-    Object.keys(channelData).forEach(key => {
-        channelOptions.push({value: key, text: key});
-    });
-
-    const operationOptions = [
-        {value: "none", text: "None"},
-        {value: "add", text: "+"},
-        {value: "sub", text: "-"},
-        {value: "mult", text: "*"},
-        {value: "div", text: "/"},
-        {value: "squared", text: "²"},
-        {value: "deriv", text: "derivative"},
-        {value: "integral", text: "integral"},
-        {value: "fft", text: "FFT"},
-    ];
-
-    const title = document.createElement("h5");
-    title.innerHTML = "Math functions";
-    modalContentDiv.appendChild(title);
-
-    const container1 = document.createElement("span");
-
-    const label1 = document.createElement("label");
-    label1.textContent = "Channel slot : ";
-    container1.appendChild(label1);
-
-    const selectSlotChannel = createSelect(emptySlotOptions);
-    selectSlotChannel.id = "selectSlotChannel";
-    container1.appendChild(selectSlotChannel);
-
-    modalContentDiv.appendChild(container1);
-    const container2 = document.createElement("span");
-
-    const label2 = document.createElement("label");
-    label2.textContent = "Channel : ";
-    container2.appendChild(label2);
-
-    const selectChannel = createSelect(channelOptions);
-    selectChannel.id = "selectChannel";
-    container2.appendChild(selectChannel);
-
-    modalContentDiv.appendChild(container2);
-    const container3 = document.createElement("span");
-
-    const label3 = document.createElement("label");
-    label3.textContent = "Operation : ";
-    container3.appendChild(label3);
-
-    const selectOperation = createSelect(operationOptions);
-    selectOperation.id = "selectOperation";
-    container3.appendChild(selectOperation);
-
-    modalContentDiv.appendChild(container3);
-
-    const container4 = document.createElement("span");
-
-    const label4 = document.createElement("label");
-    label4.textContent = "Channel 2 : ";
-    container4.appendChild(label4);
-
-    const selectSecondChannel = createSelect(channelOptions);
-    selectSecondChannel.id = "selectSecondChannel";
-    selectSecondChannel.value = "none";
-    container4.style.display = "none";//hidden by default until user chooses an operation requiring a 2nd channel
-    container4.appendChild(selectSecondChannel);
-
-    modalContentDiv.appendChild(container4);
-
-    selectOperation.addEventListener("change", function(){
-        console.log("Operation change ! ")
-        const value = selectOperation.value;
-        if (value == "add" || value == "sub" || value == "mult" || value == "div"){
-            container4.style.display = "block";
-        }else{
-            container4.style.display = "none";
-        }
-    });
-
-    const saveButton = document.createElement("button");
-    saveButton.textContent = "SAVE";
-    saveButton.id = "saveButton";
-    saveButton.classList.add("modal-measure-button");
-
-    const autoSwitchButton = document.createElement("button");
-    autoSwitchButton.textContent = "Auto-Measures →";
-    autoSwitchButton.id = "autoSwitchButton";
-    autoSwitchButton.classList.add("modal-measure-button");
-
-    //function to check wether we can indeed generate the math signal
-    //and then include it in a channel object
-    saveButton.addEventListener("click", function(){
-        let slotChannel = selectSlotChannel.value;
-        let channel1 = selectChannel.value;
-        let channel2 = selectSecondChannel.value;
-        let operation = selectOperation.value;
-
-        if (operation == "none"){
-            showToast("Please select an operation", "toast-error");
-        }else{
-            if (channel1 == channel2){
-                if (operation == "add" || operation == "sub" || operation == "mult" || operation == "div"){
-                    showToast("Please select two different channels", "toast-error");
-                }else{
-                    updateGeneratedMathSignalsData(slotChannel, channel1, channel2, operation);
-                    clearModal();
-                    populateModalForMeasure_MATHS();
-                }
-            }else{
-                updateGeneratedMathSignalsData(slotChannel, channel1, channel2, operation);
-                clearModal();
-                populateModalForMeasure_MATHS();
-            }
-        };
-    });
-    
-    //this section is to display the currently generated math signals
-    //and offer the opportunity to the user delete one if he wants to
-    const generatedSignalsDiv = document.createElement("div");
-
-    const generatedSignals = []
-    Object.keys(channelData).forEach(key => {
-        if (channelData[key].type == "generatedData"){
-            generatedSignals.push(key);
-        }
-    });
-
-    if (generatedSignals.length != 0){
-        const generatedSignalsTitle = document.createElement("h6");
-        generatedSignalsTitle.textContent = "Maths Channels in-use : ";
-        generatedSignalsDiv.appendChild(generatedSignalsTitle);
-
-        generatedSignals.forEach(signal => {
-            const signalSpan = document.createElement("span");
-            const signalText = document.createElement("p");
-            const deleteButton = document.createElement("button");
-
-            signalSpan.classList.add("generated-signal");
-            signalText.textContent = signal + " → ";
-            deleteButton.textContent = "X";
-            deleteButton.classList.add("delete-button");
-
-            signalSpan.appendChild(signalText);
-            signalSpan.appendChild(deleteButton);
-            generatedSignalsDiv.appendChild(signalSpan);
-
-            deleteButton.addEventListener("click", function(){
-                delete channelData[signal];
-                signalSpan.remove();
-
-                channelButton = document.getElementById(signal);
-
-                channelButton.className = "channel-not-displayed";
-                config.numChannels -= 1;
-
-                clearModal();
-                populateModalForMeasure_MATHS();
-            });
-        });
-    };
-
-    autoSwitchButton.addEventListener("click", function(){
-        console.log("switch to auto-measurements")
-        clearModal();
-        populateModalForMeasure_AUTO();
-    });
-
-    modalContentDiv.appendChild(saveButton);
-    if (generatedSignals.length != 0){modalContentDiv.appendChild(generatedSignalsDiv);};
-    modalContentDiv.appendChild(autoSwitchButton);
-};
-
-function updateGeneratedMathSignalsData(slotChannel, channel1, channel2, operation){
-    //console.log(`Updating math signal in slot ${slotChannel} for the operation : ${operation} between ${channel1} and ${channel2}`);
-
-    channelData[slotChannel] = {
-        points: [],
-        display: true,
-        type: "generatedData",
-        focused: false,
-        colorDark: channelsMetaData[slotChannel].colorDark,
-        colorLight: channelsMetaData[slotChannel].colorLight,
-        verticalOffset: 0,
-        verticalScale: 1,
-        verticalOffsetRelativeCursorPosition: 395,
-        //these attributes are specific to generated signals from a function
-        originChannel1: channel1,
-        originChannel2: channel2,//none if operation does not require 2 channels
-        operation: operation,
-    };
-
-    //Here we set the button styles to make it show up as available
-    channelButton = document.getElementById(slotChannel);
-
-    channelButton.classList.remove("channel-not-displayed");
-    channelButton.classList.add("channel-displayed");
-    channelButton.classList.add(channelData[slotChannel].colorDark);
-
-    //we update the global config to reflect the new channel
-    config.numChannels += 1;
-};
-
-function toggleMeasurement(measureKey, buttonId) {
-    let measure = autoMeasureOptions[measureKey];
-    if (measure) {
-        measure.set = !measure.set; // Toggle the 'set' value
-        //change button class depending on wether the measure is set or not
-        document.getElementById(buttonId).className = measure.set ? 'modal-measure-button active-measure-button' : 'modal-measure-button inactive-measure-button';
-        console.log(`${measureKey} set to ${measure.set}`);
-    }
-};
-
-function resetMeasurements(){
-    try{
-        autoMeasureOptions.associatedChannel = "CH1";
-        Object.keys(autoMeasureOptions).forEach(key => {
-            if (key !== "associatedChannel") {
-                autoMeasureOptions[key].set = false;
-                autoMeasureOptions[key].value = null;
-                document.querySelectorAll('.modal-measure-button').forEach(button => {
-                    button.className = 'modal-measure-button inactive-measure-button';
-                });
-            }
-        });
-        document.getElementById("selectChannel").value = "CH1";
-    
-        showToast("Auto Measurements values reset !", "toast-info");
-    } catch (error) {
-        console.error('Failed to reset measurements', error);
-        showToast("Error while resetting the measurements..", "toast-error");
-    }
-};
-
-function populateModalForMeasure_AUTO(){
-    let modalContentDiv = document.getElementById("modal-generated-content");
-
-    const channelOptions = [];
-    Object.keys(channelData).forEach(key => {
-        let channelNumber = parseInt(key.substring(2), 10)
-        channelOptions.push({value: key, text: "Channel " + channelNumber});
-    });
-
-    const measureOptions = [
-        {text: "Min", varKey: "min", id: "minButton", onClick: () => { toggleMeasurement('min', "minButton"); }},
-        {text: "Max", varKey: "max", id: "maxButton", onClick: () => { toggleMeasurement('max', "maxButton") }},
-        {text: "Vpp", varKey: "vpp", id: "vppButton", onClick: () => { toggleMeasurement('vpp', "vppButton") }},
-        {text: "Avg", varKey: "mean", id: "avgButton", onClick: () => { toggleMeasurement('mean', "avgButton") }},
-        {text: "RMS", varKey: "rms", id: "rmsButton", onClick: () => { toggleMeasurement('rms', "rmsButton") }},
-        {text: "F Avg", varKey: "freq", id: "freqButton", onClick: () => { toggleMeasurement('freq', "freqButton") }},
-        {text: "High", varKey: "highFreq", id: "highButton", onClick: () => { toggleMeasurement('highFreq', "highButton") }},
-        {text: "Low", varKey: "lowFreq", id: "lowButton", onClick: () => { toggleMeasurement('lowFreq', "lowButton") }},
-        {text: "Mid", varKey: "mid", id: "midButton", onClick: () => { toggleMeasurement('mid', "midButton") }},
-    ];
-
-    const title = document.createElement("h5");
-    title.innerHTML = "Auto Measurements";
-    modalContentDiv.appendChild(title);
-
-    const container1 = document.createElement("span");
-
-    const label1 = document.createElement("label");
-    label1.textContent = "Channel : ";
-    container1.appendChild(label1);
-
-    const selectChannel = createSelect(channelOptions);
-    selectChannel.id = "selectChannel";
-    selectChannel.value = autoMeasureOptions.associatedChannel;
-    container1.appendChild(selectChannel);
-
-    selectChannel.addEventListener("change", function(){
-        autoMeasureOptions.associatedChannel = selectChannel.value;
-    });
-
-    modalContentDiv.appendChild(container1);
-
-    const buttonContainer = document.createElement("span");
-    buttonContainer.id = "buttonContainer";
-
-    measureOptions.forEach(option => {
-        const button = document.createElement("button");
-        button.textContent = option.text;
-        button.id = option.id;
-        button.classList.add("modal-measure-button");
-        button.addEventListener("click", option.onClick);
-        buttonContainer.appendChild(button);
-
-        //set the buttons green if this measure is set
-        if (autoMeasureOptions[option.varKey].set) {
-            button.className = 'modal-measure-button active-measure-button';
-        }else{
-            button.className = 'modal-measure-button inactive-measure-button';
-        }
-    });
-
-    modalContentDiv.appendChild(buttonContainer);
-
-    const resetButton = document.createElement("button");
-    resetButton.textContent = "RESET";
-    resetButton.id = "resetButton";
-    resetButton.classList.add("modal-measure-button");
-
-    resetButton.addEventListener("click", function(){
-        resetMeasurements();
-    });
-
-    const autoSwitchButton = document.createElement("button");
-    autoSwitchButton.textContent = "← Math Functions";
-    autoSwitchButton.id = "autoSwitchButton";
-    autoSwitchButton.classList.add("modal-measure-button");
-
-    autoSwitchButton.addEventListener("click", function(){
-        console.log("switch to Math functions")
-        clearModal();
-        populateModalForMeasure_MATHS();
-    });
-
-    modalContentDiv.appendChild(resetButton);
-    modalContentDiv.appendChild(autoSwitchButton);
-};
-
-function populateModalForTrigger(){
-    console.log("Trigger settings : ", triggerOptions);
-    let modalContentDiv = document.getElementById("modal-generated-content");
-
-    const triggerOnOffOptions = [
-        {value: "off", text: "Off"},
-        {value: "on", text: "On"},
-    ]
-
-    const triggerModeOptions = [
-        {value: "edge", text: "Edge-Trigger"},
-        {value: "window", text: "Window-Trigger"},
-    ]
-
-    const triggerChannelOptions = [];
-    Object.keys(channelData).forEach(key => {
-        let channelNumber = parseInt(key.substring(2), 10)
-        triggerChannelOptions.push({value: key, text: "Channel " + channelNumber});
-    });
-
-    const triggerSlopeOptions = [
-        {value: "both", text: "Both"},
-        {value: "rising", text: "Rising"},
-        {value: "falling", text: "Falling"},
-    ]
-
-    const title = document.createElement("h5");
-    title.innerHTML = "Trigger options";
-    modalContentDiv.appendChild(title);
-
-    const label1 = document.createElement("label"); //Trigger on/off
-    label1.textContent = "Trigger on/off";
-    modalContentDiv.appendChild(label1);
-
-    const selectOnOffStatus = createSelect(triggerOnOffOptions);
-    selectOnOffStatus.id = "selectOnOffStatus";
-    selectOnOffStatus.value = triggerOptions.isTriggerOn;
-    modalContentDiv.appendChild(selectOnOffStatus);
-
-    const label2 = document.createElement("label"); //Trigger mode
-    label2.textContent = "Trigger mode";
-    modalContentDiv.appendChild(label2);
-
-    const selectTriggerMode = createSelect(triggerModeOptions);
-    selectTriggerMode.id = "selectTriggerMode";
-    selectTriggerMode.value = triggerOptions.triggerMode;
-    modalContentDiv.appendChild(selectTriggerMode);
-
-    const label3 = document.createElement("label"); //Trigger channel
-    label3.textContent = "Trigger channel";
-    modalContentDiv.appendChild(label3);
-
-    const selectTriggerChannel = createSelect(triggerChannelOptions);
-    selectTriggerChannel.id = "selectTriggerChannel";
-    selectTriggerChannel.value = triggerOptions.triggerChannel;
-    modalContentDiv.appendChild(selectTriggerChannel);
-
-    const label4 = document.createElement("label"); //Trigger slope
-    label4.textContent = "Trigger slope";
-    modalContentDiv.appendChild(label4);
-
-    const selectTriggerSlope = createSelect(triggerSlopeOptions);
-    selectTriggerSlope.id = "selectTriggerSlope";
-    selectTriggerSlope.value = triggerOptions.triggerSlope;
-    modalContentDiv.appendChild(selectTriggerSlope);
-
-
-    const label5 = document.createElement("label"); //Trigger level
-    label5.textContent = "Trigger level (mV)";
-    modalContentDiv.appendChild(label5);
-
-    const TriggerLevelInput = document.createElement("input");
-    TriggerLevelInput.type = "number";
-    TriggerLevelInput.min = -(config.voltage / 2) * 1000;
-    TriggerLevelInput.max = (config.voltage / 2) * 1000;
-    TriggerLevelInput.value = triggerOptions.triggerLevel;
-    TriggerLevelInput.classList.add("modal-select-trigger");
-    TriggerLevelInput.id = "TriggerLevelInput";
-    modalContentDiv.appendChild(TriggerLevelInput);
-
-    const label6 = document.createElement("label"); //Window level min
-    label6.textContent = "Window level min (mV)";
-    modalContentDiv.appendChild(label6);
-
-    const WindowLevelMinInput = document.createElement("input");
-    WindowLevelMinInput.type = "number";
-    WindowLevelMinInput.min = -(config.voltage / 2) * 1000;
-    WindowLevelMinInput.max = (config.voltage / 2) * 1000;
-    WindowLevelMinInput.value = triggerOptions.windowLevelMin;
-    WindowLevelMinInput.classList.add("modal-select-trigger");
-    WindowLevelMinInput.id = "WindowLevelMinInput";
-    modalContentDiv.appendChild(WindowLevelMinInput);
-
-    const label7 = document.createElement("label"); //Window level max
-    label7.textContent = "Window level max (mV)";
-    modalContentDiv.appendChild(label7);
-
-    const WindowLevelMaxInput = document.createElement("input");
-    WindowLevelMaxInput.type = "number";
-    WindowLevelMaxInput.min = -(config.voltage / 2) * 1000;
-    WindowLevelMaxInput.max = (config.voltage / 2) * 1000;
-    WindowLevelMaxInput.value = triggerOptions.windowLevelMax;
-    WindowLevelMaxInput.classList.add("modal-select-trigger");
-    WindowLevelMaxInput.id = "WindowLevelMaxInput";
-    modalContentDiv.appendChild(WindowLevelMaxInput);
-
-    if (triggerOptions.triggerMode == "edge"){
-        WindowLevelMinInput.disabled = true;
-        WindowLevelMaxInput.disabled = true;
-        TriggerLevelInput.disabled = false;
-    }else{
-        WindowLevelMinInput.disabled = false;
-        WindowLevelMaxInput.disabled = false;
-        TriggerLevelInput.disabled = true;
-    }
-
-    selectTriggerMode.addEventListener("change", function(){
-        console.log("Trigger mode changed to : ", selectTriggerMode.value);
-        if (selectTriggerMode.value === "edge"){
-            WindowLevelMinInput.disabled = true;
-            WindowLevelMaxInput.disabled = true;
-            TriggerLevelInput.disabled = false;
-        } else if (selectTriggerMode.value === "window"){
-            WindowLevelMinInput.disabled = false;
-            WindowLevelMaxInput.disabled = false;
-            TriggerLevelInput.disabled = true;
-        }
-    });
-
-    const label8 = document.createElement("label"); //Hold off
-    label8.textContent = "Hold off (s)";
-    modalContentDiv.appendChild(label8);
-
-    const holdOffInput = document.createElement("input");
-    holdOffInput.type = "number";
-    holdOffInput.min = 0;
-    holdOffInput.max = 3600;
-    holdOffInput.value = triggerOptions.holdOff;
-    holdOffInput.classList.add("modal-select-trigger");
-    holdOffInput.id = "holdOffInput";
-    modalContentDiv.appendChild(holdOffInput);
-
-    const button = document.createElement("button");// SAVE CHANGES
-    button.textContent = "Apply Trigger Settings";
-    button.classList.add("modal-trigger-button");
-    modalContentDiv.appendChild(button);
-
-    button.addEventListener("click", function(){
-        updateTriggerSettings(modalContentDiv);
-        hideModal();
-    });
-};
-
-function updateTriggerSettings(modalElement){
-    console.log("Updating trigger settings");
-    console.log(modalElement);
-
-    triggerOptions.isTriggerOn = modalElement.querySelector("#selectOnOffStatus").value;
-    triggerOptions.triggerMode = modalElement.querySelector("#selectTriggerMode").value;
-    triggerOptions.triggerChannel = modalElement.querySelector("#selectTriggerChannel").value;
-    triggerOptions.triggerLevel = modalElement.querySelector("#TriggerLevelInput").value;
-    triggerOptions.windowLevelMin = modalElement.querySelector("#WindowLevelMinInput").value;
-    triggerOptions.windowLevelMax = modalElement.querySelector("#WindowLevelMaxInput").value;
-    triggerOptions.triggerSlope = modalElement.querySelector("#selectTriggerSlope").value;
-    triggerOptions.holdOff = modalElement.querySelector("#holdOffInput").value;
-
-    showToast("Trigger settings updated !", "toast-info");
-};
-
-//converts a voltage to the equivalent absolute raw value of a 14-bit ADC
-function mapVoltageToRaw(voltage) {
-    return (voltage + 1.1) / 2.2 * 16383;
-};
-
-function getMedian(array){
-    let total = 0;
-    for (let i = 0; i < array.length; i++){
-        total = total + array[i];
-    }
-    return total / array.length
-};
+/*
+╔══════════════════════════════════════════════════════╗
+║                    TRIGGER FUNCTION                  ║
+╚══════════════════════════════════════════════════════╝
+*/
 
 function triggerCheck(channelPoints){
     let isTriggerValueReached = false;
@@ -1989,6 +2315,12 @@ function triggerCheck(channelPoints){
     }
 };
 
+/*
+╔══════════════════════════════════════════════════════╗
+║                    AUTOSET FUNCTION                  ║
+╚══════════════════════════════════════════════════════╝
+*/
+
 function autoset(){
     function updateCursorPosition(channel) {
         let totalHeight = document.getElementById("scroll-bar").clientHeight - scroller.clientHeight;
@@ -2001,8 +2333,6 @@ function autoset(){
         if (channel.focused){document.getElementById("scroller").style.top = newY + 'px';};
         channel.verticalOffsetRelativeCursorPosition = newY;
     }
-    
-    console.log("Autoset function called ! ");
 
     //We start by making sure everything is horizontally aligned.
     if (horizontalOffset != 0){
@@ -2017,7 +2347,7 @@ function autoset(){
     //Now we check every single channel to see if it is fitted within the window or not.
     Object.keys(channelData).forEach(key => {
         if (channelData[key].display == true && channelData[key].operation != "fft"){
-            console.log(`Autosetting this channel [${key}], is displayed and no fft`);
+            // console.log(`Autosetting this channel [${key}], is displayed and no fft`);
 
             const channel = channelData[key];
             const highestValuePoint = Math.max(...channel.points);
@@ -2032,11 +2362,11 @@ function autoset(){
 
                 //check wether the signal is clipping or not
                 if (previewedYPositionHighestPoint < 0 || previewedYPositionLowestPoint > CANVAS.height){
-                    console.log("Signal is clipping ! ");
+                    // console.log("Signal is clipping ! ");
                     
                     //See if it is possible to simply adjust the offset to make the signal fit
                     if (previewedYPositionHighestPoint < 0 && previewedYPositionLowestPoint > CANVAS.height){
-                        console.log("Can't simply adjust the offset, signal is clipping through both ends !");
+                        // console.log("Can't simply adjust the offset, signal is clipping through both ends !");
                         if (channel.verticalScale > 1){
                             channel.verticalScale = channel.verticalScale - 1;
                         }else{
@@ -2047,11 +2377,11 @@ function autoset(){
                         }
                     //If the signal is clipping through the top of the screen
                     }else if (previewedYPositionHighestPoint < 0){
-                        console.log("Signal is clipping through the top of the screen.")
+                        // console.log("Signal is clipping through the top of the screen.")
                         if (channel.verticalOffset != 0 && adjustementsCounter < 3){//CHANGE 3 TO 5 ONCE SCALING IS FUNCTIONNAL
                             //We first try to offset the signal to make it fit
                             // we add 100 px to the offset every loop max 5 times
-                            console.log("Adding 100 px to offset");
+                            // console.log("Adding 100 px to offset");
                             channel.verticalOffset += 100;
                             updateCursorPosition(channel);
                         }else {
@@ -2067,16 +2397,16 @@ function autoset(){
                         }
                     //If the signal is clipping through the bottom of the screen
                     }else if (previewedYPositionLowestPoint > CANVAS.height){
-                        console.log("Signal is clipping through the bottom of the screen.")
+                        // console.log("Signal is clipping through the bottom of the screen.")
                         if (channel.verticalOffset != 0 && adjustementsCounter < 3){//CHANGE 3 TO 5 ONCE SCALING IS FUNCTIONNAL
                             //We first try to offset the signal to make it fit
                             // we remove 100 px to the offset every loop max 5 times
-                            console.log("Removing 100 px to offset");
+                            // console.log("Removing 100 px to offset");
                             channel.verticalOffset -= 100;
                             updateCursorPosition(channel);
                         }else {
                             //If the signal is already without any offset, we scale it back
-                            console.log("Changing the offset did not work, scaling back..");
+                            // console.log("Changing the offset did not work, scaling back..");
                             if (channel.verticalScale > 1){
                                 channel.verticalScale = channel.verticalScale - 1;
                             }else{
@@ -2088,7 +2418,7 @@ function autoset(){
                         }
                     }
                 }else{
-                    console.log("No clipping detected.")
+                    // console.log("No clipping detected.")
                     isSignalClipping = false;
                     break;
                 }
@@ -2096,4 +2426,25 @@ function autoset(){
             }
         };
     });
+};
+
+/*
+╔══════════════════════════════════════════════════════╗
+║                     MISC / GENERAL                   ║
+╚══════════════════════════════════════════════════════╝
+*/
+function showToast(message, status) {
+    let toast = document.getElementById("toast");
+    toast.innerHTML = message;
+    toast.className = "";
+    toast.classList.add("show", status);
+    setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+};
+
+function getMedian(array){
+    let total = 0;
+    for (let i = 0; i < array.length; i++){
+        total = total + array[i];
+    }
+    return total / array.length
 };

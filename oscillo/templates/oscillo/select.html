@@ -30,12 +30,12 @@
         <p>Enter here the values you expect to receive from the stare cards.</p>
         <p>Please make sur to enter the right informations or else the result of the signals displayed won't be accurate.</p>
         <p>N.B: You can change these values at any moment once on the oscilloscope screen by clicking the button 'SETTINGS'</p>
-
+        
         <hr>
 
         <form method="post">
             {% csrf_token %}
-            <div>
+            <div class="toggle-visibility">
                 {{ form.mode.label}}
                 {{ form.mode }}
             </div>
