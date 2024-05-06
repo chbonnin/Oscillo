@@ -177,8 +177,13 @@ aside{
 
     position: relative;
     top: 395px;
+
+    cursor: grab;
 }
 
+#scroller:active{
+    cursor: grabbing;
+}
 
 #sub-div-horizontal-offset{
     display: flex;
@@ -200,17 +205,23 @@ aside{
 
 #scroller-Horizontal{
     height: 20px;
-    width: 10px;
+    width: 20px;
 
-    border-bottom-left-radius: 90%;
-    border-bottom-right-radius: 90%;
-
-    background-color: gray;
+    background-image: url("./triangle.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    transform: rotate(180deg);
 
     position: absolute;
-    left: 595px;
+    left: 590px;
 
     z-index: 10000;
+
+    cursor: grab;
+}
+
+#scroller-Horizontal:active{
+    cursor: grabbing;
 }
 
 .vertical-scrollers{
@@ -218,11 +229,25 @@ aside{
     width: 10px;
     border-bottom-left-radius: 90%;
     border-bottom-right-radius: 90%;
-    background-color: red;
     position: absolute;
 
+    cursor: grab;
+}
+
+.vertical-scrollers:active{
+    cursor: grabbing;
+}
+
+#vertical-scroller-A{
+    background-color: red;
+    z-index: 1500;
+}
+
+#vertical-scroller-B{
+    background-color: crimson;
     z-index: 1000;
 }
+
 
 #info-display-oscilloscope{
     display: flex;
@@ -886,4 +911,37 @@ aside{
 }
 
 
+#scroll-bar-horizontal-cursors{
+    width: 20px;
+    background-color: black;
+    height: 800px;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    
+    position: relative;
+}
+
+#scroller-horizontal-A, #scroller-horizontal-B{
+    height: 10px;
+    width: 20px;
+    border-bottom-left-radius: 90%;
+    border-top-left-radius: 90%;
+    position: absolute;
+
+    cursor: grab;
+}
+
+#scroller-horizontal-A:active, #scroller-horizontal-B:active{
+    cursor: grabbing;
+}
+
+#scroller-horizontal-A{
+    background-color: orange;
+}
+
+#scroller-horizontal-B{
+    background-color: darkorange;
+}
 

@@ -79,7 +79,7 @@ class Main(TemplateView):
         if not self.sock:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.bind(("127.0.0.1", 7888))
-            self.sock.settimeout(3000)
+            self.sock.settimeout(1)
             print("bound")
 
         try:
@@ -138,9 +138,16 @@ class Main(TemplateView):
             return HttpResponse(f"An error occured : {str(E)}", status=500)
             
 
-    def getContinousData(self, request):
-        #tbd
-        pass
+    def getRawData(self, request):
+        if not self.sock:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock.bind(("127.0.0.1", 7777))
+            self.sock.settimeout(1)
+            print("bound")
+
+        data, adr = self.sock.recvfrom(8192)
+        print("received", len(data))
+        return HttpResponse(data)
 
 
 def get_user_favorite_colors(request):

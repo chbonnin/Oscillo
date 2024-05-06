@@ -4,7 +4,6 @@
 ╚══════════════════════════════════════════════════════╝
 */
 
-
 let config = {//Used to handle the configuration of the server, in case it changes we can update it here
     numChannels: null,  // How many channels are expected. update if server configuration changes
     frequency: null,
@@ -14,6 +13,7 @@ let config = {//Used to handle the configuration of the server, in case it chang
     verticalDivisions: 16,
     horizontalDivisions: 20,
     mode: null,
+    maxSampleValue: null,
 };
 
 let triggerOptions = {
@@ -31,7 +31,7 @@ let cursorOptions = {
     isVerticalCursorOn: "false",
     isHorizontalCursorOn: "false",
     cursorsValueDisplay: "oncursor", // oncursor (default) / indisplay
-    horizontalAPoistion: 266,//value in pixels
+    horizontalAPosition: 266,//value in pixels
     horizontalBPosition: 533,//value in pixels
     verticalAPosition: 400,//value in pixels
     verticalBPosition: 800,//value in pixels
@@ -56,7 +56,7 @@ let channelData = {}; //This dictionnary holds the data for each channel includi
 let horizontalOffset = 0;
 let horizontalScale = 50;
 
-let loopDelay = 100//ms
+let loopDelay = 500//ms
 let isRunning = false;
 let triggered = false;
 let triggerClock = 0;
@@ -104,8 +104,16 @@ function getCurrentSettings(){
         config.numChannels = settings.channels;
         config.frequency = settings.freq;
         config.samplesPerFrame = settings.nb;
-        config.voltage = settings.voltage;
+        config.voltage = parseInt(settings.voltage);
         config.bitsPerSample = settings.bits;
+
+        if (config.mode == "FILE"){
+            config.maxSampleValue = 16383;
+        }else if(config.mode == "REAL-TIME"){
+            config.maxSampleValue = 65535;
+        }else if(config.mode == "FAKE-STARE"){
+            config.maxSampleValue = 16383;
+        }
 
         console.log("Updated config:", config);
 
@@ -131,7 +139,7 @@ function getCurrentSettings(){
             channel_button.classList.add(channelData['CH' + ch].colorDark);
         }
     }
-}
+};
 
 function fetchData(){
     const Http = new XMLHttpRequest();
@@ -195,7 +203,7 @@ function fetchData(){
     }
 
     Http.send();
-}
+};
 
 function fetchDataFromFile(){
     // console.log("fetchDataFromFile starts");
@@ -216,8 +224,6 @@ function fetchDataFromFile(){
                 channelData[key].points = Http.response[channelNumber + 1];   
             });
 
-            config.samplesPerFrame = Http.response[2].length//We take the number of samples for ch.1 bc logically they all have the same amount given the .osc format
-        
             clearCanvas();
             drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
             if (cursorOptions.isVerticalCursorOn == "true" || cursorOptions.isHorizontalCursorOn == "true"){
@@ -260,7 +266,77 @@ function fetchDataFromFile(){
 
     Http.send();
     // console.log("fetchDataFromFile ends");
-}
+};
+
+function fetchRawData(){
+    const Http = new XMLHttpRequest();
+    Http.responseType = 'arraybuffer';
+
+    Http.open("GET", '/oscillo/dataR/', true);
+
+    Http.onload = function(event) {
+        if (Http.status === 200) {
+            const buffer = Http.response;
+            const dataView = new DataView(buffer);
+            const bytesPerSample = 2; // Each sample is 2 bytes (Uint16) altough this may change depending on the server's settings !!
+            const totalSamples = dataView.byteLength / bytesPerSample; // Total samples in all channels
+    
+            // console.log(`THis data is made up of ${totalSamples} samples`);
+            // console.log("Here below should be the dataView created from the received data : ");
+            // console.log(dataView);
+
+            clearCanvas();
+            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+            if (cursorOptions.isVerticalCursorOn == "true" || cursorOptions.isHorizontalCursorOn == "true"){
+                drawCursors();
+            }
+
+            // Clear the channel data before parsing the new data
+            Object.keys(channelData).forEach(key => {
+                channelData[key].points = [];
+            });
+
+            // Parse buffer into channel data
+            for (let i = 0; i < totalSamples; i++) {
+                let channelNum = (i % config.numChannels) + 1;
+                let channelKey = 'CH' + channelNum;
+                let pointIndex = i * bytesPerSample;
+                let point = dataView.getUint16(pointIndex, true);
+                channelData[channelKey].points.push(point);
+            }
+
+            Object.keys(channelData).forEach(key => {
+                //we have to use some sort of a filter to remove the trigger points or whatever is causing these massive spikes.
+                const thresholdRatio = 3;
+                channelData[key].points = removeSpikes(channelData[key].points, thresholdRatio);
+
+                //Here we generate the points array for the math signals
+                if (channelData[key].type == "generatedData"){
+                    generatePoints(key);
+                }
+
+                // Here we display the signal on the screen (if the button for this channel is active)
+                if (channelData[key].display === true){
+                    if (channelData[key].type == "generatedData" && channelData[key].operation == "fft"){
+                        drawFFT(key);
+                    } else {
+                        drawSignalFromFile(key);
+                    }
+                }
+            });
+
+
+        } else {
+            console.error("The request failed unexpectedly ->", Http.statusText);
+        }
+    }
+
+    Http.onerror = function() {
+        console.log("An error occured while fetching the data");
+    }
+
+    Http.send();
+};
 
 /*
 ╔══════════════════════════════════════════════════════╗
@@ -494,6 +570,8 @@ function MAINLOOP(){
                     fetchDataFromFile();
                 }else if(config.mode == "FAKE-STARE"){
                     fetchData();
+                }else if (config.mode == "REAL-TIME"){
+                    fetchRawData();
                 }
                 setScreenInformation();
             }else if(triggered){
@@ -551,63 +629,124 @@ function clearCanvas(){
 
 function drawCursors(){
     const ctx = CANVAS.getContext('2d');
-    const scrollerA = document.getElementById("vertical-scroller-A");
-    const scrollerB = document.getElementById("vertical-scroller-B");
 
-    ctx.setLineDash([12, 8]);/*dashes are 12px and spaces are 8px*/
-    ctx.strokeStyle = 'red';
-    ctx.lineWidth = 2;
-    ctx.globalAlpha = 0.6;
-    ctx.font = "bold 18px Arial";
-    ctx.fillStyle = 'red';
-
-    //draw first line
-    ctx.beginPath();
-    ctx.moveTo(cursorOptions.verticalAPosition, 0);
-    ctx.lineTo(cursorOptions.verticalAPosition, CANVAS.height);
-    const cursorATime = getTimeForACursor(cursorOptions.verticalAPosition)
-    const text = `${cursorATime.value} ${cursorATime.scale}`;
-    ctx.fillText(text, cursorOptions.verticalAPosition + 10, 50);
-    ctx.stroke();
-
-
-    //draw second line
-    ctx.beginPath();
-    ctx.moveTo(cursorOptions.verticalBPosition, 0);
-    ctx.lineTo(cursorOptions.verticalBPosition, CANVAS.height);
-    const cursorBTime = getTimeForACursor(cursorOptions.verticalBPosition)
-    const text2 = `${cursorBTime.value} ${cursorBTime.scale}`;
-    ctx.fillText(text2, cursorOptions.verticalBPosition - 70, 50);
-    ctx.stroke();
-
-    //draw perpendicular line
-    ctx.beginPath();
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.5;
-    ctx.fillStyle = 'white';
+    if (cursorOptions.isVerticalCursorOn == "true"){
+        ctx.setLineDash([12, 8]);/*dashes are 12px and spaces are 8px*/
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.6;
+        ctx.font = "bold 18px Arial";
+        ctx.fillStyle = 'red';
     
-
-
-    let pixelsBetweenCursors;
-    if (cursorOptions.verticalAPosition > cursorOptions.verticalBPosition){
-        pixelsBetweenCursors = cursorOptions.verticalAPosition - cursorOptions.verticalBPosition;
-    }else{
-        pixelsBetweenCursors = cursorOptions.verticalBPosition - cursorOptions.verticalAPosition;
-    }
-    const timeBetweenCursors = getTimeBetweenCursors(pixelsBetweenCursors);
-
-    const text3 = `Δ ${timeBetweenCursors.value} ${timeBetweenCursors.scale}`;
-    let X = (cursorOptions.verticalAPosition + cursorOptions.verticalBPosition) / 2;
-    let Y = CANVAS.height * 0.80 - 10;
-    ctx.fillText(text3, X -80, Y);
+        //draw first line
+        ctx.beginPath();
+        ctx.moveTo(cursorOptions.verticalAPosition, 0);
+        ctx.lineTo(cursorOptions.verticalAPosition, CANVAS.height);
+        const cursorATime = getTimeForACursor(cursorOptions.verticalAPosition)
+        const text = `${cursorATime.value} ${cursorATime.scale}`;
+        ctx.fillText(text, cursorOptions.verticalAPosition + 10, 50);
+        ctx.stroke();
     
-    ctx.setLineDash([8, 4]);
-    ctx.moveTo(Math.min(cursorOptions.verticalAPosition, cursorOptions.verticalBPosition), CANVAS.height * 0.80);
-    ctx.lineTo(Math.max(cursorOptions.verticalAPosition, cursorOptions.verticalBPosition), CANVAS.height * 0.80);
-    ctx.stroke();
+        ctx.strokeStyle = 'crimson';
+        ctx.fillStyle = 'crimson';
 
-    ctx.setLineDash([]);
+        //draw second line
+        ctx.beginPath();
+        ctx.moveTo(cursorOptions.verticalBPosition, 0);
+        ctx.lineTo(cursorOptions.verticalBPosition, CANVAS.height);
+        const cursorBTime = getTimeForACursor(cursorOptions.verticalBPosition)
+        const text2 = `${cursorBTime.value} ${cursorBTime.scale}`;
+        ctx.fillText(text2, cursorOptions.verticalBPosition - 70, 50);
+        ctx.stroke();
+    
+        //draw perpendicular line
+        ctx.beginPath();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = 'white';
+        
+    
+    
+        let pixelsBetweenCursors;
+        if (cursorOptions.verticalAPosition > cursorOptions.verticalBPosition){
+            pixelsBetweenCursors = cursorOptions.verticalAPosition - cursorOptions.verticalBPosition;
+        }else{
+            pixelsBetweenCursors = cursorOptions.verticalBPosition - cursorOptions.verticalAPosition;
+        }
+        const timeBetweenCursors = getTimeBetweenCursors(pixelsBetweenCursors);
+    
+        const text3 = `Δ ${timeBetweenCursors.value} ${timeBetweenCursors.scale}`;
+        let X = (cursorOptions.verticalAPosition + cursorOptions.verticalBPosition) / 2;
+        let Y = CANVAS.height * 0.80 - 10;
+        ctx.fillText(text3, X -80, Y);
+        
+        ctx.setLineDash([8, 4]);
+        ctx.moveTo(Math.min(cursorOptions.verticalAPosition, cursorOptions.verticalBPosition), CANVAS.height * 0.80);
+        ctx.lineTo(Math.max(cursorOptions.verticalAPosition, cursorOptions.verticalBPosition), CANVAS.height * 0.80);
+        ctx.stroke();
+    
+        ctx.setLineDash([]);
+    };
+
+    if (cursorOptions.isHorizontalCursorOn == "true"){
+        ctx.setLineDash([12, 8]);
+        ctx.strokeStyle = 'orange';
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.6;
+        ctx.font = "bold 18px Arial";
+        ctx.fillStyle = 'orange';
+
+        //draw first line
+        ctx.beginPath();
+        ctx.moveTo(0, cursorOptions.horizontalAPosition); // Move to the left edge of the canvas at a specific horizontal position
+        ctx.lineTo(CANVAS.width, cursorOptions.horizontalAPosition); // Draw line to the right edge of the canvas
+        const MvCursorA = getMilliVoltForACursor(cursorOptions.horizontalAPosition);
+        const text = `${MvCursorA.value} ${MvCursorA.scale}`;
+        ctx.fillText(text, CANVAS.width - 100, cursorOptions.horizontalAPosition -10); // Adjust text position to follow the line
+        ctx.stroke();
+    
+        ctx.strokeStyle = 'darkorange';
+        ctx.fillStyle = 'darkorange';
+
+        //draw second line
+        ctx.beginPath();
+        ctx.moveTo(0, cursorOptions.horizontalBPosition); // Move to the left edge of the canvas at another specific horizontal position
+        ctx.lineTo(CANVAS.width, cursorOptions.horizontalBPosition); // Draw line to the right edge of the canvas
+        const MvCursorB = getMilliVoltForACursor(cursorOptions.horizontalBPosition);
+        const text2 = `${MvCursorB.value} ${MvCursorB.scale}`;
+        ctx.fillText(text2, CANVAS.width - 100, cursorOptions.horizontalBPosition + 22); // Adjust text position to follow the line, slightly offset vertically
+        ctx.stroke();
+
+
+        // Draw perpendicular line
+        ctx.beginPath();
+        ctx.strokeStyle = 'whitesmoke';
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = 'whitesmoke';
+
+        let pixelsBetweenCursors;
+        if (cursorOptions.horizontalAPosition > cursorOptions.horizontalBPosition){
+            pixelsBetweenCursors = cursorOptions.horizontalAPosition - cursorOptions.horizontalBPosition;
+        }else{
+            pixelsBetweenCursors = cursorOptions.horizontalBPosition - cursorOptions.horizontalAPosition;
+        }
+
+        const milliVoltsBetweenCursors = getMillivoltsBetweenCursors(pixelsBetweenCursors);
+
+        const text3 = `Δ ${milliVoltsBetweenCursors.value} ${milliVoltsBetweenCursors.scale}`;
+        let Y = (cursorOptions.horizontalAPosition + cursorOptions.horizontalBPosition) / 2;
+        let X = CANVAS.width * 0.10 + 10;
+        ctx.fillText(text3, X, Y);
+
+        ctx.setLineDash([8, 4]);
+        ctx.moveTo(CANVAS.width * 0.10, Math.min(cursorOptions.horizontalAPosition, cursorOptions.horizontalBPosition));
+        ctx.lineTo(CANVAS.width * 0.10, Math.max(cursorOptions.horizontalAPosition, cursorOptions.horizontalBPosition));
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+    };
 };
 
 function drawSignal(channelKey) {
@@ -658,7 +797,7 @@ function drawSignalFromFile(channelKey){
     const width = CANVAS.width;
     const height = CANVAS.height;
 
-    const maxSignalValue = 16383;  // Max value of the signal
+    const maxSignalValue = config.maxSampleValue;  // Max value of the signal
 
     // Calculate the scaling factors
     const verticalScale = height / maxSignalValue * channel.verticalScale;
@@ -729,7 +868,7 @@ function drawFFT(channelKey) {
 
                 if (x >= previousX + 200) {
                     previousX = x;
-                    const text = `${point.frequency.toFixed(0)} Hz`;
+                    const text = formatFrequency(point.frequency);
                     ctx.fillText(text, x, y - 60);
                 }
             }
@@ -787,6 +926,29 @@ function drawGrid(gridColor, opacity, thickerLineWidth) {
         ctx.stroke();
     }
 };
+
+function removeSpikes(points, thresholdRatio) {
+    const pointsAverage = points.reduce((a, b) => a + b, 0) / points.length;
+
+    function isSpike(point, index) {
+        let prev = points[index - 1] || pointsAverage;
+        let next = points[index + 1] || pointsAverage;
+        let localAverage = (prev + next) / 2;
+        let deviationFromLocalAverage = Math.abs(point - localAverage);
+        return deviationFromLocalAverage > thresholdRatio * Math.abs(localAverage - pointsAverage);
+    }
+
+    // Replace spikes with the average of their neighboring points
+    for (let i = 0; i < points.length; i++) {
+        if (isSpike(points[i], i)) {
+            let prev = points[i - 1] || pointsAverage;
+            let next = points[i + 1] || pointsAverage;
+            points[i] = (prev + next) / 2;
+        }
+    }
+
+    return points;
+}
 
 /*
 ╔══════════════════════════════════════════════════════╗
@@ -1329,7 +1491,7 @@ function populateModalForCursors(){
 
     selectHorizontal.addEventListener("change", function(){
         cursorOptions.isHorizontalCursorOn = this.value;
-
+        toggleDisplayForHorizontalCursorScrollers();
     });
 
     modalContentDiv.appendChild(container1);
@@ -1456,6 +1618,7 @@ function changeChannelButtonStatus(channelKey) {
 };
 
 let isVerticalMouseDownListenerSet = false;
+let isHorizontalMouseDownListenerSet = false;
 
 function toggleDisplayForVerticalCursorScrollers(){
     console.log(`Current value for 'cursorOptions.isVerticalCursorOn' : ${cursorOptions.isVerticalCursorOn} | Type : ${typeof cursorOptions.isVerticalCursorOn}`);
@@ -1476,7 +1639,7 @@ function toggleDisplayForVerticalCursorScrollers(){
             if (whichCursor == "A"){
                 cursorOptions.verticalAPosition = newX + ((parseInt(window.getComputedStyle(scrollerA).width)) / 2);
             }else{
-                cursorOptions.verticalBPosition = newX + ((parseInt(window.getComputedStyle(scrollerA).width)) / 2);
+                cursorOptions.verticalBPosition = newX + ((parseInt(window.getComputedStyle(scrollerB).width)) / 2);
             }
         };
     }
@@ -1529,8 +1692,76 @@ function toggleDisplayForVerticalCursorScrollers(){
     }
 };
 
-function toggleDisplayForVerticalCursorScrollers(){
+function toggleDisplayForHorizontalCursorScrollers(){
+    console.log(`Current value for 'cursorOptions.isHorizontalCursorOn' : ${cursorOptions.isHorizontalCursorOn} | Type : ${typeof cursorOptions.isHorizontalCursorOn}`);
 
+    const scrollerA = document.getElementById("scroller-horizontal-A");
+    const scrollerB = document.getElementById("scroller-horizontal-B");
+    const scrollBar = document.getElementById("scroll-bar-horizontal-cursors");
+    let isDragging = false;
+    let currentMoveListener = null;
+    let currentUpListener = null;
+
+    function onMouseMoveScrollerHorizontal(scroller, startY, whichCursor){
+        return function(event) {
+            let newY = event.clientY - startY;
+            newY = Math.max(newY, 0);
+            newY = Math.min(newY, scrollBar.clientHeight - scroller.clientHeight);
+            scroller.style.top = newY + 'px';
+            if (whichCursor == "A"){
+                cursorOptions.horizontalAPosition = newY + ((parseInt(window.getComputedStyle(scrollerA).height)) / 2);
+            }else{
+                cursorOptions.horizontalBPosition = newY + ((parseInt(window.getComputedStyle(scrollerA).height)) / 2);
+            }
+        };
+    };
+
+    function onMouseUpScrollerHorizontal(){
+        if (!isDragging) return;
+        isDragging = false;
+        console.log("Mouse released");
+
+        document.removeEventListener('mousemove', currentMoveListener);
+        document.removeEventListener('mouseup', currentUpListener);
+        currentMoveListener = null;
+        currentUpListener = null;
+    };
+
+    function setupDragListeners(scroller, whichCursor) {
+        scroller.addEventListener('mousedown', function(event) {
+            if (isDragging) return; // Prevents adding multiple listeners during an active drag
+            console.log("Mouse click on scroller", scroller.id);
+            isDragging = true;
+            let startY = event.clientY - scroller.getBoundingClientRect().top + scrollBar.getBoundingClientRect().top;
+
+            currentMoveListener = onMouseMoveScrollerHorizontal(scroller, startY, whichCursor);
+            currentUpListener = onMouseUpScrollerHorizontal;
+
+            document.addEventListener('mousemove', currentMoveListener);
+            document.addEventListener('mouseup', currentUpListener);
+        });
+    }
+
+    if (cursorOptions.isHorizontalCursorOn === "true"){
+        console.log("Show the scrollers for the horizontal cursors");
+        scrollerA.style.display = "block";
+        scrollerA.style.top = (cursorOptions.horizontalAPosition - (parseInt(window.getComputedStyle(scrollerA).height)) / 2) + "px";
+    
+        scrollerB.style.display = "block";
+        scrollerB.style.top = (cursorOptions.horizontalBPosition - (parseInt(window.getComputedStyle(scrollerB).height)) / 2) + "px";
+
+        if (!isHorizontalMouseDownListenerSet){
+            setupDragListeners(scrollerA, "A");
+            setupDragListeners(scrollerB, "B");
+        }
+
+        isHorizontalMouseDownListenerSet = true;
+    } else {
+        console.log("Hide the scrollers for the horizontal cursors");
+        // Hide scrollers (A & B)
+        scrollerA.style.display = "none";
+        scrollerB.style.display = "none";
+    }
 };
 
 /*
@@ -1573,7 +1804,7 @@ function getTimePerDiv() {
 
 //converts a voltage to the equivalent absolute raw value of a 14-bit ADC
 function mapVoltageToRaw(voltage) {
-    return (voltage + 1.1) / 2.2 * 16383;
+    return (voltage + (config.voltage / 2)) / config.voltage * config.maxSampleValue;
 };
 
 function getTimeBetweenCursors(pixelsBetweenCursors){
@@ -1585,6 +1816,44 @@ function getTimeBetweenCursors(pixelsBetweenCursors){
 
     const resultScaled = getTimeScale(TimeBetweenCursors);
     return resultScaled;
+};
+
+function getMillivoltsBetweenCursors(pixelsBetweenCursors){
+    //If a channel is focused then we get the mv/div of this one.
+    let result = {value: "No channel", scale: "selected"};
+
+    Object.keys(channelData).forEach(key => {
+        if(channelData[key].focused){
+            const sizeOfOneDivisionInPixels = CANVAS.height / config.verticalDivisions;
+            const milliVoltsPerDivision = getMilliVoltsPerDiv(channelData[key].verticalScale);
+            const milliVoltsBetweenCursors = (pixelsBetweenCursors / sizeOfOneDivisionInPixels) * milliVoltsPerDivision;
+            result =  {value: milliVoltsBetweenCursors.toFixed(1), scale: "mV"};
+        }
+    });
+    //If not, we just return "NA" until the user selects a certain channel. 
+    return result;
+};
+
+function getMilliVoltForACursor(cursorPosition){
+    let result = {value: "No channel", scale: "selected"};
+
+    Object.keys(channelData).forEach(key => {
+        if(channelData[key].focused){
+            const sizeOfOneDivisionInPixels = CANVAS.height / config.verticalDivisions;
+            const milliVoltsPerDivision = getMilliVoltsPerDiv(channelData[key].verticalScale);
+            if (cursorPosition == (CANVAS.height / 2)){
+                result = {value: "0", scale: "mV"};
+            }else if (cursorPosition > (CANVAS.height / 2)){//negative values
+                const cursorValue = ((cursorPosition - (CANVAS.height / 2)) / sizeOfOneDivisionInPixels) * milliVoltsPerDivision;
+                result = {value: -cursorValue.toFixed(1), scale: "mV"}
+            }else if (cursorPosition < (CANVAS.height / 2)){//positive values
+                const cursorValue = (((CANVAS.height / 2) - cursorPosition) / sizeOfOneDivisionInPixels) * milliVoltsPerDivision;
+                result = {value: cursorValue.toFixed(1), scale: "mV"}
+            }
+        }
+    });
+
+    return result;
 };
 
 function getTimeForACursor(cursorPosition){
@@ -1609,8 +1878,12 @@ function setScreenInformation(){
 
     Object.keys(channelData).forEach(key => {
         const voltsPerDiv = getMilliVoltsPerDiv(channelData[key].verticalScale);
-        let channelNumber = parseInt(key.substring(2), 10)
-        document.getElementById('mes-CH' + channelNumber).innerHTML = voltsPerDiv + ' mv/dv';
+        let channelNumber = parseInt(key.substring(2), 10);
+        if (voltsPerDiv > 1000){
+            document.getElementById('mes-CH' + channelNumber).innerHTML = (voltsPerDiv / 1000).toFixed(2) + ' V/dv';
+        }else{
+            document.getElementById('mes-CH' + channelNumber).innerHTML = voltsPerDiv + ' mv/dv';
+        }
         document.getElementById('mes-CH' + channelNumber).style.color = channelData[key].colorDark;
     });
 
@@ -1858,7 +2131,8 @@ function generatePoints(channelKey){
             return halfDisplayData;
         }
         //we have to fill the gaps in the array until the next power of 2 (required by the library)
-        channelData[channelKey].points = fillArrayToNextPowerOfTwo(channelData[originChannel1].points);
+        let tempOriginChannel = channelData[originChannel1];
+        channelData[channelKey].points = fillArrayToNextPowerOfTwo(tempOriginChannel.points);
         channelData[channelKey].points = calculateFFT(channelData[channelKey].points, config.frequency);
 
         channelData[channelKey].verticalScale = 2.5; // We set the vertical scale to 2.5 to make the fft thinner than other signals. This can still be modified by the user oc.
@@ -1916,7 +2190,7 @@ function generatePoints(channelKey){
 
 function calculateAutoMeasures(){
     //converts an absolute value (from 0 to 16383) to the corresponding voltage value (-1.1 to +1.1v or else if the config changes).
-    function voltage_from_raw(raw_value, max_raw=16383){
+    function voltage_from_raw(raw_value, max_raw=config.maxSampleValue){
         let voltage_range = [-(config.voltage/2), config.voltage/2]
         let span = voltage_range[1] - voltage_range[0]
         normalized = raw_value / max_raw
@@ -2337,7 +2611,7 @@ function autoset(){
     //We start by making sure everything is horizontally aligned.
     if (horizontalOffset != 0){
         horizontalOffset = 0;
-        document.getElementById("scroller-Horizontal").style.left = "595px";
+        document.getElementById("scroller-Horizontal").style.left = ((CANVAS.width / 2) - 10) + 'px';
     };
     if (horizontalScale != 50){
         horizontalScale = 50;
@@ -2357,8 +2631,8 @@ function autoset(){
             adjustementsCounter = 0;
 
             while (isSignalClipping && adjustementsCounter < 15) { //This gives a max of 5 offset adjustements and 10 scaling adjsutements. After which there's no point in trying to autoset.
-                previewedYPositionHighestPoint = ((CANVAS.height / 2) - ((highestValuePoint - 16383 / 2) * (CANVAS.height / 16383 * channel.verticalScale))) + channel.verticalOffset;
-                previewedYPositionLowestPoint = ((CANVAS.height / 2) - ((lowestValuePoint - 16383 / 2) * (CANVAS.height / 16383 * channel.verticalScale))) + channel.verticalOffset;
+                previewedYPositionHighestPoint = ((CANVAS.height / 2) - ((highestValuePoint - config.maxSampleValue / 2) * (CANVAS.height / config.maxSampleValue * channel.verticalScale))) + channel.verticalOffset;
+                previewedYPositionLowestPoint = ((CANVAS.height / 2) - ((lowestValuePoint - config.maxSampleValue / 2) * (CANVAS.height / config.maxSampleValue * channel.verticalScale))) + channel.verticalOffset;
 
                 //check wether the signal is clipping or not
                 if (previewedYPositionHighestPoint < 0 || previewedYPositionLowestPoint > CANVAS.height){
@@ -2448,3 +2722,14 @@ function getMedian(array){
     }
     return total / array.length
 };
+
+function formatFrequency(hertz) {
+    if (hertz < 1e3) {
+        return `${hertz} Hz`;
+    } else if (hertz < 1e6) {
+        return `${(hertz / 1e3).toFixed(1)} kHz`;
+    } else if (hertz < 1e9) {
+        return `${(hertz / 1e6).toFixed(1)} MHz`;
+    }
+}
+

@@ -42,7 +42,7 @@ class OscilloSettingsForm(forms.Form):
 
     channels = forms.IntegerField(
         label='Number of Channels : ',
-        initial=3,
+        initial=4,
         min_value=1,
         max_value=10,
         widget=forms.NumberInput(attrs={'placeholder': '3'}),
@@ -66,7 +66,7 @@ class OscilloSettingsForm(forms.Form):
     )
     voltage = forms.FloatField(
         label='Voltage (V) : ',
-        initial=10,
+        initial=2.2,
         min_value=0.1,
         max_value=50,
         widget=forms.NumberInput(attrs={'placeholder': 'Enter voltage in volts'}),
