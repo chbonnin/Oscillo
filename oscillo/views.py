@@ -9,6 +9,7 @@ import random
 import json
 import socket
 import pickle
+import sys
 
 #User-related imports
 from django.contrib.auth.models import User
@@ -17,6 +18,7 @@ from django.contrib.auth import login, logout, authenticate
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
 from .models import FavoriteColors
 from .forms import OscilloSettingsForm
+
 
 class Main(TemplateView):
     #This 'context' variable is what tells us what to expect before rendering the actual oscilloscope screen.
