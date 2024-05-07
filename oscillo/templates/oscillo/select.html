@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oscillo Settings</title>
     {% load static %}
+    <link rel="icon" type="image/png" href={% static "IMAGES/oscillo-icon.png" %}>
     <link rel="stylesheet" type="text/css" href={% static 'FILES/styles_settings.css' %}>
     <!-- BOOTSTRAP 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
@@ -32,42 +33,43 @@
         <p>N.B: You can change these values at any moment once on the oscilloscope screen by clicking the button 'SETTINGS'</p>
         
         <hr>
-
-        <form method="post">
-            {% csrf_token %}
-            <div class="toggle-visibility">
+        
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}    
+            <div>
                 {{ form.mode.label}}
                 {{ form.mode }}
             </div>
-            <div class="toggle-visibility">
+            <div class="settingsForm-elements">
                 {{ form.channels.label }}
                 {{ form.channels }}
             </div>
-            <div class="toggle-visibility">
+            <div class="settingsForm-elements">
                 {{ form.freq.label }}
                 {{ form.freq }}
             </div>
-            <div class="toggle-visibility">
+            <div class="settingsForm-elements">
                 {{ form.nb.label }}
                 {{ form.nb }}
             </div>
-            <div class="toggle-visibility">
+            <div class="settingsForm-elements">
                 {{ form.voltage.label }}
                 {{ form.voltage }}
             </div>
-            <div class="toggle-visibility">
+            <div class="settingsForm-elements">
                 {{ form.bits.label }}
                 {{ form.bits }}
             </div>
+            <div id="fileInput">
+                {{ form.file.label }}
+                {{ form.file }}
+            </div>
             <button type="submit">Start Capture</button>
         </form>
-
         <hr>
-
-        <span id="warning-span">
+        <span id="warning-span" style="display: none;">
             <p>You've currently selected the 'file' option.</p>
-            <p>This means you already have a server running (Reader_Sender.py for example) and sending data from a .osc file.</p>
-            <p>If you are not sure how to setup this server to read data from a previous experiment, feel free to visit the documentation at "(TBD)"</p>
+            <p>Please select here above a file with an extension .osc to read it using the oscilloscope app.</p>
         </span>
     </main>
 
@@ -78,18 +80,23 @@
     <script>
         function updateFormVisibility() {
             let selectedMode = document.getElementById('id_mode').value;
-            let elementsToToggle = document.querySelectorAll('.toggle-visibility');
+            let settingsFormElements = document.querySelectorAll(".settingsForm-elements");
+            let fileInput = document.getElementById("fileInput");
             let spanElement = document.querySelector('#warning-span');
-            
-            elementsToToggle.forEach(function(element) {
-                if (selectedMode === 'FILE') {
-                    element.style.display = 'none';
-                    spanElement.style.display = 'block';
-                } else {
-                    element.style.display = 'block';
-                    spanElement.style.display = 'none';
-                }
-            });
+
+            if (selectedMode == "FILE"){
+                settingsFormElements.forEach(element => {
+                    element.style.display = "none";
+                    fileInput.style.display = "block";
+                });
+                spanElement.style.display = "block";
+            }else if (selectedMode == "REAL-TIME" || selectedMode == "FAKE-STARE"){
+                settingsFormElements.forEach(element => {
+                    element.style.display = "block";
+                });
+                fileInput.style.display = "none";
+                spanElement.style.display = "none";
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {

@@ -81,3 +81,4 @@ class OscilloSettingsForm(forms.Form):
         required=False
     )
 
+    file = forms.FileField(label='Select a .osc file', required=False)

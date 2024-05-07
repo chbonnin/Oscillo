@@ -56,10 +56,14 @@ let channelData = {}; //This dictionnary holds the data for each channel includi
 let horizontalOffset = 0;
 let horizontalScale = 50;
 
-let loopDelay = 500//ms
+let loopDelay = 300//ms
 let isRunning = false;
 let triggered = false;
 let triggerClock = 0;
+
+//these lines below only serves in the case of a file mode.
+let currentFilePosition = 0;
+let fileName = "NA";
 
 const autoMeasures = calculateAutoMeasures();
 
@@ -104,11 +108,13 @@ function getCurrentSettings(){
         config.numChannels = settings.channels;
         config.frequency = settings.freq;
         config.samplesPerFrame = settings.nb;
-        config.voltage = parseInt(settings.voltage);
+        config.voltage = parseFloat(settings.voltage);
         config.bitsPerSample = settings.bits;
 
         if (config.mode == "FILE"){
             config.maxSampleValue = 16383;
+            fileName = settings.file_path
+            currentFilePosition = parseInt(settings.file_position, 10);
         }else if(config.mode == "REAL-TIME"){
             config.maxSampleValue = 65535;
         }else if(config.mode == "FAKE-STARE"){
@@ -209,19 +215,23 @@ function fetchDataFromFile(){
     // console.log("fetchDataFromFile starts");
     const Http = new XMLHttpRequest();
 
-    Http.open("GET", '/oscillo/dataF/', true);
+    const fileNameOnly = fileName.split("/").pop();
+
+    const url = `/oscillo/dataFL/${currentFilePosition}/${fileNameOnly}/`;
+    Http.open("GET", url, true);
     Http.responseType = 'json';
 
     Http.onload = function() {
         if (Http.status === 200) {
-            // console.log("JSON data received : ");
-            // console.log(Http.response);
+            console.log("JSON data received : ");
+            console.log(Http.response);
 
             //Here we now populate the channel data arrays with the data received
             //We know .osc files take a max amount of 4 channels
             Object.keys(channelData).forEach(key => {
                 let channelNumber = parseInt(key.substring(2), 10)
-                channelData[key].points = Http.response[channelNumber + 1];   
+                channelData[key].points = Http.response[0][channelNumber + 1];
+                currentFilePosition = parseInt(Http.response[1]);
             });
 
             clearCanvas();
@@ -254,7 +264,7 @@ function fetchDataFromFile(){
             });
             //console.log(channelData);
         } else if (Http.status === 408){
-            console.error("The server supposed to send the data (Reader_sender) did not send anything" + Http.status)
+            console.error("Backend Error" + Http.status)
         } else {
             console.error("Failed to load data, status: " + Http.status);
         }
