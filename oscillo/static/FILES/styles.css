@@ -18,6 +18,22 @@ body{
     background-size: cover;
 }
 
+.canvas-light{
+    background-color: #f0f0f0;
+}
+
+.canvas-dark{
+    background-color: #1f1f1f;
+}
+
+.canvas-scrollbars-light{
+    background-color: #c9c9c9;
+}
+
+.canvas-scrollbars-dark{
+    background-color: #141414;
+}
+
 section{
     display: flex;
     flex-direction: column;
@@ -29,7 +45,6 @@ section{
 }
 
 #oscilloscope_screen{
-    background-color: rgb(31, 31, 31);
     margin: auto 0px; /* Center the canvas vertically and add horizontal margin */
     
     flex-grow: 1;
@@ -50,7 +65,6 @@ section{
     justify-content: start;
 
     width: 100%;
-    background-color: black;
     min-height: 19px;
 }
 
@@ -159,7 +173,6 @@ aside{
 
 #scroll-bar{
     width: 20px;
-    background-color: black;
     height: 800px;
     margin-top: 20px;
     
@@ -185,16 +198,10 @@ aside{
     cursor: grabbing;
 }
 
-#sub-div-horizontal-offset{
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
-}
 
 #scrollbar-horizontal{
     width: 1200px;
     height: 20px;
-    background-color: black;
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -254,8 +261,6 @@ aside{
     flex-direction: row;
     flex-wrap: nowrap;
     justify-content: space-between;
-
-    background-color: black;
 }
 
 #info-display-oscilloscope span{
@@ -534,20 +539,20 @@ aside{
     background: rgb(201, 151, 159);
 }
 
-.fuschia{
+.fuchsia{
     background: fuchsia;
     border: 2px solid rgb(119, 0, 119);
 }
 
-.fuschia::before{
+.fuchsia::before{
     background: rgb(255, 125, 255);
 }
 
-.fuschia:hover{
+.fuchsia:hover{
     background: rgb(190, 0, 190);
 }
 
-.fuschia:active{
+.fuchsia:active{
     background: rgb(190, 0, 190);
 }
 
@@ -588,6 +593,8 @@ aside{
     border-radius: 0.75em;
     transform-style: preserve-3d;
     transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), background 150ms cubic-bezier(0, 0, 0.58, 1);
+    text-align: center;
+
 }
 
 .channel-displayed::before {
@@ -913,7 +920,6 @@ aside{
 
 #scroll-bar-horizontal-cursors{
     width: 20px;
-    background-color: black;
     height: 800px;
     margin-top: 20px;
     display: flex;

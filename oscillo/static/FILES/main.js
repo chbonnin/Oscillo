@@ -14,6 +14,8 @@ let config = {//Used to handle the configuration of the server, in case it chang
     horizontalDivisions: 20,
     mode: null,
     maxSampleValue: null,
+    gridDisplay: 1,
+    theme: "dark",
 };
 
 let triggerOptions = {
@@ -37,6 +39,17 @@ let cursorOptions = {
     verticalBPosition: 800,//value in pixels
 };
 
+let zoomConfig = {
+    isZoomed: false,
+    isDrawing: false,
+    initX: 0,
+    initY: 0,
+    finalX: 0,
+    finalY: 0,
+    zoomX: 0,
+    zoomY: 0,
+}
+
 let autoMeasureOptions = {
     //each option has a boolean associated representing whether or not the measure is to be made depending on the user selection
     associatedChannel: "CH1", //null / CH1 (default) / CH2 / CH3, etc etc..
@@ -56,7 +69,7 @@ let channelData = {}; //This dictionnary holds the data for each channel includi
 let horizontalOffset = 0;
 let horizontalScale = 50;
 
-let loopDelay = 300//ms
+let loopDelay = 100//ms
 let isRunning = false;
 let triggered = false;
 let triggerClock = 0;
@@ -217,14 +230,14 @@ function fetchDataFromFile(){
 
     const fileNameOnly = fileName.split("/").pop();
 
-    const url = `/oscillo/dataFL/${currentFilePosition}/${fileNameOnly}/`;
+    const url = `/oscillo/dataF/${currentFilePosition}/${fileNameOnly}/`;
     Http.open("GET", url, true);
     Http.responseType = 'json';
 
     Http.onload = function() {
         if (Http.status === 200) {
-            console.log("JSON data received : ");
-            console.log(Http.response);
+            // console.log("JSON data received : ");
+            // console.log(Http.response);
 
             //Here we now populate the channel data arrays with the data received
             //We know .osc files take a max amount of 4 channels
@@ -238,6 +251,11 @@ function fetchDataFromFile(){
             drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
             if (cursorOptions.isVerticalCursorOn == "true" || cursorOptions.isHorizontalCursorOn == "true"){
                 drawCursors();
+            }
+
+            //HERE WE CHECK IF THE USER IS CURRENTLY ZOOMING OR NOT
+            if (zoomConfig.isDrawing == true){
+                drawZoomRectangle();
             }
 
             Object.keys(channelData).forEach(key => {
@@ -299,6 +317,11 @@ function fetchRawData(){
             drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
             if (cursorOptions.isVerticalCursorOn == "true" || cursorOptions.isHorizontalCursorOn == "true"){
                 drawCursors();
+            }
+
+            //HERE WE CHECK IF THE USER IS CURRENTLY ZOOMING OR NOT
+            if (zoomConfig.isDrawing == true){
+                drawZoomRectangle();
             }
 
             // Clear the channel data before parsing the new data
@@ -516,9 +539,13 @@ function environmentSetup(){//This function sets up anything necessary for inter
             drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);//we keep the grid however.
             
         } else {
-            console.log("Starting the oscilloscope");
-            isRunning = true;
-            RUNSTOP.innerHTML = "STOP";
+            if (config.mode == null || config.mode == "NA"){
+                showToast("Your settings are not set yet.\nClick on the 'Settings' button to set them up.", "toast-error");
+            }else{
+                console.log("Starting the oscilloscope");
+                isRunning = true;
+                RUNSTOP.innerHTML = "STOP";
+            }
         }
     });
 
@@ -564,6 +591,73 @@ function environmentSetup(){//This function sets up anything necessary for inter
         console.log("Cursors Button clicked ! ");
         populateModalForCursors();
         displayBaseModal();
+    });
+
+    //===================== SIZE BUTTON INTERACTIONS =====================
+
+    SIZE.addEventListener("click", function(){
+        console.log("Size button clicked !");
+        populateModalForSize();
+        displayBaseModal();
+    });
+
+
+    //===================== SETUP CANVAS INTERACTIONS (ZOOM) =====================
+
+    CANVAS.addEventListener('mousedown', (e) => {
+        if (isRunning && zoomConfig.isZoomed == false){
+            const rect = CANVAS.getBoundingClientRect();
+
+            zoomConfig.initX = e.clientX - rect.left;
+            zoomConfig.initY = e.clientY - rect.top;
+            zoomConfig.isDrawing = true;
+        }else{
+            if (zoomConfig.isZoomed == true){
+                showToast("The screen is already zoomed-in.", "toast-error");
+            }else{
+                showToast("Can't zoom while the oscilloscope is stopped", "toast-error");
+            }
+        }
+    });
+
+    CANVAS.addEventListener('mousemove', (e) => {
+        if (!zoomConfig.isDrawing) return;
+
+        const rect = CANVAS.getBoundingClientRect();
+        
+        zoomConfig.finalX = e.clientX - rect.left;
+        zoomConfig.finalY = e.clientY - rect.top;
+    });
+
+    CANVAS.addEventListener('mouseup', () => {
+        if (isRunning && zoomConfig.isDrawing && zoomConfig.isZoomed == false){
+            zoomConfig.isDrawing = false;
+            calculateZoomFactors();
+            // console.log("Zoom config : ", zoomConfig);
+    
+            const ctx = CANVAS.getContext('2d');
+            ctx.setTransform(zoomConfig.zoomX, 0, 0, zoomConfig.zoomY, -zoomConfig.initX * zoomConfig.zoomX, -zoomConfig.initY * zoomConfig.zoomY);
+            ctx.restore();
+
+            zoomConfig.isZoomed = true;
+            showToast("Zoom applied", "toast-info");
+        }
+    });
+    
+    //===================== DISPLAY BUTTON INTERACTIONS =====================
+
+    DISPLAY.addEventListener("click", function(){
+        console.log("Display button clicked !");
+        populateModalForDisplay();
+        displayBaseModal();
+    });
+
+    //===================== GENERAL ZOOM RESET VIA KEY PRESS CTRL + X =====================
+
+    document.addEventListener('keydown', function(e){
+        if (e.key === "X" && e.shiftKey) {
+            resetZoom();
+        }
     });
 
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
@@ -795,7 +889,11 @@ function drawSignal(channelKey) {
         }
     });
 
-    ctx.strokeStyle = channel.colorDark;  // Color of the waveform
+    if (config.theme == "dark"){
+        ctx.strokeStyle = channel.colorDark;  // Color of the waveform
+    }else{
+        ctx.strokeStyle = channel.colorLight;
+    }
     ctx.lineWidth = 2;
     ctx.stroke();
 };
@@ -830,7 +928,11 @@ function drawSignalFromFile(channelKey){
         }
     });
 
-    ctx.strokeStyle = channel.colorDark;
+    if (config.theme == "dark"){
+        ctx.strokeStyle = channel.colorDark;  // Color of the waveform
+    }else{
+        ctx.strokeStyle = channel.colorLight;
+    }
     ctx.lineWidth = 2;
     ctx.globalAlpha = 0.8;
     ctx.stroke();
@@ -856,7 +958,11 @@ function drawFFT(channelKey) {
         const verticalScale = channel.verticalScale;
 
         ctx.beginPath();
-        ctx.strokeStyle = 'purple';
+        if (config.theme == "dark"){
+            ctx.strokeStyle = channel.colorDark;  // Color of the waveform
+        }else{
+            ctx.strokeStyle = channel.colorLight;
+        }
         ctx.lineWidth = 1;
         ctx.font = "bold 18px Arial";
         ctx.fillStyle = 'purple';
@@ -891,6 +997,8 @@ function drawFFT(channelKey) {
 
 // Function to draw a grid composed of full squares on the canvas
 function drawGrid(gridColor, opacity, thickerLineWidth) {
+    if (config.gridDisplay == 0){return;}
+    
     let ctx = CANVAS.getContext('2d');
     ctx.globalAlpha = opacity;
 
@@ -958,7 +1066,22 @@ function removeSpikes(points, thresholdRatio) {
     }
 
     return points;
-}
+};
+
+function drawZoomRectangle(){
+    const ctx = CANVAS.getContext('2d');
+    ctx.strokeStyle = 'white';
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.rect(zoomConfig.initX, zoomConfig.initY, zoomConfig.finalX - zoomConfig.initX, zoomConfig.finalY - zoomConfig.initY);
+    ctx.fill();
+};
+
+function resetZoom(){
+    const ctx = CANVAS.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform to identity
+    zoomConfig.isZoomed = false;
+};
 
 /*
 ╔══════════════════════════════════════════════════════╗
@@ -1558,6 +1681,109 @@ function populateModalForCursors(){
     });
 };
 
+function populateModalForSize(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    const sizeOptions = [
+        {text: "Tiny", value: "400|267"},
+        {text: "Small", value: "800|533"},
+        {text: "Standard", value: "1200|800"},
+        {text: "Large", value: "1400|900"},
+        {text: "Maximized", value: "TD"},//determine current window size and apply canvas to that size
+    ];
+
+    const title = document.createElement("h5");
+    title.innerHTML = "Screen size";
+    modalContentDiv.appendChild(title);
+
+    const selectSize = createSelect(sizeOptions);
+    selectSize.id = "";
+    selectSize.value = "1200|800";
+    modalContentDiv.appendChild(selectSize);
+
+    selectSize.addEventListener("change", function(){
+        changeScreenSize(selectSize.value);
+    });
+};
+
+function populateModalForDisplay(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    const title = document.createElement("h5");
+    title.innerHTML = "Display options";
+    modalContentDiv.appendChild(title);
+
+    const unzoomButton = document.createElement("button");
+    unzoomButton.textContent = "Unzoom";
+    unzoomButton.id = "unzoomButton";
+    unzoomButton.classList.add("modal-measure-button");
+
+    unzoomButton.addEventListener("click", function(){
+        if (zoomConfig.isZoomed){
+            resetZoom();
+            showToast("Zoom reset", "toast-info");
+        }else{
+            showToast("No zoom to reset", "toast-error");
+        }
+    });
+
+    modalContentDiv.appendChild(unzoomButton);
+
+    const gridOptions = [
+        {text: "On", value: 1},
+        {text: "Off", value: 0}, 
+    ]
+
+    const container1 = document.createElement("span");
+
+    const label2 = document.createElement("label");
+    label2.textContent = "Grid Display : ";
+    container1.appendChild(label2);
+
+    const selectGridDisplay = createSelect(gridOptions);
+    selectGridDisplay.id = "selectGridDisplay";
+    selectGridDisplay.value = config.gridDisplay;
+    
+    container1.appendChild(selectGridDisplay);
+    modalContentDiv.appendChild(container1);
+
+    selectGridDisplay.addEventListener("change", function(){
+        if (selectGridDisplay.value == 1){
+            config.gridDisplay = 1;
+            showToast("Grid displayed", "toast-info");
+            if (!isRunning){
+                drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+            };
+        }else{
+            config.gridDisplay = 0;
+            showToast("Grid Removed", "toast-info");
+            if (!isRunning){
+                clearCanvas();
+            };
+        }
+    });
+
+    const lightModeOptions = [
+        {text: "Light", value: "light"},
+        {text: "Dark", value: "dark"},
+    ];
+
+    const container2 = document.createElement("span");
+
+    const label3 = document.createElement("label");
+    label3.textContent = "Theme : ";
+    container2.appendChild(label3);
+
+    const selectTheme = createSelect(lightModeOptions);
+    selectTheme.id = "selectTheme";
+    selectTheme.value = config.theme;
+
+    container2.appendChild(selectTheme);
+    modalContentDiv.appendChild(container2);
+
+    selectTheme.addEventListener("change", function(){changeScreenLightMode(selectTheme.value)});
+};
+
 /*
 ╔══════════════════════════════════════════════════════╗
 ║                UI INTERACTIONS HANDLERS              ║
@@ -1588,7 +1814,12 @@ function changeChannelButtonStatus(channelKey) {
             document.getElementById('vertical-scaling').value = channelData[channelKey].verticalScale;
             //And we do the same for the vertical offset (little cursor)
             document.getElementById('scroller').style.top = channelData[channelKey].verticalOffsetRelativeCursorPosition + 'px';
-            document.getElementById('scroller').style.backgroundColor = channelData[channelKey].colorDark;
+            if (config.theme == "light"){
+                document.getElementById('scroller').style.backgroundColor = channelData[channelKey].colorLight;
+            }else{
+                document.getElementById('scroller').style.backgroundColor = channelData[channelKey].colorDark;
+            }
+            
 
             // If channel is not displayed, display it
             if (!channelData[channelKey].display) {
@@ -1616,7 +1847,7 @@ function changeChannelButtonStatus(channelKey) {
     } catch (error) {
         if (error instanceof TypeError) {//Button not linked to an active channel
             let text = "This channel is not active.";
-            showToast(text, "toast-info");
+            showToast(text, "toast-error");
         } else {
             alert("An unknown error occured, please look at the console.")
             console.error(error);
@@ -1772,6 +2003,267 @@ function toggleDisplayForHorizontalCursorScrollers(){
         scrollerA.style.display = "none";
         scrollerB.style.display = "none";
     }
+};
+
+function changeScreenSize(size){
+    console.log(`Change screen size to : ${size}`);
+
+    const width = parseInt(size.split("|")[0]);
+    const height = parseInt(size.split("|")[1]);
+
+    CANVAS.width = width;
+    CANVAS.height = height;
+
+    const horizontalScrollBar = document.getElementById("scrollbar-horizontal");
+    const leftVerticalScrollBar = document.getElementById("scroll-bar");
+    const rightVerticalScrollBar = document.getElementById("scroll-bar-horizontal-cursors");
+    const scrollerHorizontal = document.getElementById("scroller-Horizontal");
+    const scroller = document.getElementById("scroller");
+    const channelButtons = document.querySelectorAll(".ch-button");
+    const channelButtonsContainer = document.getElementById("channel-select-div");
+    const functionButtons = document.querySelectorAll(".function-buttons");
+    const measurementsHolder = document.getElementById("info-display-oscilloscope");
+
+    horizontalScrollBar.style.width = width + "px";
+    leftVerticalScrollBar.style.height = height + "px";
+    rightVerticalScrollBar.style.height = height + "px";
+    scrollerHorizontal.style.left = (width / 2) - 10 + "px";
+    scroller.style.top = (height / 2) - 5 + "px";
+
+    function setTinyScreenSize(){
+        channelButtons.forEach(button => {
+            button.style.width = "20px";
+            button.style.height = "10px";
+            button.style.fontSize = "10px";
+            button.style.lineHeight = "3px";
+            button.firstElementChild.style.position = "absolute";
+            button.firstElementChild.style.left = "8px";
+        });
+
+        functionButtons.forEach(button => {
+            button.style.width = "105px";
+            button.style.height = "20";
+            button.style.fontSize = "13px";
+            button.style.lineHeight = "5px";
+        });
+
+        channelButtonsContainer.style.margin = "1em auto";
+
+        measurementsHolder.style.flexDirection = "column";
+
+        document.getElementById("vpdiv-mesurements").style.width = "fit-content";
+        document.getElementById("vpdiv-mesurements").style.margin = "0px";
+
+        document.querySelectorAll(".chanmeasures").forEach(p => {
+            p.style.width = "fit-content";
+        });
+
+        document.getElementById("mathres-measurements").style.display = "none";
+    };
+
+    function setSmallScreenSize(){
+        channelButtons.forEach(button => {
+            button.style.width = "40px";
+            button.style.height = "15px";
+            button.style.fontSize = "15px";
+            button.style.lineHeight = "3px";
+            button.firstElementChild.style.position = "absolute";
+            button.firstElementChild.style.left = "13px";
+        });
+
+        functionButtons.forEach(button => {
+            button.style.width = "150px";
+            button.style.height = "40px";
+            button.style.fontSize = "18px";
+            button.style.lineHeight = "5px";
+        });
+
+        channelButtonsContainer.style.margin = "1em auto";
+
+        measurementsHolder.style.flexDirection = "column";
+
+        document.getElementById("vpdiv-mesurements").style.width = "fit-content";
+        document.getElementById("vpdiv-mesurements").style.margin = "0px";
+
+        document.querySelectorAll(".chanmeasures").forEach(p => {
+            p.style.width = "fit-content";
+        });
+
+        document.getElementById("mathres-measurements").style.display = "none";
+        document.getElementById("tpdiv-measurement").width = "fit-content";
+        document.getElementById("tpdiv-measurement").margin = "0px";
+
+    };
+
+    function setStandardScreenSize(){
+        channelButtons.forEach(button => {
+            button.style.width = "";
+            button.style.height = "";
+            button.style.fontSize = "";
+            button.style.lineHeight = "";
+            button.firstElementChild.style.position = "";
+            button.firstElementChild.style.left = "";
+        });
+
+        functionButtons.forEach(button => {
+            button.style.width = "";
+            button.style.height = "";
+            button.style.fontSize = "";
+            button.style.lineHeight = "";
+        });
+
+        channelButtonsContainer.style.margin = "";
+
+        measurementsHolder.style.flexDirection = "row";
+
+        document.getElementById("vpdiv-mesurements").style.width = "";
+        document.getElementById("vpdiv-mesurements").style.margin = "";
+
+        document.querySelectorAll(".chanmeasures").forEach(p => {
+            p.style.width = "";
+        });
+
+        document.getElementById("mathres-measurements").style.display = "flex";
+        document.getElementById("tpdiv-measurement").width = "";
+        document.getElementById("tpdiv-measurement").margin = "";
+    };
+
+    function setLargeScreenSize(){
+        document.querySelectorAll("#channel-select-div span").forEach(span => {
+            span.style.flexWrap = "wrap";
+            span.style.justifyContent = "space-evenly";
+        });
+
+        channelButtons.forEach(button => {
+            button.style.width = "";
+            button.style.height = "";
+            button.style.fontSize = "";
+            button.style.lineHeight = "";
+            button.firstElementChild.style.position = "";
+            button.firstElementChild.style.left = "";
+            button.style.margin = "0px 0.2em 1em 0.2em"
+        });
+
+        functionButtons.forEach(button => {
+            button.style.width = "";
+            button.style.height = "";
+            button.style.fontSize = "";
+            button.style.lineHeight = "";
+        });
+
+        channelButtonsContainer.style.margin = "";
+
+        measurementsHolder.style.flexDirection = "row";
+
+        document.getElementById("vpdiv-mesurements").style.width = "";
+        document.getElementById("vpdiv-mesurements").style.margin = "";
+
+        document.querySelectorAll(".chanmeasures").forEach(p => {
+            p.style.width = "";
+        });
+
+        document.getElementById("mathres-measurements").style.display = "flex";
+        document.getElementById("tpdiv-measurement").width = "";
+        document.getElementById("tpdiv-measurement").margin = "";
+    };
+
+    function exitFullScreen(event){
+        if (event.key === "Escape"){
+            console.log("EXITING FULL SCREEN !");
+
+            CANVAS.width = 1200;
+            CANVAS.height = 800;
+
+            document.getElementById("aside").style.display = "flex";
+
+            horizontalScrollBar.style.width = CANVAS.width + "px";
+            leftVerticalScrollBar.style.height = CANVAS.height + "px";
+            rightVerticalScrollBar.style.height = CANVAS.height + "px";
+            scrollerHorizontal.style.left = (CANVAS.width / 2) - 10 + "px";
+            scroller.style.top = (CANVAS.height / 2) - 5 + "px";
+
+            document.getElementById("info-display-oscilloscope").style.display = "flex";
+            document.getElementById("auto-measures-display").style.display = "flex";
+
+            setStandardScreenSize();
+
+            document.removeEventListener("keydown", exitFullScreen);
+            showToast("Back to standard screen size.", "toast-info");
+
+            clearCanvas();
+            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+        }
+    }
+
+    function setMaximizedScreenSize(){
+        const bodyWidth = document.body.clientWidth;
+        const bodyHeight = document.body.clientHeight;
+
+        CANVAS.width = bodyWidth - 40;
+        CANVAS.height = bodyHeight - 20;
+
+        document.getElementById("aside").style.display = "none";
+        document.getElementById("middle-line").style.marginLeft = "0px";
+
+        horizontalScrollBar.style.width = CANVAS.width + "px";
+        leftVerticalScrollBar.style.height = CANVAS.height + "px";
+        rightVerticalScrollBar.style.height = CANVAS.height + "px";
+        scrollerHorizontal.style.left = (CANVAS.width / 2) - 10 + "px";
+        scroller.style.top = (CANVAS.height / 2) - 5 + "px";
+
+        document.getElementById("info-display-oscilloscope").style.display = "none";
+        document.getElementById("auto-measures-display").style.display = "none";
+
+        showToast("To escape full-screen, press 'ESC'", "toast-info");
+
+        document.addEventListener("keydown", exitFullScreen);
+    };
+    
+
+    if (size == "400|267"){
+        setTinyScreenSize();
+    }else if (size == "800|533"){
+        setSmallScreenSize();
+    }else if (size == "1200|800"){
+        setStandardScreenSize();
+    }else if (size == "1400|900"){
+        setLargeScreenSize();
+    }else if (size == "TD"){
+        setMaximizedScreenSize();
+    }
+
+    clearCanvas();
+    drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+};
+
+function changeScreenLightMode(mode){
+    if (mode == "light"){
+        CANVAS.classList.remove("canvas-dark");
+        CANVAS.classList.add("canvas-light");
+        document.querySelectorAll(".canvas-scrollbars-dark").forEach(scrollbar => {
+            scrollbar.classList.remove("canvas-scrollbars-dark");
+            scrollbar.classList.add("canvas-scrollbars-light");
+        });
+    }else{
+        CANVAS.classList.remove("canvas-light");
+        CANVAS.classList.add("canvas-dark");
+        document.querySelectorAll(".canvas-scrollbars-light").forEach(scrollbar => {
+            scrollbar.classList.remove("canvas-scrollbars-light");
+            scrollbar.classList.add("canvas-scrollbars-dark");
+        });
+    };
+
+    Object.keys(channelData).forEach(key => {
+        if (mode == "light"){
+            document.getElementById(key).classList.remove(channelData[key].colorDark);
+            document.getElementById(key).classList.add(channelData[key].colorLight);
+        }else{
+            document.getElementById(key).classList.remove(channelData[key].colorLight);
+            document.getElementById(key).classList.add(channelData[key].colorDark);
+        }
+    });
+
+    config.theme = mode;
 };
 
 /*
@@ -2393,6 +2885,15 @@ function updateTriggerSettings(modalElement){
     showToast("Trigger settings updated !", "toast-info");
 };
 
+function calculateZoomFactors() {
+    const selectedWidth = zoomConfig.finalX - zoomConfig.initX;
+    const selectedHeight = zoomConfig.finalY - zoomConfig.initY;
+
+    // Calculate scale factors to fit the selected area to the canvas size
+    zoomConfig.zoomX = CANVAS.width / selectedWidth;
+    zoomConfig.zoomY = CANVAS.height / selectedHeight;
+};
+
 /*
 ╔══════════════════════════════════════════════════════╗
 ║                  INFORMATION EXPORT                  ║
@@ -2741,5 +3242,5 @@ function formatFrequency(hertz) {
     } else if (hertz < 1e9) {
         return `${(hertz / 1e6).toFixed(1)} MHz`;
     }
-}
+};
 

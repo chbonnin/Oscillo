@@ -10,8 +10,7 @@ urlpatterns = [
     path('start/', main.index, name="start"),
     path("settings/", main.settings, name="settings"),
     path("data/", main.getData, name="data"),
-    path("dataF/", main.getFileData, name="dataF"),
-    path("dataFL/<int:filePosition>/<str:fileName>/", main.getFileData2, name="dataFL"),
+    path("dataF/<int:filePosition>/<str:fileName>/", main.getFileData, name="dataF"),
     path("dataR/", main.getRawData, name="dataR"),
     path("oscilloSelect/", main.oscilloSelect, name="oscilloSelect"),
 

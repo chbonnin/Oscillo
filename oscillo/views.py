@@ -61,7 +61,6 @@ class Main(TemplateView):
 
         return render(request, 'oscillo/graph.html', {"channels":data})
     
-    
 
     def oscilloSelect(self, request):
         if request.method == 'POST':
@@ -129,51 +128,6 @@ class Main(TemplateView):
         except socket.timeout:
             return HttpResponse("No data received so far..", status=408)
         
-    
-    def getFileData(self, request):
-        if not self.sock:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.bind(("127.0.0.1", 7888))
-            self.sock.settimeout(1)
-            print("Socket bound")
-        
-        try:
-            #First we let the reader_sender server know we need data:
-            
-            print("Sending ND message")
-            message = "ND"
-            self.sock.sendto(message.encode(), ("127.0.0.1", 7999))
-
-            # Receive the length of the data
-            data_length, address = self.sock.recvfrom(4096)
-            print("Received message [data length] -> ", data_length.decode())
-
-            print("Sending ACK message.")
-            # Send acknowledgment
-            self.sock.sendto(b'ACK', address)
-
-            # Convert data length to integer
-            expected_data_to_receive = int(data_length.decode())
-
-            print("Receiving final data")
-            # Receive the actual data
-            data, _ = self.sock.recvfrom(expected_data_to_receive)
-            print(f"Received message [data] -> {len(data)} bytes long")
-
-            decoded_data = pickle.loads(data)
-
-            print("Length of decoded data:", len(decoded_data))
-            print(f"Number of samples for this set of data : {decoded_data[0]}")
-            print(f"Header data for this set of data : {decoded_data[1]}")
-            return JsonResponse(decoded_data, safe=False)
-        except socket.timeout:
-            return HttpResponse("No data received from the file reader..", status=408)
-        except Exception as E:
-            print("ERROR OCCURED !")
-            print(E)
-            return HttpResponse(f"An error occured : {str(E)}", status=500)
-
-
     def getRawData(self, request):
         if not self.sock:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -186,7 +140,7 @@ class Main(TemplateView):
         return HttpResponse(data)
 
 
-    def getFileData2(self, request, filePosition, fileName):
+    def getFileData(self, request, filePosition, fileName):
         print(f"GET DATA AT POSITION {filePosition} FOR FILE {fileName}")
 
         completeFilePath = os.path.join(settings.BASE_DIR, 'temp_files') + "/" + fileName
