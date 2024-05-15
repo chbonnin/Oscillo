@@ -15,11 +15,13 @@ urlpatterns = [
     path("oscilloSelect/", main.oscilloSelect, name="oscilloSelect"),
     path("setNewColors/<int:UID>/", views.SetNewColors, name="SetNewColors"),
     path("setThemePreference/<int:UID>/", views.setThemePreference, name="setThemePreference"),
+    path("changePasswd/", views.changePasswd, name="changePasswd"),
 
     #User related patterns
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('disconnect/', views.disconnect, name='disconnect'),
+    path('profile/', views.profile, name="profile"),
 ]
 
 

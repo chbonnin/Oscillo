@@ -1,11 +1,10 @@
 body{
-
-
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
     
     align-items: center;
+    min-height: 100vh;
 }
 
 
@@ -18,6 +17,4 @@ footer{
     background-color: darkgreen;
     background-color: chocolate;
     background-color: #e2e2e2;
-
-
 }

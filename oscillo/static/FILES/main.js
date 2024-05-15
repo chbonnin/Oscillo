@@ -74,6 +74,7 @@ let loopDelay = 100//ms
 let isRunning = false;
 let triggered = false;
 let triggerClock = 0;
+let failedAttempt = 0;
 
 //these lines below only serve in the case of a file mode.
 let currentFilePosition = 0;
@@ -137,8 +138,6 @@ function getCurrentSettings(){
             currentFilePosition = parseInt(settings.file_position, 10);
         }else if(config.mode == "REAL-TIME"){
             config.maxSampleValue = 65535;
-        }else if(config.mode == "FAKE-STARE"){
-            config.maxSampleValue = 16383;
         }
 
         console.log("Updated config:", config);
@@ -170,69 +169,69 @@ function getCurrentSettings(){
     }
 };
 
-function fetchData(){
-    const Http = new XMLHttpRequest();
-    Http.responseType = 'arraybuffer';
+// function fetchData(){
+//     const Http = new XMLHttpRequest();
+//     Http.responseType = 'arraybuffer';
 
-    Http.open("GET", '/oscillo/data/', true);
+//     Http.open("GET", '/oscillo/data/', true);
 
-    Http.onload = function(event) {
-        if (Http.status === 200) {
-            console.log("Data received");
+//     Http.onload = function(event) {
+//         if (Http.status === 200) {
+//             console.log("Data received");
 
-            const buffer = Http.response;
-            const dataView = new DataView(buffer);
-            const bytesPerSample = 2; // Each sample is 2 bytes (Uint16) altough this may change depending on the server's settings !!
-            const totalSamples = dataView.byteLength / bytesPerSample; // Total samples in all channels
+//             const buffer = Http.response;
+//             const dataView = new DataView(buffer);
+//             const bytesPerSample = 2; // Each sample is 2 bytes (Uint16) altough this may change depending on the server's settings !!
+//             const totalSamples = dataView.byteLength / bytesPerSample; // Total samples in all channels
 
-            console.log(`THis data is made up of ${totalSamples} samples`);
-            console.log("Here below should be the dataView created from the received data : ");
-            console.log(dataView);
+//             console.log(`THis data is made up of ${totalSamples} samples`);
+//             console.log("Here below should be the dataView created from the received data : ");
+//             console.log(dataView);
 
-            // Clear the channel data before parsing the new data
-            Object.keys(channelData).forEach(key => {
-                channelData[key].points = [];
-            });
+//             // Clear the channel data before parsing the new data
+//             Object.keys(channelData).forEach(key => {
+//                 channelData[key].points = [];
+//             });
         
-            // Parse buffer into channel data
-            for (let i = 0; i < totalSamples; i++) {
-                let channelNum = (i % config.numChannels) + 1;
-                let channelKey = 'CH' + channelNum;
-                let pointIndex = i * bytesPerSample;
-                let point = dataView.getUint16(pointIndex, true);
-                channelData[channelKey].points.push(point);
-            }
+//             // Parse buffer into channel data
+//             for (let i = 0; i < totalSamples; i++) {
+//                 let channelNum = (i % config.numChannels) + 1;
+//                 let channelKey = 'CH' + channelNum;
+//                 let pointIndex = i * bytesPerSample;
+//                 let point = dataView.getUint16(pointIndex, true);
+//                 channelData[channelKey].points.push(point);
+//             }
 
-            clearCanvas();
-            drawGrid('rgba(128, 128, 128, 0.5)', 3);
+//             clearCanvas();
+//             drawGrid('rgba(128, 128, 128, 0.5)', 3);
 
-            Object.keys(channelData).forEach(key => {
-                // console.log(key, channelData[key].points);
-                if (channelData[key].display === true){
-                    if (channelData[key].type == "generatedData" && channelData[key].operation == "fft"){
-                        drawFFT(key);
-                    } else {
-                        drawSignal(key);
-                    }
-                }
-            });
+//             Object.keys(channelData).forEach(key => {
+//                 // console.log(key, channelData[key].points);
+//                 if (channelData[key].display === true){
+//                     if (channelData[key].type == "generatedData" && channelData[key].operation == "fft"){
+//                         drawFFT(key);
+//                     } else {
+//                         drawSignal(key);
+//                     }
+//                 }
+//             });
 
-            console.log(channelData);
+//             console.log(channelData);
 
 
-        } else if (Http.status === 408) {
-            alert('Backend has no data to forward');
-        } else {
-            console.error("The request failed unexpectedly ->", Http.statusText);
-        }
-    }
+//         } else if (Http.status === 408) {
+//             alert('Backend has no data to forward');
+//         } else {
+//             console.error("The request failed unexpectedly ->", Http.statusText);
+//         }
+//     }
 
-    Http.onerror = function() {
-        console.log("An error occured while fetching the data");
-    }
+//     Http.onerror = function() {
+//         console.log("An error occured while fetching the data");
+//     }
 
-    Http.send();
-};
+//     Http.send();
+// };
 
 function fetchDataFromFile(){
     // console.log("fetchDataFromFile starts");
@@ -373,10 +372,13 @@ function fetchRawData(){
                     }
                 }
             });
-
-
         } else {
             console.error("The request failed unexpectedly ->", Http.statusText);
+            failedAttempt++;
+            if (failedAttempt > 60){
+                showToast("There seem to be a problem with the reception of the data.", "toast-error");
+                failedAttempt = 0;
+            }
         }
     }
 
@@ -713,8 +715,6 @@ function MAINLOOP(){
             if (isRunning && !triggered){
                 if (config.mode == "FILE"){
                     fetchDataFromFile();
-                }else if(config.mode == "FAKE-STARE"){
-                    fetchData();
                 }else if (config.mode == "REAL-TIME"){
                     fetchRawData();
                 }
@@ -836,9 +836,12 @@ function drawCursors(){
 
             const timeBetweenCursors = getTimeBetweenCursors(pixelsBetweenCursors);
             const text3 = `Δ ${timeBetweenCursors.value} ${timeBetweenCursors.scale}`;
-            let X = (cursorOptions.verticalAPosition + cursorOptions.verticalBPosition) / 2;
+            const textMetrics = ctx.measureText(text3);
+            const textWidth = textMetrics.width;
+
+            let X = ((cursorOptions.verticalAPosition + cursorOptions.verticalBPosition) / 2) - (textWidth/2);
             let Y = CANVAS.height * 0.80 - 10;
-            ctx.fillText(text3, X -80, Y);
+            ctx.fillText(text3, X, Y);
         }else{
             let X = (cursorOptions.verticalAPosition + cursorOptions.verticalBPosition) / 2;
             let Y = CANVAS.height * 0.80 - 10;
@@ -2155,7 +2158,7 @@ let isVerticalMouseDownListenerSet = false;
 let isHorizontalMouseDownListenerSet = false;
 
 function toggleDisplayForVerticalCursorScrollers(){
-    console.log(`Current value for 'cursorOptions.isVerticalCursorOn' : ${cursorOptions.isVerticalCursorOn} | Type : ${typeof cursorOptions.isVerticalCursorOn}`);
+    //console.log(`Current value for 'cursorOptions.isVerticalCursorOn' : ${cursorOptions.isVerticalCursorOn} | Type : ${typeof cursorOptions.isVerticalCursorOn}`);
 
     const scrollerA = document.getElementById("vertical-scroller-A");
     const scrollerB = document.getElementById("vertical-scroller-B");
@@ -2181,7 +2184,6 @@ function toggleDisplayForVerticalCursorScrollers(){
     function onMouseUpScrollerVertical(){
         if (!isDragging) return;
         isDragging = false;
-        console.log("Mouse released");
 
         document.removeEventListener('mousemove', currentMoveListener);
         document.removeEventListener('mouseup', currentUpListener);
@@ -2192,7 +2194,7 @@ function toggleDisplayForVerticalCursorScrollers(){
     function setupDragListeners(scroller, whichCursor) {
         scroller.addEventListener('mousedown', function(event) {
             if (isDragging) return; // Prevents adding multiple listeners during an active drag
-            console.log("Mouse click on scroller", scroller.id);
+            // console.log("Mouse click on scroller", scroller.id);
             isDragging = true;
             let startX = event.clientX - scroller.getBoundingClientRect().left + scrollBar.getBoundingClientRect().left;
 
@@ -2205,7 +2207,6 @@ function toggleDisplayForVerticalCursorScrollers(){
     }
 
     if (cursorOptions.isVerticalCursorOn === "true"){
-        console.log("Show the scrollers for the vertical cursors");
         scrollerA.style.display = "block";
         scrollerA.style.left = (cursorOptions.verticalAPosition - (parseInt(window.getComputedStyle(scrollerA).width)) / 2) + "px";
     
@@ -2219,7 +2220,6 @@ function toggleDisplayForVerticalCursorScrollers(){
 
         isVerticalMouseDownListenerSet = true;
     } else {
-        console.log("Hide the scrollers for the vertical cursors");
         // Hide scrollers (A & B)
         scrollerA.style.display = "none";
         scrollerB.style.display = "none";
@@ -2227,7 +2227,7 @@ function toggleDisplayForVerticalCursorScrollers(){
 };
 
 function toggleDisplayForHorizontalCursorScrollers(){
-    console.log(`Current value for 'cursorOptions.isHorizontalCursorOn' : ${cursorOptions.isHorizontalCursorOn} | Type : ${typeof cursorOptions.isHorizontalCursorOn}`);
+    //console.log(`Current value for 'cursorOptions.isHorizontalCursorOn' : ${cursorOptions.isHorizontalCursorOn} | Type : ${typeof cursorOptions.isHorizontalCursorOn}`);
 
     const scrollerA = document.getElementById("scroller-horizontal-A");
     const scrollerB = document.getElementById("scroller-horizontal-B");
@@ -2253,7 +2253,6 @@ function toggleDisplayForHorizontalCursorScrollers(){
     function onMouseUpScrollerHorizontal(){
         if (!isDragging) return;
         isDragging = false;
-        console.log("Mouse released");
 
         document.removeEventListener('mousemove', currentMoveListener);
         document.removeEventListener('mouseup', currentUpListener);
@@ -2264,7 +2263,6 @@ function toggleDisplayForHorizontalCursorScrollers(){
     function setupDragListeners(scroller, whichCursor) {
         scroller.addEventListener('mousedown', function(event) {
             if (isDragging) return; // Prevents adding multiple listeners during an active drag
-            console.log("Mouse click on scroller", scroller.id);
             isDragging = true;
             let startY = event.clientY - scroller.getBoundingClientRect().top + scrollBar.getBoundingClientRect().top;
 
@@ -2277,7 +2275,6 @@ function toggleDisplayForHorizontalCursorScrollers(){
     }
 
     if (cursorOptions.isHorizontalCursorOn === "true"){
-        console.log("Show the scrollers for the horizontal cursors");
         scrollerA.style.display = "block";
         scrollerA.style.top = (cursorOptions.horizontalAPosition - (parseInt(window.getComputedStyle(scrollerA).height)) / 2) + "px";
     
@@ -2291,7 +2288,6 @@ function toggleDisplayForHorizontalCursorScrollers(){
 
         isHorizontalMouseDownListenerSet = true;
     } else {
-        console.log("Hide the scrollers for the horizontal cursors");
         // Hide scrollers (A & B)
         scrollerA.style.display = "none";
         scrollerB.style.display = "none";
@@ -2299,7 +2295,7 @@ function toggleDisplayForHorizontalCursorScrollers(){
 };
 
 function changeScreenSize(size){
-    console.log(`Change screen size to : ${size}`);
+    //console.log(`Change screen size to : ${size}`);
 
     const width = parseInt(size.split("|")[0]);
     const height = parseInt(size.split("|")[1]);
@@ -2311,7 +2307,7 @@ function changeScreenSize(size){
     const leftVerticalScrollBar = document.getElementById("scroll-bar");
     const rightVerticalScrollBar = document.getElementById("scroll-bar-horizontal-cursors");
     const scrollerHorizontal = document.getElementById("scroller-Horizontal");
-    const scroller = document.getElementById("scroller");
+    const scrollers = document.querySelectorAll(".scrollers")
     const channelButtons = document.querySelectorAll(".ch-button");
     const channelButtonsContainer = document.getElementById("channel-select-div");
     const functionButtons = document.querySelectorAll(".function-buttons");
@@ -2321,7 +2317,10 @@ function changeScreenSize(size){
     leftVerticalScrollBar.style.height = height + "px";
     rightVerticalScrollBar.style.height = height + "px";
     scrollerHorizontal.style.left = (width / 2) - 10 + "px";
-    scroller.style.top = (height / 2) - 5 + "px";
+    scrollers.forEach(scroller => {
+        scroller.style.top = (height / 2) - 5 + "px";
+    });
+    
 
     function setTinyScreenSize(){
         channelButtons.forEach(button => {
@@ -2473,7 +2472,9 @@ function changeScreenSize(size){
             leftVerticalScrollBar.style.height = CANVAS.height + "px";
             rightVerticalScrollBar.style.height = CANVAS.height + "px";
             scrollerHorizontal.style.left = (CANVAS.width / 2) - 10 + "px";
-            scroller.style.top = (CANVAS.height / 2) - 5 + "px";
+            scrollers.forEach(scroller => {
+                scroller.style.top = (CANVAS.height / 2) - 5 + "px";
+            })
 
             document.getElementById("info-display-oscilloscope").style.display = "flex";
             document.getElementById("auto-measures-display").style.display = "flex";
@@ -2502,7 +2503,9 @@ function changeScreenSize(size){
         leftVerticalScrollBar.style.height = CANVAS.height + "px";
         rightVerticalScrollBar.style.height = CANVAS.height + "px";
         scrollerHorizontal.style.left = (CANVAS.width / 2) - 10 + "px";
-        scroller.style.top = (CANVAS.height / 2) - 5 + "px";
+        scrollers.forEach(scroller => {
+            scroller.style.top = (CANVAS.height / 2) - 5 + "px";
+        });
 
         document.getElementById("info-display-oscilloscope").style.display = "none";
         document.getElementById("auto-measures-display").style.display = "none";

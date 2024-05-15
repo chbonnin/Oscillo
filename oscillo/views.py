@@ -21,7 +21,7 @@ import struct, time
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
-from .forms import CustomUserCreationForm, CustomAuthenticationForm, OscilloSettingsForm
+from .forms import CustomUserCreationForm, CustomAuthenticationForm, OscilloSettingsForm, UserUpdateForm, PasswordUpdateForm
 from .models import FavoriteColors
 
 
@@ -283,10 +283,12 @@ def register_view(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             messages.success(request, "Registration successful.")
             return redirect('/oscillo/')  # Redirect to the home page
         else:
+            print("FORM ERRORS : ")
+            print(form.errors)
             messages.error(request, "Unsuccessful registration. Invalid information.")
     else:
         form = CustomUserCreationForm()
@@ -316,6 +318,64 @@ def login_view(request):
 def disconnect(request):
     logout(request)
     return redirect("/oscillo/")
+
+
+def profile(request):
+    try:
+        UID = request.user.id
+        user = User.objects.get(pk=UID)
+
+        if request.method == "POST":
+            form = UserUpdateForm(request.POST)
+            if form.is_valid():
+                user.username = form.cleaned_data['username']
+                user.first_name = form.cleaned_data['first_name']
+                user.last_name = form.cleaned_data['last_name']
+                user.email = form.cleaned_data['email']
+                user.save()
+        else:
+            form = UserUpdateForm(initial={
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email
+            })
+
+        return render(request, "users/profile.html", {"user": user, "form": form})
+    except Exception as E:
+        print(f"Error : {E}")
+        return redirect('/oscillo/')
+
+
+def changePasswd(request):
+    try:
+
+        if request.method == "POST":
+            UID = request.user.id
+            user = User.objects.get(pk=UID)
+            errors = []
+
+            form = PasswordUpdateForm(request.POST)
+            if form.is_valid():
+                if user.check_password(form.cleaned_data['currentPassword']):
+                    if form.cleaned_data['newPassword1'] == form.cleaned_data['newPassword2']:
+                        #Change the passwd of the user
+                        user.set_password(form.cleaned_data['newPassword1'])
+                        user.save()
+                        return redirect("/oscillo/")
+                    else:
+                        errors.append("The two passwords given do not match.")
+                else:
+                    print("Wrong current password")
+                    errors.append("The current password given is not right.")
+
+            return render(request, "users/changePasswd.html", {"user": user, "form": form, "errors": errors})
+        else:
+            form = PasswordUpdateForm()
+            return render(request, "users/changePasswd.html", {"form": form})            
+    except Exception as E:
+        print(f"Error : {E}")
+        return redirect('/oscillo/')
 
 
 def read_file(file_path, position_within_the_file):

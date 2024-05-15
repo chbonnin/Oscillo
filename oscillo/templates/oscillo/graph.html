@@ -95,7 +95,7 @@
         <nav id="user-related-actions">
             {% if request.user.is_authenticated %}
                 <a href={% url "oscillo:disconnect" %}><button>Logout</button></a>
-                <a href="#"><button>Profile</button></a>
+                <a href={% url "oscillo:profile" %}><button>Profile</button></a>
             {% else %}
                 <a href={% url "oscillo:login" %}><button>Login</button></a>
                 <a href={% url "oscillo:register" %}><button>Register</button></a>

@@ -25,19 +25,69 @@ class CustomUserCreationForm(UserCreationForm):
 class CustomAuthenticationForm(AuthenticationForm):
     username = forms.CharField(label="Username or Email")
 
+    def __init__(self, *args, **kwargs):
+        super(CustomAuthenticationForm, self).__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password'].widget.attrs.update({'class': 'form-control'})
+
+
+class UserUpdateForm(forms.Form):
+    username = forms.CharField(
+        max_length=100, 
+        label="Username",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'disabled': 'disabled'})
+    )
+
+    first_name = forms.CharField(
+        max_length=100,
+        label="First name",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'disabled': 'disabled'})
+    )
+
+    last_name = forms.CharField(
+        max_length=100,
+        label="Last name",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'disabled': 'disabled'})
+    )
+
+    email = forms.EmailField(
+        max_length=100,
+        label="Email",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'disabled': 'disabled'})
+    )
+
+
+class PasswordUpdateForm(forms.Form):
+    currentPassword = forms.CharField(
+        max_length=100,
+        label="Current password",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+
+    newPassword1 = forms.CharField(
+        max_length=100,
+        label="New password",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    
+    newPassword2 = forms.CharField(
+        max_length=100,
+        label="Confirm new password",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+
 
 class OscilloSettingsForm(forms.Form):
     MODE_CHOICES = (
         ('REAL-TIME', 'Real-Time'),
         ('FILE', 'File'),
-        ('FAKE-STARE', 'Fake-Stare'),
     )
 
     mode = forms.ChoiceField(
         choices=MODE_CHOICES,
         label='Mode :',
         initial='REAL-TIME',
-        widget=forms.Select(attrs={'onchange': 'updateFormVisibility();'}),
+        widget=forms.Select(attrs={'onchange': 'updateFormVisibility();', 'class': 'form-control'}),
     )
 
     channels = forms.IntegerField(
@@ -45,7 +95,7 @@ class OscilloSettingsForm(forms.Form):
         initial=4,
         min_value=1,
         max_value=10,
-        widget=forms.NumberInput(attrs={'placeholder': '3'}),
+        widget=forms.NumberInput(attrs={'placeholder': '3', 'class': 'form-control'}),
         required=False
     )
     freq = forms.FloatField(
@@ -53,7 +103,7 @@ class OscilloSettingsForm(forms.Form):
         initial=1e8,
         min_value=1.0,
         max_value=1e9,
-        widget=forms.NumberInput(attrs={'placeholder': '1e8'}),
+        widget=forms.NumberInput(attrs={'placeholder': '1e8', 'class': 'form-control'}),
         required=False
     )
     nb = forms.IntegerField(
@@ -61,7 +111,7 @@ class OscilloSettingsForm(forms.Form):
         initial=1024,
         min_value=32,
         max_value=4096,
-        widget=forms.NumberInput(attrs={'placeholder': 'Enter number of samples'}),
+        widget=forms.NumberInput(attrs={'placeholder': 'Enter number of samples', 'class': 'form-control'}),
         required=False
     )
     voltage = forms.FloatField(
@@ -69,7 +119,7 @@ class OscilloSettingsForm(forms.Form):
         initial=2.2,
         min_value=0.1,
         max_value=50,
-        widget=forms.NumberInput(attrs={'placeholder': 'Enter voltage in volts'}),
+        widget=forms.NumberInput(attrs={'placeholder': 'Enter voltage in volts', 'class': 'form-control'}),
         required=False
     )
     bits = forms.IntegerField(
@@ -77,8 +127,12 @@ class OscilloSettingsForm(forms.Form):
         initial=16,
         min_value=14,
         max_value=64,
-        widget=forms.NumberInput(attrs={'placeholder': 'Enter bit depth'}),
+        widget=forms.NumberInput(attrs={'placeholder': 'Enter bit depth', 'class': 'form-control'}),
         required=False
     )
 
-    file = forms.FileField(label='Select a .osc file', required=False)
+    file = forms.FileField(
+        label='Select a .osc file', 
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'}), 
+        required=False
+    )
