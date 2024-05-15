@@ -15,6 +15,11 @@
     {% csrf_token %}<!--Token used during http request and such by the javascript-->
     <script>
         const channelsMetaData = {{ channels|safe }};
+        {% if user.is_authenticated %}
+            const userId = {{ user.id }};
+        {% else %}
+            const userId = 0;//0 can't normally be assigned to a UID.
+        {% endif %}
     </script>
     <section>
         <div id="top-line"><!--Contains the top line of the screen-->
@@ -22,7 +27,16 @@
         </div>
         <div id="middle-line">
             <div id="scroll-bar" class="canvas-scrollbars-dark">
-                <div id="scroller"></div>
+                <div id="scroller-CH1" class="scrollers" style="display: none;"></div>
+                <div id="scroller-CH2" class="scrollers" style="display: none;"></div>
+                <div id="scroller-CH3" class="scrollers" style="display: none;"></div>
+                <div id="scroller-CH4" class="scrollers" style="display: none;"></div>
+                <div id="scroller-CH5" class="scrollers" style="display: none;"></div>
+                <div id="scroller-CH6" class="scrollers" style="display: none;"></div>
+                <div id="scroller-CH7" class="scrollers" style="display: none;"></div>
+                <div id="scroller-CH8" class="scrollers" style="display: none;"></div>
+                <div id="scroller-CH9" class="scrollers" style="display: none;"></div>
+                <div id="scroller-CH10" class="scrollers" style="display: none;"></div>
             </div>
             <div id="sub-div-horizontal-offset">
                 <div id="scrollbar-horizontal" class="canvas-scrollbars-dark">

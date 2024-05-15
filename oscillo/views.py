@@ -34,7 +34,7 @@ def clear_console():
 class Main(TemplateView):
     #This 'context' variable is what tells us what to expect before rendering the actual oscilloscope screen.
     #During testing these values need to be changed by hand here but later on will sent via the server depending on what the user selected
-    context = {"mode": "NA", "channels": 3, "freq": 1e8, "nb": 1024, "voltage": 2.2, "bits": 16, "file_path": "NA", "file_position": 0}
+    context = {"mode": "NA", "channels": 3, "freq": 1e8, "nb": 1024, "voltage": 2.2, "bits": 16, "file_path": "NA", "file_position": 0, "theme": "dark", "gridOpacity": 0.5}
 
     sock: socket = None
 
@@ -107,6 +107,16 @@ class Main(TemplateView):
 
 
     def settings(self, request):#In the future (in prod) this function will retrieve the settings from the server (starecontrol)
+        try:
+            user = User.objects.get(pk=request.user.id)
+            favorite_colors, created = FavoriteColors.objects.get_or_create(user=user)
+            theme = favorite_colors.Theme_saved
+            gridOpacity = favorite_colors.Grid_opacity
+            self.context['theme'] = theme
+            self.context['gridOpacity'] = gridOpacity
+        except:
+            print("No user logged.")
+        
         return HttpResponse(json.dumps(self.context))
 
 
@@ -161,6 +171,79 @@ class Main(TemplateView):
         print("Header Data : ", Data[0][1])
         print("====================================================")
         return JsonResponse(Data, safe=False)
+    
+
+def SetNewColors(request, UID):
+    if request.method == 'POST':
+        try:
+            if UID == 0:#User not registered
+                return JsonResponse({"status": "error", "message": "You need to be registered in order to save your color preferences."}, status=315)
+
+            data = json.loads(request.body)
+            ColorChoicesDark = data.get('ColorChoicesDark', [])
+            ColorChoicesLight = data.get('ColorChoicesLight', [])
+            gridOpacity = data.get('gridOpacity', [])
+
+            print(f"User ID: {UID}")
+            print(f"ColorChoicesDark: {ColorChoicesDark}")
+            print(f"ColorChoicesLight: {ColorChoicesLight}")
+
+            user = User.objects.get(pk=UID)
+
+            favorite_colors, created = FavoriteColors.objects.get_or_create(user=user)
+
+            favorite_colors.CH1_L = ColorChoicesLight[0]
+            favorite_colors.CH2_L = ColorChoicesLight[1]
+            favorite_colors.CH3_L = ColorChoicesLight[2]
+            favorite_colors.CH4_L = ColorChoicesLight[3]
+            favorite_colors.CH5_L = ColorChoicesLight[4]
+            favorite_colors.CH6_L = ColorChoicesLight[5]
+            favorite_colors.CH7_L = ColorChoicesLight[6]
+            favorite_colors.CH8_L = ColorChoicesLight[7]
+            favorite_colors.CH9_L = ColorChoicesLight[8]
+            favorite_colors.CH10_L = ColorChoicesLight[9]
+
+            favorite_colors.CH1_D = ColorChoicesDark[0]
+            favorite_colors.CH2_D = ColorChoicesDark[1]
+            favorite_colors.CH3_D = ColorChoicesDark[2]
+            favorite_colors.CH4_D = ColorChoicesDark[3]
+            favorite_colors.CH5_D = ColorChoicesDark[4]
+            favorite_colors.CH6_D = ColorChoicesDark[5]
+            favorite_colors.CH7_D = ColorChoicesDark[6]
+            favorite_colors.CH8_D = ColorChoicesDark[7]
+            favorite_colors.CH9_D = ColorChoicesDark[8]
+            favorite_colors.CH10_D = ColorChoicesDark[9]
+
+            favorite_colors.Grid_opacity = float(gridOpacity)
+
+            favorite_colors.save()
+
+            return JsonResponse({"status": "success", "message": "Color choices saved."})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data."}, status=400)
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method."}, status=405)
+
+
+def setThemePreference(request, UID):
+    if request.method == 'POST':
+        try:
+            if UID == 0:#User not registered
+                return JsonResponse({"status": "error", "message": "Please register to save your theme preference between sessions."}, status=320)
+            
+            data = json.loads(request.body)
+            theme = data.get('theme', [])
+
+            user = User.objects.get(pk=UID)
+            favorite_colors, created = FavoriteColors.objects.get_or_create(user=user)
+
+            favorite_colors.Theme_saved = theme
+            favorite_colors.save()
+            return JsonResponse({"status": "success", "message": "Theme preference saved."})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data."}, status=400)
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method."}, status=405)
 
 
 def get_user_favorite_colors(request):
@@ -202,7 +285,7 @@ def register_view(request):
             user = form.save()
             login(request, user)
             messages.success(request, "Registration successful.")
-            return redirect('/')  # Redirect to the home page
+            return redirect('/oscillo/')  # Redirect to the home page
         else:
             messages.error(request, "Unsuccessful registration. Invalid information.")
     else:
@@ -219,7 +302,7 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect('/') # Redirect to the home page
+                return redirect('/oscillo/') # Redirect to the home page
             else:
                 messages.error(request, "Invalid username/mail or password.")
         else:
@@ -232,7 +315,7 @@ def login_view(request):
     
 def disconnect(request):
     logout(request)
-    return redirect("/")
+    return redirect("/oscillo/")
 
 
 def read_file(file_path, position_within_the_file):

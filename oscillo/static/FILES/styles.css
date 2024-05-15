@@ -175,11 +175,11 @@ aside{
     width: 20px;
     height: 800px;
     margin-top: 20px;
-    
+    position: relative;
 }
 
 
-#scroller{
+.scrollers{
     width: 20px;
     height: 10px;
 
@@ -188,13 +188,13 @@ aside{
     border-top-right-radius: 100px;
     border-bottom-right-radius: 100px;
 
-    position: relative;
+    position: absolute;
     top: 395px;
 
     cursor: grab;
 }
 
-#scroller:active{
+.scrollers:active{
     cursor: grabbing;
 }
 
@@ -951,3 +951,53 @@ aside{
     background-color: darkorange;
 }
 
+
+#colorSelectionContainer{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+}
+
+#DarkColorSelectionContainer, #LightColorSelectionContainer{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    width: 50%;
+}
+
+#DarkColorSelectionContainer{
+    border-right: 2px solid black;
+    padding-right: 0.2em;
+    margin-right: 0.2em;
+}
+
+.individualChannelColorContainer{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 0.3em;
+}
+
+.individualChannelColorContainer p{
+    margin: 0px;
+}
+
+.individualChannelColorContainer select{
+    margin: 0px;
+}
+
+#GridOpacityContainer{
+    width: 100%;
+    margin-top: 0.5em;
+    margin-bottom: 1em;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+
+}

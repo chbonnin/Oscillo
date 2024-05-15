@@ -15,6 +15,7 @@ let config = {//Used to handle the configuration of the server, in case it chang
     mode: null,
     maxSampleValue: null,
     gridDisplay: 1,
+    gridOpacity: 0.5,
     theme: "dark",
 };
 
@@ -74,7 +75,7 @@ let isRunning = false;
 let triggered = false;
 let triggerClock = 0;
 
-//these lines below only serves in the case of a file mode.
+//these lines below only serve in the case of a file mode.
 let currentFilePosition = 0;
 let fileName = "NA";
 
@@ -123,6 +124,12 @@ function getCurrentSettings(){
         config.samplesPerFrame = settings.nb;
         config.voltage = parseFloat(settings.voltage);
         config.bitsPerSample = settings.bits;
+        config.gridOpacity = settings.gridOpacity;
+
+        if (settings.theme == "light"){
+            config.theme = settings.theme;
+            changeScreenLightMode("light");
+        }
 
         if (config.mode == "FILE"){
             config.maxSampleValue = 16383;
@@ -156,6 +163,9 @@ function getCurrentSettings(){
             channel_button.classList.remove("channel-not-displayed");
             channel_button.classList.add("channel-displayed");
             channel_button.classList.add(channelData['CH' + ch].colorDark);
+
+            //This part assigns each channel to its own scroller for the offset.
+            setScrollersEvents(ch);
         }
     }
 };
@@ -194,7 +204,7 @@ function fetchData(){
             }
 
             clearCanvas();
-            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+            drawGrid('rgba(128, 128, 128, 0.5)', 3);
 
             Object.keys(channelData).forEach(key => {
                 // console.log(key, channelData[key].points);
@@ -248,7 +258,7 @@ function fetchDataFromFile(){
             });
 
             clearCanvas();
-            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+            drawGrid('rgba(128, 128, 128, 0.5)', 3);
             if (cursorOptions.isVerticalCursorOn == "true" || cursorOptions.isHorizontalCursorOn == "true"){
                 drawCursors();
             }
@@ -314,7 +324,7 @@ function fetchRawData(){
             // console.log(dataView);
 
             clearCanvas();
-            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+            drawGrid('rgba(128, 128, 128, 0.5)', 3);
             if (cursorOptions.isVerticalCursorOn == "true" || cursorOptions.isHorizontalCursorOn == "true"){
                 drawCursors();
             }
@@ -329,9 +339,15 @@ function fetchRawData(){
                 channelData[key].points = [];
             });
 
+            let max
+            if (config.numChannels > 4){
+                max = 4;
+            }else{
+                max = config.numChannels;
+            }
             // Parse buffer into channel data
             for (let i = 0; i < totalSamples; i++) {
-                let channelNum = (i % config.numChannels) + 1;
+                let channelNum = (i % max) + 1;
                 let channelKey = 'CH' + channelNum;
                 let pointIndex = i * bytesPerSample;
                 let point = dataView.getUint16(pointIndex, true);
@@ -371,6 +387,86 @@ function fetchRawData(){
     Http.send();
 };
 
+function saveColorChoices(){
+    const UID = userId;//We get this value from the html page "graph.html"
+
+    console.log("Saving color choices for the user with id :", UID);
+
+    //We start by gathering each values for the color inputs
+    ColorChoicesDark = [];
+    ColorChoicesLight = [];
+
+    for (let i = 1; i < 11; i++){
+        valueDark = document.getElementById("channelColorD-"+i).value;
+        valueLight = document.getElementById("channelColorL-"+i).value;
+
+        ColorChoicesDark.push(valueDark);
+        ColorChoicesLight.push(valueLight);
+    }
+
+    gridOpacity = document.getElementById("gridOpacityInput").value;
+
+    // console.log("FINAL ARRAYS : ");
+    // console.log(ColorChoicesDark);
+    // console.log(ColorChoicesLight);
+
+    //Now we send the data to the backend where we'll change the preferences.
+    const Http = new XMLHttpRequest();
+    const url = `/oscillo/setNewColors/${UID}/`;
+    
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+    Http.open("POST", url, true);
+    Http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    Http.setRequestHeader("X-CSRFToken", csrfToken);
+
+    const data = JSON.stringify({
+        ColorChoicesDark: ColorChoicesDark,
+        ColorChoicesLight: ColorChoicesLight,
+        gridOpacity: gridOpacity
+    });
+
+    Http.onreadystatechange = function() {
+        if (Http.readyState === 4) {
+            response = JSON.parse(Http.responseText);
+            if (Http.status === 200) {
+                console.log(response.message);
+                showToast(response.message, "toast-success");
+            } else {
+                console.log("Error saving color choices: ", response.message);
+                showToast(response.message, "toast-error");
+                return;
+            }
+        }
+    };
+
+    Http.send(data);
+
+    //Once we have confirmation the choices have been saved, we update each channel with their new colors.
+    for (let i = 1; i < 11; i++){
+        channelsMetaData["CH"+i].colorDark = ColorChoicesDark[i -1];
+        channelsMetaData["CH"+i].colorLight = ColorChoicesLight[i -1];
+        try {//In case we have channels not directly next to one another (eg. CH1, CH2, CH7, CH9)
+            channelData["CH"+i].colorDark = ColorChoicesDark[i -1];
+            channelData["CH"+i].colorLight = ColorChoicesLight[i -1];
+        } catch (error) {}
+    }
+    config.gridOpacity = gridOpacity;
+
+    //We finish off by changing the channel buttons' color & their offset cursor.
+    Object.keys(channelData).forEach(key => {
+        if (channelData[key].display == true){
+            if (config.theme == "dark"){
+                document.getElementById(key).className = "ch-button channel-displayed " + channelData[key].colorDark;
+                document.getElementById("scroller-"+key).style.backgroundColor = channelData[key].colorDark
+            }else{
+                document.getElementById(key).className = "ch-button channel-displayed " + channelData[key].colorLight;
+                document.getElementById("scroller-"+key).style.backgroundColor = channelData[key].colorLight
+            }
+        }
+    });
+};
+
 /*
 ╔══════════════════════════════════════════════════════╗
 ║        CODE FLOW (START - LOOP - EVENTS)             ║
@@ -383,10 +479,6 @@ function environmentSetup(){//This function sets up anything necessary for inter
     const verticalScalingKnob = document.getElementById("vertical-scaling");
     const horizontalScalingKnob = document.getElementById("horizontal-scaling");
     
-    const scrollBar = document.getElementById("scroll-bar");
-    const scroller = document.getElementById("scroller");
-    let startY;
-
     const scrollBarHorizontal = document.getElementById("scrollbar-horizontal");
     const scrollerHorizontal = document.getElementById("scroller-Horizontal");
     let startX;
@@ -395,60 +487,8 @@ function environmentSetup(){//This function sets up anything necessary for inter
     for (let i = 1; i < 11; i++) {//Setup listeners to change a button's aspect when clicked
         let channel = "CH" + i;
         document.getElementById(channel).addEventListener("click", function() {
-            console.log(`Channel ${channel} clicked!`);
+            // console.log(`Channel ${channel} clicked!`);
             changeChannelButtonStatus(channel);
-        });
-    };
-
-
-    //===================== VERTICAL OFFSET INTERACTIONS (MOUSE) =====================
-    scroller.addEventListener('mousedown', function(event) {
-        isDragging = true;
-        startY = event.clientY - scroller.getBoundingClientRect().top + scrollBar.getBoundingClientRect().top;
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    });
-
-    function onMouseMove(event) {
-        if (!isDragging) return;
-
-        //this part handles the actual movement of the element on the screen
-        let newY = event.clientY - startY;
-        newY = Math.max(newY, 0);
-        newY = Math.min(newY, scrollBar.clientHeight - scroller.clientHeight);
-
-        scroller.style.top = newY + 'px';
-        // console.log("Curser is being dragged");
-
-        //this part maps the relative position of the scroller to the offset of the signal
-        let percent = newY / (scrollBar.clientHeight - scroller.clientHeight);
-        let verticalOffset = (percent - 0.5) * 1000;
-        verticalOffset = Math.round(verticalOffset);
-
-        //and now we actually update the vertical offset of the focused channel
-        Object.keys(channelData).forEach(key => {
-            if (channelData[key].focused) {
-                channelData[key].verticalOffset = verticalOffset;
-            }
-        });
-    };
-
-    function onMouseUp(event) {
-        isDragging = false;
-
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-
-        //Here below we save the cursor position for that channel to restore it when the user clicks on the channel again
-
-        let newY = event.clientY - startY;
-        newY = Math.max(newY, 0);
-        newY = Math.min(newY, scrollBar.clientHeight - scroller.clientHeight);
-
-        Object.keys(channelData).forEach(key => {
-            if (channelData[key].focused) {
-                channelData[key].verticalOffsetRelativeCursorPosition = newY;
-            }
         });
     };
 
@@ -463,7 +503,6 @@ function environmentSetup(){//This function sets up anything necessary for inter
 
     function onMouseMoveHorizontal(event) {
         if (!isDragging) return;
-        console.log("Curser is being dragged");
         
         let newX = event.clientX - startX;
         newX = Math.max(newX, 0);
@@ -532,17 +571,16 @@ function environmentSetup(){//This function sets up anything necessary for inter
 
     RUNSTOP.addEventListener("click", function() {
         if (isRunning) {
-            console.log("Stopping the oscilloscope");
+            //console.log("Stopping the oscilloscope");
             isRunning = false;
             RUNSTOP.innerHTML = "RUN";
             clearCanvas(); //we delete the signals on screen
-            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);//we keep the grid however.
-            
+            drawGrid('rgba(128, 128, 128, 0.5)', 3);//we keep the grid however.
         } else {
             if (config.mode == null || config.mode == "NA"){
                 showToast("Your settings are not set yet.\nClick on the 'Settings' button to set them up.", "toast-error");
             }else{
-                console.log("Starting the oscilloscope");
+                //console.log("Starting the oscilloscope");
                 isRunning = true;
                 RUNSTOP.innerHTML = "STOP";
             }
@@ -572,7 +610,6 @@ function environmentSetup(){//This function sets up anything necessary for inter
     //===================== TRIGGER BUTTON INTERACTIONS =====================
 
     TRIGGER.addEventListener("click", function(){
-        console.log("Trigger button clicked");
         if (triggered){
             triggered = false;
         }else{
@@ -588,7 +625,6 @@ function environmentSetup(){//This function sets up anything necessary for inter
     //===================== CURSORS BUTTON INTERACTIONS =====================
 
     CURSORS.addEventListener("click", function(){
-        console.log("Cursors Button clicked ! ");
         populateModalForCursors();
         displayBaseModal();
     });
@@ -596,7 +632,6 @@ function environmentSetup(){//This function sets up anything necessary for inter
     //===================== SIZE BUTTON INTERACTIONS =====================
 
     SIZE.addEventListener("click", function(){
-        console.log("Size button clicked !");
         populateModalForSize();
         displayBaseModal();
     });
@@ -647,7 +682,6 @@ function environmentSetup(){//This function sets up anything necessary for inter
     //===================== DISPLAY BUTTON INTERACTIONS =====================
 
     DISPLAY.addEventListener("click", function(){
-        console.log("Display button clicked !");
         populateModalForDisplay();
         displayBaseModal();
     });
@@ -660,11 +694,18 @@ function environmentSetup(){//This function sets up anything necessary for inter
         }
     });
 
+    //===================== SETUP BUTTON INTERACTIONS =====================
+
+    SETUP.addEventListener("click", function(){
+        populateModalForSetup();
+        displayBaseModal();
+    });
+
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
-    drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+    drawGrid('rgba(128, 128, 128, 0.5)', 3);
 
     getCurrentSettings();
-}
+};
 
 function MAINLOOP(){
     LOOP = setInterval(function() {
@@ -680,7 +721,7 @@ function MAINLOOP(){
                 setScreenInformation();
             }else if(triggered){
                 clearCanvas();
-                drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+                drawGrid('rgba(128, 128, 128, 0.5)', 3);
                 Object.keys(channelData).forEach(key => {
                     //We check here wether there could be a signal to generate from a math function that has been set during a trigger.
                     //In which case it wouldn't be drawn directly because the 'generatepoints' function is called when fetching data which we aren't when triggered.
@@ -712,7 +753,7 @@ function MAINLOOP(){
         }
     }, loopDelay)
 
-}
+};
 
 document.addEventListener('DOMContentLoaded', function() {
     environmentSetup();//we load all the necessary event listeners for the oscilloscope
@@ -746,9 +787,13 @@ function drawCursors(){
         ctx.beginPath();
         ctx.moveTo(cursorOptions.verticalAPosition, 0);
         ctx.lineTo(cursorOptions.verticalAPosition, CANVAS.height);
-        const cursorATime = getTimeForACursor(cursorOptions.verticalAPosition)
-        const text = `${cursorATime.value} ${cursorATime.scale}`;
-        ctx.fillText(text, cursorOptions.verticalAPosition + 10, 50);
+        if (cursorOptions.cursorsValueDisplay != "indisplay"){
+            const cursorATime = getTimeForACursor(cursorOptions.verticalAPosition)
+            const text = `${cursorATime.value} ${cursorATime.scale}`;
+            ctx.fillText(text, cursorOptions.verticalAPosition + 10, 50);
+        }else{
+            ctx.fillText("A", cursorOptions.verticalAPosition + 10, 50);
+        }
         ctx.stroke();
     
         ctx.strokeStyle = 'crimson';
@@ -758,32 +803,47 @@ function drawCursors(){
         ctx.beginPath();
         ctx.moveTo(cursorOptions.verticalBPosition, 0);
         ctx.lineTo(cursorOptions.verticalBPosition, CANVAS.height);
-        const cursorBTime = getTimeForACursor(cursorOptions.verticalBPosition)
-        const text2 = `${cursorBTime.value} ${cursorBTime.scale}`;
-        ctx.fillText(text2, cursorOptions.verticalBPosition - 70, 50);
+        if (cursorOptions.cursorsValueDisplay != "indisplay"){
+            const cursorBTime = getTimeForACursor(cursorOptions.verticalBPosition)
+            const text2 = `${cursorBTime.value} ${cursorBTime.scale}`;
+            ctx.fillText(text2, cursorOptions.verticalBPosition - 70, 50);
+        }else{
+            ctx.fillText("B", cursorOptions.verticalBPosition - 20, 50);
+        }
         ctx.stroke();
     
         //draw perpendicular line
         ctx.beginPath();
-        ctx.strokeStyle = 'white';
         ctx.lineWidth = 1;
         ctx.globalAlpha = 0.5;
-        ctx.fillStyle = 'white';
+        if (config.theme == "dark"){
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'white';
+        }else{
+            ctx.fillStyle = 'black';
+            ctx.strokeStyle = 'black';
+        }
         
     
-    
-        let pixelsBetweenCursors;
-        if (cursorOptions.verticalAPosition > cursorOptions.verticalBPosition){
-            pixelsBetweenCursors = cursorOptions.verticalAPosition - cursorOptions.verticalBPosition;
+        if (cursorOptions.cursorsValueDisplay != "indisplay"){
+            
+            let pixelsBetweenCursors;
+            if (cursorOptions.verticalAPosition > cursorOptions.verticalBPosition){
+                pixelsBetweenCursors = cursorOptions.verticalAPosition - cursorOptions.verticalBPosition;
+            }else{
+                pixelsBetweenCursors = cursorOptions.verticalBPosition - cursorOptions.verticalAPosition;
+            }
+
+            const timeBetweenCursors = getTimeBetweenCursors(pixelsBetweenCursors);
+            const text3 = `Δ ${timeBetweenCursors.value} ${timeBetweenCursors.scale}`;
+            let X = (cursorOptions.verticalAPosition + cursorOptions.verticalBPosition) / 2;
+            let Y = CANVAS.height * 0.80 - 10;
+            ctx.fillText(text3, X -80, Y);
         }else{
-            pixelsBetweenCursors = cursorOptions.verticalBPosition - cursorOptions.verticalAPosition;
+            let X = (cursorOptions.verticalAPosition + cursorOptions.verticalBPosition) / 2;
+            let Y = CANVAS.height * 0.80 - 10;
+            ctx.fillText("Δ", X - 7, Y);
         }
-        const timeBetweenCursors = getTimeBetweenCursors(pixelsBetweenCursors);
-    
-        const text3 = `Δ ${timeBetweenCursors.value} ${timeBetweenCursors.scale}`;
-        let X = (cursorOptions.verticalAPosition + cursorOptions.verticalBPosition) / 2;
-        let Y = CANVAS.height * 0.80 - 10;
-        ctx.fillText(text3, X -80, Y);
         
         ctx.setLineDash([8, 4]);
         ctx.moveTo(Math.min(cursorOptions.verticalAPosition, cursorOptions.verticalBPosition), CANVAS.height * 0.80);
@@ -805,9 +865,13 @@ function drawCursors(){
         ctx.beginPath();
         ctx.moveTo(0, cursorOptions.horizontalAPosition); // Move to the left edge of the canvas at a specific horizontal position
         ctx.lineTo(CANVAS.width, cursorOptions.horizontalAPosition); // Draw line to the right edge of the canvas
-        const MvCursorA = getMilliVoltForACursor(cursorOptions.horizontalAPosition);
-        const text = `${MvCursorA.value} ${MvCursorA.scale}`;
-        ctx.fillText(text, CANVAS.width - 100, cursorOptions.horizontalAPosition -10); // Adjust text position to follow the line
+        if (cursorOptions.cursorsValueDisplay != "indisplay"){
+            const MvCursorA = getMilliVoltForACursor(cursorOptions.horizontalAPosition);
+            const text = `${MvCursorA.value} ${MvCursorA.scale}`;
+            ctx.fillText(text, CANVAS.width - 100, cursorOptions.horizontalAPosition -10); // Adjust text position to follow the line
+        }else{
+            ctx.fillText("A", CANVAS.width - 20, cursorOptions.horizontalAPosition -10);
+        }
         ctx.stroke();
     
         ctx.strokeStyle = 'darkorange';
@@ -817,32 +881,48 @@ function drawCursors(){
         ctx.beginPath();
         ctx.moveTo(0, cursorOptions.horizontalBPosition); // Move to the left edge of the canvas at another specific horizontal position
         ctx.lineTo(CANVAS.width, cursorOptions.horizontalBPosition); // Draw line to the right edge of the canvas
-        const MvCursorB = getMilliVoltForACursor(cursorOptions.horizontalBPosition);
-        const text2 = `${MvCursorB.value} ${MvCursorB.scale}`;
-        ctx.fillText(text2, CANVAS.width - 100, cursorOptions.horizontalBPosition + 22); // Adjust text position to follow the line, slightly offset vertically
+        if (cursorOptions.cursorsValueDisplay != "indisplay"){
+            const MvCursorB = getMilliVoltForACursor(cursorOptions.horizontalBPosition);
+            const text2 = `${MvCursorB.value} ${MvCursorB.scale}`;
+            ctx.fillText(text2, CANVAS.width - 100, cursorOptions.horizontalBPosition + 22); // Adjust text position to follow the line, slightly offset vertically
+        }else{
+            ctx.fillText("B", CANVAS.width - 20, cursorOptions.horizontalBPosition + 22);
+        }
         ctx.stroke();
 
 
         // Draw perpendicular line
         ctx.beginPath();
-        ctx.strokeStyle = 'whitesmoke';
         ctx.lineWidth = 1;
         ctx.globalAlpha = 0.5;
-        ctx.fillStyle = 'whitesmoke';
 
-        let pixelsBetweenCursors;
-        if (cursorOptions.horizontalAPosition > cursorOptions.horizontalBPosition){
-            pixelsBetweenCursors = cursorOptions.horizontalAPosition - cursorOptions.horizontalBPosition;
+        if (config.theme == "dark"){
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'white';
         }else{
-            pixelsBetweenCursors = cursorOptions.horizontalBPosition - cursorOptions.horizontalAPosition;
+            ctx.fillStyle = 'black';
+            ctx.strokeStyle = 'black';
         }
 
-        const milliVoltsBetweenCursors = getMillivoltsBetweenCursors(pixelsBetweenCursors);
-
-        const text3 = `Δ ${milliVoltsBetweenCursors.value} ${milliVoltsBetweenCursors.scale}`;
-        let Y = (cursorOptions.horizontalAPosition + cursorOptions.horizontalBPosition) / 2;
-        let X = CANVAS.width * 0.10 + 10;
-        ctx.fillText(text3, X, Y);
+        if (cursorOptions.cursorsValueDisplay != "indisplay"){
+            let pixelsBetweenCursors;
+            if (cursorOptions.horizontalAPosition > cursorOptions.horizontalBPosition){
+                pixelsBetweenCursors = cursorOptions.horizontalAPosition - cursorOptions.horizontalBPosition;
+            }else{
+                pixelsBetweenCursors = cursorOptions.horizontalBPosition - cursorOptions.horizontalAPosition;
+            }
+    
+            const milliVoltsBetweenCursors = getMillivoltsBetweenCursors(pixelsBetweenCursors);
+    
+            const text3 = `Δ ${milliVoltsBetweenCursors.value} ${milliVoltsBetweenCursors.scale}`;
+            let Y = (cursorOptions.horizontalAPosition + cursorOptions.horizontalBPosition) / 2;
+            let X = CANVAS.width * 0.10 + 10;
+            ctx.fillText(text3, X, Y);
+        }else{
+            let Y = (cursorOptions.horizontalAPosition + cursorOptions.horizontalBPosition) / 2;
+            let X = CANVAS.width * 0.10 + 10;
+            ctx.fillText("Δ", X, Y);  
+        }
 
         ctx.setLineDash([8, 4]);
         ctx.moveTo(CANVAS.width * 0.10, Math.min(cursorOptions.horizontalAPosition, cursorOptions.horizontalBPosition));
@@ -850,6 +930,77 @@ function drawCursors(){
         ctx.stroke();
 
         ctx.setLineDash([]);
+    };
+
+    if (cursorOptions.cursorsValueDisplay == "indisplay"){
+        ctx.setLineDash([]);
+        ctx.strokeStyle = 'yellow';
+        ctx.fillStyle = 'lightgoldenrodyellow';
+        ctx.lineWidth = 5;
+        ctx.globalAlpha = 0.8;
+    
+        ctx.beginPath();
+    
+        var rectWidth = 220;
+        var rectHeight = 120;
+    
+        var x = CANVAS.width - rectWidth;
+        var y = 10;
+    
+        ctx.rect(x - 10, y, rectWidth, rectHeight);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = "16px Arial";
+        ctx.fillStyle = 'black';
+        ctx.globalAlpha = 1.0;
+
+        const cursorATime = getTimeForACursor(cursorOptions.verticalAPosition)
+        const cursorBTime = getTimeForACursor(cursorOptions.verticalBPosition)
+        let pixelsBetweenCursors;
+        if (cursorOptions.verticalAPosition > cursorOptions.verticalBPosition){
+            pixelsBetweenCursors = cursorOptions.verticalAPosition - cursorOptions.verticalBPosition;
+        }else{
+            pixelsBetweenCursors = cursorOptions.verticalBPosition - cursorOptions.verticalAPosition;
+        }
+        const timeBetweenCursors = getTimeBetweenCursors(pixelsBetweenCursors);
+
+        var textA_us = `A: ${cursorATime.value} ${cursorATime.scale}`;
+        var textB_us = `B: ${cursorBTime.value} ${cursorBTime.scale}`;
+        var textD_us = `Δ: ${timeBetweenCursors.value} ${timeBetweenCursors.scale}`;
+
+        const MvCursorA = getMilliVoltForACursor(cursorOptions.horizontalAPosition);    
+        const MvCursorB = getMilliVoltForACursor(cursorOptions.horizontalBPosition);
+        let pixelsBetweenCursorsHorizontal;
+        if (cursorOptions.horizontalAPosition > cursorOptions.horizontalBPosition){
+            pixelsBetweenCursorsHorizontal = cursorOptions.horizontalAPosition - cursorOptions.horizontalBPosition;
+        }else{
+            pixelsBetweenCursorsHorizontal = cursorOptions.horizontalBPosition - cursorOptions.horizontalAPosition;
+        }
+        const milliVoltsBetweenCursors = getMillivoltsBetweenCursors(pixelsBetweenCursorsHorizontal);
+
+        var textA_mV = `A: ${MvCursorA.value} ${MvCursorA.scale}`;
+        var textB_mV = `B: ${MvCursorB.value} ${MvCursorB.scale}`;
+        var textD_mV = `Δ: ${milliVoltsBetweenCursors.value} ${milliVoltsBetweenCursors.scale}`;
+
+        var padding = 10;
+        var textY1 = y + padding + 20;
+        var textY2 = textY1 + 20;
+        var textY3 = y + rectHeight / 2 + padding + 20;
+        var textY4 = textY3 + 20;
+
+        var spaceBetween = rectWidth / 2;
+
+        ctx.fillText(textA_us, x, textY1);
+        ctx.fillText(textB_us, x + spaceBetween, textY1);
+        ctx.fillText(textD_us, x + rectWidth / 4, textY2);
+
+        ctx.fillText(textA_mV, x, textY3);
+        if (MvCursorA.value != "No channel"){
+            ctx.fillText(textB_mV, x + spaceBetween, textY3);
+            ctx.fillText(textD_mV, x + rectWidth / 4, textY4);
+        }
+
     };
 };
 
@@ -996,11 +1147,11 @@ function drawFFT(channelKey) {
 };
 
 // Function to draw a grid composed of full squares on the canvas
-function drawGrid(gridColor, opacity, thickerLineWidth) {
+function drawGrid(gridColor, thickerLineWidth) {
     if (config.gridDisplay == 0){return;}
     
     let ctx = CANVAS.getContext('2d');
-    ctx.globalAlpha = opacity;
+    ctx.globalAlpha = config.gridOpacity;
 
     const gridSizeVertical = CANVAS.width / config.horizontalDivisions;
     const gridSizeHorizontal = CANVAS.height / config.verticalDivisions;
@@ -1099,7 +1250,7 @@ function createSelect(options){
     });
     selectElement.classList.add("modal-select-trigger");
     return selectElement;
-}
+};
 
 function displayBaseModal(){
     MODAL.style.display = "block";
@@ -1107,7 +1258,7 @@ function displayBaseModal(){
     let modalClose = document.getElementsByClassName("close")[0];
 
 
-    modalClose.onclick = function() {//if user clicks on the close button, we close the modal
+    modalClose.onclick = function() {
         hideModal();
     };
 
@@ -1120,8 +1271,8 @@ function displayBaseModal(){
 
 function hideModal() {
     MODAL.style.display = "none"; // Hide the modal by setting display to 'none'
-    clearModal(); // Assuming clearModal() is a function to clear the modal content
-}
+    clearModal();
+};
 
 function clearModal(){
     let modalContentDiv = document.getElementById("modal-generated-content");
@@ -1130,7 +1281,7 @@ function clearModal(){
     //This ensures that the event listeners are also removed.
     let modalClone = modalContentDiv.cloneNode(false);
     modalContentDiv.parentNode.replaceChild(modalClone, modalContentDiv);
-}
+};
 
 function populateModalForMeasure_AUTO(){
     let modalContentDiv = document.getElementById("modal-generated-content");
@@ -1210,7 +1361,6 @@ function populateModalForMeasure_AUTO(){
     autoSwitchButton.classList.add("modal-measure-button");
 
     autoSwitchButton.addEventListener("click", function(){
-        console.log("switch to Math functions")
         clearModal();
         populateModalForMeasure_MATHS();
     });
@@ -1333,7 +1483,6 @@ function populateModalForMeasure_MATHS(){
     modalContentDiv.appendChild(container4);
 
     selectOperation.addEventListener("change", function(){
-        console.log("Operation change ! ")
         const value = selectOperation.value;
         if (value == "add" || value == "sub" || value == "mult" || value == "div"){
             container4.style.display = "block";
@@ -1418,6 +1567,10 @@ function populateModalForMeasure_MATHS(){
                 channelButton.className = "channel-not-displayed";
                 config.numChannels -= 1;
 
+                //Here we also get rid of the cursor associated to the signal.
+                const scroller = document.getElementById("scroller-" + signal);
+                scroller.style.display = "none";
+
                 clearModal();
                 populateModalForMeasure_MATHS();
             });
@@ -1436,7 +1589,7 @@ function populateModalForMeasure_MATHS(){
 };
 
 function populateModalForTrigger(){
-    console.log("Trigger settings : ", triggerOptions);
+    // console.log("Trigger settings : ", triggerOptions);
     let modalContentDiv = document.getElementById("modal-generated-content");
 
     const triggerOnOffOptions = [
@@ -1589,7 +1742,6 @@ function populateModalForTrigger(){
 };
 
 function populateModalForCursors(){
-    console.log("Setting up the modal for the cursors options");
     let modalContentDiv = document.getElementById("modal-generated-content");
 
     const horizontalOptions = [
@@ -1678,6 +1830,13 @@ function populateModalForCursors(){
         cursorOptions.horizontalBPosition = 533;
         cursorOptions.verticalAPosition = 400;
         cursorOptions.verticalBPosition = 800;
+        selectHorizontal.value = "false";
+        selectVertical.value = "false";
+        selectValue.value = "oncursor";
+        document.getElementById("vertical-scroller-A").style.display = "none";
+        document.getElementById("vertical-scroller-B").style.display = "none";
+        document.getElementById("scroller-horizontal-A").style.display = "none";
+        document.getElementById("scroller-horizontal-B").style.display = "none";
     });
 };
 
@@ -1697,7 +1856,6 @@ function populateModalForSize(){
     modalContentDiv.appendChild(title);
 
     const selectSize = createSelect(sizeOptions);
-    selectSize.id = "";
     selectSize.value = "1200|800";
     modalContentDiv.appendChild(selectSize);
 
@@ -1752,7 +1910,7 @@ function populateModalForDisplay(){
             config.gridDisplay = 1;
             showToast("Grid displayed", "toast-info");
             if (!isRunning){
-                drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+                drawGrid('rgba(128, 128, 128, 0.5)', 3);
             };
         }else{
             config.gridDisplay = 0;
@@ -1784,6 +1942,139 @@ function populateModalForDisplay(){
     selectTheme.addEventListener("change", function(){changeScreenLightMode(selectTheme.value)});
 };
 
+function populateModalForSetup(){
+    let modalContentDiv = document.getElementById("modal-generated-content");
+
+    const colorOptionsLight = [
+        //We have to display the color's name because some browsers (firefox) do not display the colors of "option" elements.
+        {text: "Green", value: "green"},
+        {text: "Red", value: "red"},
+        {text: "Gray", value: "gray"},
+        {text: "Olive", value: "olive"},
+        {text: "Cyan", value: "cyan"},
+        {text: "Orange", value: "orange"},
+        {text: "Maroon", value: "maroon"},
+        {text: "Blue", value: "blue"},
+        {text: "Purple", value: "purple"},
+        {text: "Black", value: "black"},
+    ];
+
+    const colorOptionsDark = [
+        {text: "Lime", value: "lime"},
+        {text: "Red", value: "red"},
+        {text: "Cyan", value: "cyan"},
+        {text: "Yellow", value: "yellow"},
+        {text: "Green", value: "green"},
+        {text: "Orange", value: "orange"},
+        {text: "Pink", value: "pink"},
+        {text: "Blue", value: "blue"},
+        {text: "Fuchsia", value: "fuchsia"},
+        {text: "White", value: "white"},
+    ];
+
+    const title = document.createElement("h4");
+    title.textContent = "Setup Options";
+    modalContentDiv.appendChild(title);
+
+    const container1 = document.createElement("div");
+    container1.id = "colorSelectionContainer";
+
+    const container2 = document.createElement("div");
+    container2.id = "DarkColorSelectionContainer";
+
+    const container3 = document.createElement("div");
+    container3.id = "LightColorSelectionContainer";
+
+    const subTitle1 = document.createElement("h5");
+    subTitle1.textContent = "Dark";
+    const subTitle2 = document.createElement("h5");
+    subTitle2.textContent = "Light";
+
+    container1.appendChild(container2);
+    container1.appendChild(container3)
+    container2.appendChild(subTitle1);
+    container3.appendChild(subTitle2);
+
+    for (let i = 1; i < 11; i++){//Dark mode color options
+        const individualChannelColorContainer = document.createElement("span");
+        individualChannelColorContainer.classList.add("individualChannelColorContainer");
+        const para = document.createElement("p");
+        para.textContent = "CH" + i;
+        const colorSelect = createSelect(colorOptionsDark);
+        colorSelect.id = "channelColorD-"+i;
+
+        colorSelect.style.backgroundColor = channelsMetaData["CH"+i].colorDark;
+        colorSelect.value = channelsMetaData["CH"+i].colorDark;
+
+        colorSelect.addEventListener("change", function(){
+            colorSelect.style.backgroundColor = colorSelect.value;
+        });
+
+        //These 3 lines below display the color associated with each option element
+        //It does not work on certain browser (firefox)
+        colorSelect.childNodes.forEach((option, index) => {
+            option.style.backgroundColor = colorOptionsDark[index].value;
+        });
+
+        individualChannelColorContainer.appendChild(para);
+        individualChannelColorContainer.appendChild(colorSelect);
+        container2.appendChild(individualChannelColorContainer);
+    };
+
+    for (let i = 1; i < 11; i++){//Light mode color options
+        const individualChannelColorContainer = document.createElement("span");
+        individualChannelColorContainer.classList.add("individualChannelColorContainer");
+        const para = document.createElement("p");
+        para.textContent = "CH" + i;
+        const colorSelect = createSelect(colorOptionsLight);
+        colorSelect.id = "channelColorL-"+i;
+
+        colorSelect.style.backgroundColor = channelsMetaData["CH"+i].colorLight;
+        colorSelect.value = channelsMetaData["CH"+i].colorLight;
+
+        colorSelect.addEventListener("change", function(){
+            colorSelect.style.backgroundColor = colorSelect.value;
+        });
+
+        //These 3 lines below display the color associated with each option element
+        //It does not work on certain browser (firefox)
+        colorSelect.childNodes.forEach((option, index) => {
+            option.style.backgroundColor = colorOptionsLight[index].value;
+        });
+
+        individualChannelColorContainer.appendChild(para);
+        individualChannelColorContainer.appendChild(colorSelect);
+        container3.appendChild(individualChannelColorContainer);
+    };
+
+    modalContentDiv.appendChild(container1);
+
+    const container4 = document.createElement("div");
+    container4.id = "GridOpacityContainer";
+
+    const label = document.createElement("label");
+    label.textContent = "Grid Opacity (0-1) : ";
+    const gridOpacityInput = document.createElement("input");
+    gridOpacityInput.id = "gridOpacityInput";
+    gridOpacityInput.type = "number"
+    gridOpacityInput.min = 0;
+    gridOpacityInput.max = 1;
+    gridOpacityInput.step = 0.1;
+    gridOpacityInput.value = config.gridOpacity;
+
+    container4.appendChild(label);
+    container4.appendChild(gridOpacityInput);
+
+    modalContentDiv.appendChild(container4);
+
+    const saveButton = document.createElement("button");
+    saveButton.textContent = "SAVE";
+
+    saveButton.addEventListener("click", saveColorChoices);
+
+    modalContentDiv.appendChild(saveButton);
+};
+
 /*
 ╔══════════════════════════════════════════════════════╗
 ║                UI INTERACTIONS HANDLERS              ║
@@ -1812,15 +2103,15 @@ function changeChannelButtonStatus(channelKey) {
 
             //Here we also set the correct values for the vertical scaling of this channel to the knob of the html page
             document.getElementById('vertical-scaling').value = channelData[channelKey].verticalScale;
-            //And we do the same for the vertical offset (little cursor)
-            document.getElementById('scroller').style.top = channelData[channelKey].verticalOffsetRelativeCursorPosition + 'px';
-            if (config.theme == "light"){
-                document.getElementById('scroller').style.backgroundColor = channelData[channelKey].colorLight;
-            }else{
-                document.getElementById('scroller').style.backgroundColor = channelData[channelKey].colorDark;
-            }
+            //here we update the z-index of that cursor to make it easy for the user to interact with.
+            Object.keys(channelData).forEach(key => {
+                if (key == channelKey){
+                    document.getElementById('scroller-' + channelKey).style.zIndex = 50000;
+                }else{
+                    document.getElementById('scroller-' + key).style.zIndex = 10000;
+                }
+            })
             
-
             // If channel is not displayed, display it
             if (!channelData[channelKey].display) {
                 // console.log("Displaying channel:", channelKey);
@@ -1828,6 +2119,8 @@ function changeChannelButtonStatus(channelKey) {
                 button.classList.add("channel-displayed");
                 button.classList.add(channelData[channelKey].colorDark);
                 channelData[channelKey].display = true;
+                document.getElementById('scroller-' + channelKey).style.display = 'block';
+                document.getElementById('scroller-' + channelKey).style.top = channelData[channelKey].verticalOffsetRelativeCursorPosition;
             }
         } else {
             if (channelData[channelKey].display) {//if channel is focused, then
@@ -1837,8 +2130,7 @@ function changeChannelButtonStatus(channelKey) {
                 button.classList.remove(channelData[channelKey].colorDark);
                 channelData[channelKey].display = false;
 
-                document.getElementById('scroller').style.top = '395px';
-                document.getElementById('scroller').style.backgroundColor = "gray";
+                document.getElementById('scroller-' + channelKey).style.display = 'none';
             }
             // remove the focus since the button was clicked a second time
             button.classList.remove('button-focused');
@@ -1846,8 +2138,9 @@ function changeChannelButtonStatus(channelKey) {
         }
     } catch (error) {
         if (error instanceof TypeError) {//Button not linked to an active channel
-            let text = "This channel is not active.";
-            showToast(text, "toast-error");
+            console.error(error)
+            showToast("This channel is not active.", "toast-error");
+
         } else {
             alert("An unknown error occured, please look at the console.")
             console.error(error);
@@ -2191,7 +2484,7 @@ function changeScreenSize(size){
             showToast("Back to standard screen size.", "toast-info");
 
             clearCanvas();
-            drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+            drawGrid('rgba(128, 128, 128, 0.5)', 3);
         }
     }
 
@@ -2233,7 +2526,7 @@ function changeScreenSize(size){
     }
 
     clearCanvas();
-    drawGrid('rgba(128, 128, 128, 0.5)', 0.5, 3);
+    drawGrid('rgba(128, 128, 128, 0.5)', 3);
 };
 
 function changeScreenLightMode(mode){
@@ -2257,13 +2550,97 @@ function changeScreenLightMode(mode){
         if (mode == "light"){
             document.getElementById(key).classList.remove(channelData[key].colorDark);
             document.getElementById(key).classList.add(channelData[key].colorLight);
+            document.getElementById("scroller-"+key).style.backgroundColor = channelData[key].colorLight;
         }else{
             document.getElementById(key).classList.remove(channelData[key].colorLight);
             document.getElementById(key).classList.add(channelData[key].colorDark);
+            document.getElementById("scroller-"+key).style.backgroundColor = channelData[key].colorDark;
         }
     });
 
     config.theme = mode;
+
+    //Now we save the new theme to the db for later on.
+    const UID = userId;
+    const Http = new XMLHttpRequest();
+    const url = `/oscillo/setThemePreference/${UID}/`;
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+    Http.open("POST", url, true);
+    Http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    Http.setRequestHeader("X-CSRFToken", csrfToken);
+
+    const data = JSON.stringify({
+        theme: mode,
+    });
+
+    Http.onreadystatechange = function() {
+        if (Http.readyState === 4) {
+            response = JSON.parse(Http.responseText);
+            if (Http.status === 200) {
+                console.log(response.message);
+                showToast(response.message, "toast-success");
+            } else {
+                console.log("Error saving theme: ", response.message);
+                showToast(response.message, "toast-error");
+                return;
+            }
+        }
+    };
+
+    Http.send(data);
+};
+
+function setScrollersEvents(Channel_ID){
+    let isDragging = false;
+    const scrollBar = document.getElementById("scroll-bar");
+    const scroller = document.getElementById("scroller-CH"+Channel_ID);
+    let startY;
+
+    scroller.style.display = "block";
+    scroller.style.backgroundColor = channelData["CH" + Channel_ID].colorDark;
+
+    scroller.addEventListener('mousedown', function(event) {
+        isDragging = true;
+        startY = event.clientY - scroller.getBoundingClientRect().top + scrollBar.getBoundingClientRect().top;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(event) {
+        if (!isDragging) return;
+
+        //this part handles the actual movement of the element on the screen
+        let newY = event.clientY - startY;
+        newY = Math.max(newY, 0);
+        newY = Math.min(newY, scrollBar.clientHeight - scroller.clientHeight);
+
+        scroller.style.top = newY + 'px';
+        // console.log("Curser is being dragged");
+
+        //this part maps the relative position of the scroller to the offset of the signal
+        let percent = newY / (scrollBar.clientHeight - scroller.clientHeight);
+        let verticalOffset = (percent - 0.5) * 1000;
+        verticalOffset = Math.round(verticalOffset);
+
+        //and now we actually update the vertical offset of the focused channel
+        channelData["CH" + Channel_ID].verticalOffset = verticalOffset;
+    };
+
+    function onMouseUp(event) {
+        isDragging = false;
+
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+
+        //Here below we save the cursor position for that channel to restore it when the user clicks on the channel again
+
+        let newY = event.clientY - startY;
+        newY = Math.max(newY, 0);
+        newY = Math.min(newY, scrollBar.clientHeight - scroller.clientHeight);
+
+        channelData["CH" + Channel_ID].verticalOffsetRelativeCursorPosition = newY;
+    };
 };
 
 /*
@@ -2551,7 +2928,7 @@ function generatePoints(channelKey){
                 difference = points[i + 1] - points[i];
                 //Since the derivative show the difference between two points on the graph we need to add the equivalent of 1/2 the height of the graph 
                 //so that it doesn't start being drawn at the bottom of the screen.
-                derivative[i] = difference + 8191;
+                derivative[i] = (difference + 8191).toFixed(0);
             }
             return derivative;
         };
@@ -2572,6 +2949,7 @@ function generatePoints(channelKey){
                 let voltage1 = points[i];
                 let voltage2 = points[i+1];
                 currentIntegral += (voltage2 + voltage1) / 2 * deltaTime;
+                currentIntegral = currentIntegral.toFixed(0);
                 integralValues.push(currentIntegral);
             }
             return integralValues;
@@ -2836,6 +3214,13 @@ function updateGeneratedMathSignalsData(slotChannel, channel1, channel2, operati
 
     //we update the global config to reflect the new channel
     config.numChannels += 1;
+
+    //we add a cursor for this newly created channel
+    const scroller = document.getElementById("scroller-" + slotChannel);
+    scroller.style.display = "block";
+    scroller.style.backgroundColor = channelData[slotChannel].colorDark;
+    const channelID = slotChannel.split("CH")[1];
+    setScrollersEvents(channelID);
 };
 
 function toggleMeasurement(measureKey, buttonId) {
@@ -3019,7 +3404,6 @@ function triggerCheck(channelPoints){
     let trigLevelWindowMin = mapVoltageToRaw((triggerOptions.windowLevelMin / 1000));
     let trigLevelWindowMax = mapVoltageToRaw((triggerOptions.windowLevelMax / 1000));
 
-
     //First we check wether or not any of the points exceed the trigger value(s) set up by the user
     if (triggerOptions.triggerMode == "edge"){
         for (let i = 0; i < channelPoints.length - 1; i++){
@@ -3061,7 +3445,6 @@ function triggerCheck(channelPoints){
     };
 
     //Now if the triggerLevel has been exceeded, we check if the slope is in accord with what the user selected.
-
     if (!isTriggerValueReached){//no need to check the slope type if the value hasn't been exceeded.
         return false;
     }
@@ -3132,8 +3515,6 @@ function autoset(){
     //Now we check every single channel to see if it is fitted within the window or not.
     Object.keys(channelData).forEach(key => {
         if (channelData[key].display == true && channelData[key].operation != "fft"){
-            // console.log(`Autosetting this channel [${key}], is displayed and no fft`);
-
             const channel = channelData[key];
             const highestValuePoint = Math.max(...channel.points);
             const lowestValuePoint = Math.min(...channel.points);
@@ -3147,8 +3528,6 @@ function autoset(){
 
                 //check wether the signal is clipping or not
                 if (previewedYPositionHighestPoint < 0 || previewedYPositionLowestPoint > CANVAS.height){
-                    // console.log("Signal is clipping ! ");
-                    
                     //See if it is possible to simply adjust the offset to make the signal fit
                     if (previewedYPositionHighestPoint < 0 && previewedYPositionLowestPoint > CANVAS.height){
                         // console.log("Can't simply adjust the offset, signal is clipping through both ends !");

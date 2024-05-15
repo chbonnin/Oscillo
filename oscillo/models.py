@@ -56,8 +56,7 @@ class FavoriteColors(models.Model):
     CH9_D = models.CharField(max_length=10, choices=CHOICES_DARK, default="fuchsia", null=False)
     CH10_D = models.CharField(max_length=10, choices=CHOICES_DARK, default="white", null=False)
 
-    Math_signal_L = models.CharField(max_length=10, choices=CHOICES_LIGHT, default="gray", null=False)
-    Math_signal_D = models.CharField(max_length=10, choices=CHOICES_DARK, default="gray", null=False)
+    Theme_saved = models.CharField(max_length=6, default="dark", null=False)
 
     Grid_opacity = models.FloatField(default=0.5, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], null=False)
 

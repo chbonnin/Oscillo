@@ -13,6 +13,8 @@ urlpatterns = [
     path("dataF/<int:filePosition>/<str:fileName>/", main.getFileData, name="dataF"),
     path("dataR/", main.getRawData, name="dataR"),
     path("oscilloSelect/", main.oscilloSelect, name="oscilloSelect"),
+    path("setNewColors/<int:UID>/", views.SetNewColors, name="SetNewColors"),
+    path("setThemePreference/<int:UID>/", views.setThemePreference, name="setThemePreference"),
 
     #User related patterns
     path('login/', views.login_view, name='login'),
