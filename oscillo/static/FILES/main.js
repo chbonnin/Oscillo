@@ -23,9 +23,9 @@ let triggerOptions = {
     isTriggerOn: "off",
     triggerMode: "edge", //edge trigger / window trigger
     triggerChannel: "CH1", //CH1, CH2, CH3, CH4, etc
-    triggerLevel: "500", //value in volts from -1 to +1, that map to the values 0-16383 (if triggerMode = edgetrigger)
-    windowLevelMin: "500", //value in volts from -1 to +1, that map to the values 0-16383 (if triggerMode = windowtrigger)
-    windowLevelMax: "500",//value in volts from -1 to +1, that map to the values 0-16383 (if triggerMode = windowtrigger) + must be higher than windowLevelMin
+    triggerLevel: "500", //value in millivolts from -1 to +1, that map to the values 0-16383 (if triggerMode = edgetrigger)
+    windowLevelMin: "500", //value in millivolts from -1 to +1, that map to the values 0-16383 (if triggerMode = windowtrigger)
+    windowLevelMax: "500",//value in millivolts from -1 to +1, that map to the values 0-16383 (if triggerMode = windowtrigger) + must be higher than windowLevelMin
     triggerSlope: "both", //rising, falling, both
     holdOff: "3600", //default: stop for 1h | value : time in seconds
 };
@@ -169,70 +169,6 @@ function getCurrentSettings(){
     }
 };
 
-// function fetchData(){
-//     const Http = new XMLHttpRequest();
-//     Http.responseType = 'arraybuffer';
-
-//     Http.open("GET", '/oscillo/data/', true);
-
-//     Http.onload = function(event) {
-//         if (Http.status === 200) {
-//             console.log("Data received");
-
-//             const buffer = Http.response;
-//             const dataView = new DataView(buffer);
-//             const bytesPerSample = 2; // Each sample is 2 bytes (Uint16) altough this may change depending on the server's settings !!
-//             const totalSamples = dataView.byteLength / bytesPerSample; // Total samples in all channels
-
-//             console.log(`THis data is made up of ${totalSamples} samples`);
-//             console.log("Here below should be the dataView created from the received data : ");
-//             console.log(dataView);
-
-//             // Clear the channel data before parsing the new data
-//             Object.keys(channelData).forEach(key => {
-//                 channelData[key].points = [];
-//             });
-        
-//             // Parse buffer into channel data
-//             for (let i = 0; i < totalSamples; i++) {
-//                 let channelNum = (i % config.numChannels) + 1;
-//                 let channelKey = 'CH' + channelNum;
-//                 let pointIndex = i * bytesPerSample;
-//                 let point = dataView.getUint16(pointIndex, true);
-//                 channelData[channelKey].points.push(point);
-//             }
-
-//             clearCanvas();
-//             drawGrid('rgba(128, 128, 128, 0.5)', 3);
-
-//             Object.keys(channelData).forEach(key => {
-//                 // console.log(key, channelData[key].points);
-//                 if (channelData[key].display === true){
-//                     if (channelData[key].type == "generatedData" && channelData[key].operation == "fft"){
-//                         drawFFT(key);
-//                     } else {
-//                         drawSignal(key);
-//                     }
-//                 }
-//             });
-
-//             console.log(channelData);
-
-
-//         } else if (Http.status === 408) {
-//             alert('Backend has no data to forward');
-//         } else {
-//             console.error("The request failed unexpectedly ->", Http.statusText);
-//         }
-//     }
-
-//     Http.onerror = function() {
-//         console.log("An error occured while fetching the data");
-//     }
-
-//     Http.send();
-// };
-
 function fetchDataFromFile(){
     // console.log("fetchDataFromFile starts");
     const Http = new XMLHttpRequest();
@@ -266,6 +202,13 @@ function fetchDataFromFile(){
             if (zoomConfig.isDrawing == true){
                 drawZoomRectangle();
             }
+
+            //Here we check whether the trigger is active or not to add the trigger level cursor.
+            if (triggerOptions.isTriggerOn == "on"){
+                drawTriggerCursor();
+            }else{
+                document.getElementById("trigger-cursor").style.display = "none";
+            };
 
             Object.keys(channelData).forEach(key => {
                 //We start by checking wether or not the trigger is set and if so we check the trigger conditions to freeze or not this part of the signal.
@@ -332,6 +275,13 @@ function fetchRawData(){
             if (zoomConfig.isDrawing == true){
                 drawZoomRectangle();
             }
+
+            //Here we check whether the trigger is active or not to add the trigger level cursor.
+            if (triggerOptions.isTriggerOn == "on"){
+                drawTriggerCursor();
+            }else{
+                document.getElementById("trigger-cursor").style.display = "none";
+            };
 
             // Clear the channel data before parsing the new data
             Object.keys(channelData).forEach(key => {
@@ -407,6 +357,12 @@ function saveColorChoices(){
     }
 
     gridOpacity = document.getElementById("gridOpacityInput").value;
+
+    if (gridOpacity > 1){
+        gridOpacity = 1;
+    }else if (gridOpacity < 0){
+        gridOpacity = 0;
+    }
 
     // console.log("FINAL ARRAYS : ");
     // console.log(ColorChoicesDark);
@@ -703,6 +659,8 @@ function environmentSetup(){//This function sets up anything necessary for inter
         displayBaseModal();
     });
 
+    setupTriggerCursor();
+
     //This part is not absolutely necessary, it justs show the grid of the screen before the oscillo has been started.
     drawGrid('rgba(128, 128, 128, 0.5)', 3);
 
@@ -741,6 +699,12 @@ function MAINLOOP(){
                 if (cursorOptions.isVerticalCursorOn == "true" || cursorOptions.isHorizontalCursorOn == "true"){
                     drawCursors();
                 }
+                //Here we check whether the trigger is active or not to add the trigger level cursor.
+                if (triggerOptions.isTriggerOn == "on"){
+                    drawTriggerCursor();
+                }else{
+                    document.getElementById("trigger-cursor").style.display = "none";
+                };
                 if ((triggerClock / 1000) > triggerOptions.holdOff){
                     triggerClock = 0;
                     triggered = false;
@@ -774,6 +738,8 @@ function clearCanvas(){
 
 function drawCursors(){
     const ctx = CANVAS.getContext('2d');
+
+    const canvasWidth = CANVAS.width;
 
     if (cursorOptions.isVerticalCursorOn == "true"){
         ctx.setLineDash([12, 8]);/*dashes are 12px and spaces are 8px*/
@@ -944,17 +910,32 @@ function drawCursors(){
     
         ctx.beginPath();
     
-        var rectWidth = 220;
-        var rectHeight = 120;
+        let rectWidth, rectHeight, y
+
+        if (canvasWidth < 1100){
+            rectWidth = 150;
+            rectHeight = 80;
+            y = 5;
+            ctx.font = "12px Arial";
+        }else if (canvasWidth < 700){
+            rectWidth = 150;
+            rectHeight = 80;
+            y = 2;
+            ctx.font = "10px Arial";
+        }else{
+            rectWidth = 220;
+            rectHeight = 120;
+            y = 10
+            ctx.font = "16px Arial";
+        }
+
     
-        var x = CANVAS.width - rectWidth;
-        var y = 10;
+        let x = CANVAS.width - rectWidth;
     
         ctx.rect(x - 10, y, rectWidth, rectHeight);
         ctx.fill();
         ctx.stroke();
 
-        ctx.font = "16px Arial";
         ctx.fillStyle = 'black';
         ctx.globalAlpha = 1.0;
 
@@ -968,9 +949,9 @@ function drawCursors(){
         }
         const timeBetweenCursors = getTimeBetweenCursors(pixelsBetweenCursors);
 
-        var textA_us = `A: ${cursorATime.value} ${cursorATime.scale}`;
-        var textB_us = `B: ${cursorBTime.value} ${cursorBTime.scale}`;
-        var textD_us = `Δ: ${timeBetweenCursors.value} ${timeBetweenCursors.scale}`;
+        let textA_us = `A: ${cursorATime.value} ${cursorATime.scale}`;
+        let textB_us = `B: ${cursorBTime.value} ${cursorBTime.scale}`;
+        let textD_us = `Δ: ${timeBetweenCursors.value} ${timeBetweenCursors.scale}`;
 
         const MvCursorA = getMilliVoltForACursor(cursorOptions.horizontalAPosition);    
         const MvCursorB = getMilliVoltForACursor(cursorOptions.horizontalBPosition);
@@ -982,17 +963,28 @@ function drawCursors(){
         }
         const milliVoltsBetweenCursors = getMillivoltsBetweenCursors(pixelsBetweenCursorsHorizontal);
 
-        var textA_mV = `A: ${MvCursorA.value} ${MvCursorA.scale}`;
-        var textB_mV = `B: ${MvCursorB.value} ${MvCursorB.scale}`;
-        var textD_mV = `Δ: ${milliVoltsBetweenCursors.value} ${milliVoltsBetweenCursors.scale}`;
+        let textA_mV = `A: ${MvCursorA.value} ${MvCursorA.scale}`;
+        let textB_mV = `B: ${MvCursorB.value} ${MvCursorB.scale}`;
+        let textD_mV = `Δ: ${milliVoltsBetweenCursors.value} ${milliVoltsBetweenCursors.scale}`;
 
-        var padding = 10;
-        var textY1 = y + padding + 20;
-        var textY2 = textY1 + 20;
-        var textY3 = y + rectHeight / 2 + padding + 20;
-        var textY4 = textY3 + 20;
+        let padding, textY1, textY2, textY3, textY4
 
-        var spaceBetween = rectWidth / 2;
+        if (canvasWidth < 1100){
+            padding = 1;
+            textY1 = y + padding + 15;
+            textY2 = textY1 + 15;
+            textY3 = y + rectHeight / 2 + padding + 15;
+            textY4 = textY3 + 15;
+        }else{
+            padding = 10;
+            textY1 = y + padding + 20;
+            textY2 = textY1 + 20;
+            textY3 = y + rectHeight / 2 + padding + 20;
+            textY4 = textY3 + 20;
+        }
+
+
+        let spaceBetween = rectWidth / 2;
 
         ctx.fillText(textA_us, x, textY1);
         ctx.fillText(textB_us, x + spaceBetween, textY1);
@@ -1224,17 +1216,38 @@ function removeSpikes(points, thresholdRatio) {
 
 function drawZoomRectangle(){
     const ctx = CANVAS.getContext('2d');
+    ctx.globalAlpha = 0.4;
     ctx.strokeStyle = 'white';
     ctx.fillStyle = 'white';
     ctx.beginPath();
     ctx.rect(zoomConfig.initX, zoomConfig.initY, zoomConfig.finalX - zoomConfig.initX, zoomConfig.finalY - zoomConfig.initY);
     ctx.fill();
+    ctx.globalAlpha = 1;
 };
 
 function resetZoom(){
     const ctx = CANVAS.getContext('2d');
     ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform to identity
     zoomConfig.isZoomed = false;
+};
+
+function drawTriggerCursor(){
+    const ctx = CANVAS.getContext('2d');
+
+    const triggerScroller = document.getElementById("trigger-cursor");
+
+    ctx.setLineDash([]);
+    ctx.strokeStyle = 'blue';
+    ctx.fillStyle = 'blue';
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.8;
+
+    const Y = parseInt(triggerScroller.style.top, 10) + 10;
+
+    ctx.beginPath();
+    ctx.moveTo(0, Y);
+    ctx.lineTo(CANVAS.width, Y);
+    ctx.stroke();
 };
 
 /*
@@ -1736,6 +1749,7 @@ function populateModalForTrigger(){
     const button = document.createElement("button");// SAVE CHANGES
     button.textContent = "Apply Trigger Settings";
     button.classList.add("modal-trigger-button");
+    button.id = "triggerOptionsSaveButton";
     modalContentDiv.appendChild(button);
 
     button.addEventListener("click", function(){
@@ -1829,7 +1843,7 @@ function populateModalForCursors(){
         cursorOptions.isVerticalCursorOn = "false";
         cursorOptions.isHorizontalCursorOn = "false";
         cursorOptions.cursorsValueDisplay = "oncursor";
-        cursorOptions.horizontalAPoistion = 266;
+        cursorOptions.horizontalAPosition = 266;
         cursorOptions.horizontalBPosition = 533;
         cursorOptions.verticalAPosition = 400;
         cursorOptions.verticalBPosition = 800;
@@ -1859,7 +1873,18 @@ function populateModalForSize(){
     modalContentDiv.appendChild(title);
 
     const selectSize = createSelect(sizeOptions);
-    selectSize.value = "1200|800";
+    selectSize.id = "sizeSelectionInput";
+    if (CANVAS.width == 400){
+        selectSize.value = "400|267";
+    }else if (CANVAS.width == 800){
+        selectSize.value = "800|533";
+    }else if (CANVAS.width == 1200){
+        selectSize.value = "1200|800";
+    }else if (CANVAS.width == 1400){
+        selectSize.value = "1400|900";
+    }else{
+        selectSize.value = "TD";
+    }
     modalContentDiv.appendChild(selectSize);
 
     selectSize.addEventListener("change", function(){
@@ -2072,7 +2097,7 @@ function populateModalForSetup(){
 
     const saveButton = document.createElement("button");
     saveButton.textContent = "SAVE";
-
+    saveButton.id = "setupModalSaveButton"
     saveButton.addEventListener("click", saveColorChoices);
 
     modalContentDiv.appendChild(saveButton);
@@ -2320,8 +2345,21 @@ function changeScreenSize(size){
     scrollers.forEach(scroller => {
         scroller.style.top = (height / 2) - 5 + "px";
     });
-    
 
+    if (cursorOptions.isHorizontalCursorOn && size != "TD"){
+        cursorOptions.horizontalAPosition = CANVAS.height / 3;
+        cursorOptions.horizontalBPosition = (CANVAS.height / 3) * 2;
+        document.getElementById("scroller-horizontal-A").style.top = (cursorOptions.horizontalAPosition - 5) + 'px';
+        document.getElementById("scroller-horizontal-B").style.top = (cursorOptions.horizontalBPosition - 5) + 'px';
+    }
+
+    if (cursorOptions.isVerticalCursorOn && size != "TD"){
+        cursorOptions.verticalAPosition = CANVAS.width / 3;
+        cursorOptions.verticalBPosition = (CANVAS.width / 3) * 2;
+        document.getElementById("vertical-scroller-A").style.left = (cursorOptions.verticalAPosition - 5) + 'px';
+        document.getElementById("vertical-scroller-B").style.left = (cursorOptions.verticalBPosition - 5) + 'px';
+    }
+    
     function setTinyScreenSize(){
         channelButtons.forEach(button => {
             button.style.width = "20px";
@@ -2507,6 +2545,19 @@ function changeScreenSize(size){
             scroller.style.top = (CANVAS.height / 2) - 5 + "px";
         });
 
+        if (cursorOptions.isHorizontalCursorOn){
+            cursorOptions.horizontalAPosition = CANVAS.height / 3;
+            cursorOptions.horizontalBPosition = (CANVAS.height / 3) * 2;
+            document.getElementById("scroller-horizontal-A").style.top = (cursorOptions.horizontalAPosition - 5) + 'px';
+            document.getElementById("scroller-horizontal-B").style.top = (cursorOptions.horizontalBPosition - 5) + 'px';
+        }
+        if (cursorOptions.isVerticalCursorOn){
+            cursorOptions.verticalAPosition = CANVAS.width / 3;
+            cursorOptions.verticalBPosition = (CANVAS.width / 3) * 2;
+            document.getElementById("vertical-scroller-A").style.left = (cursorOptions.verticalAPosition - 5) + 'px';
+            document.getElementById("vertical-scroller-B").style.left = (cursorOptions.verticalBPosition - 5) + 'px';
+        }
+
         document.getElementById("info-display-oscilloscope").style.display = "none";
         document.getElementById("auto-measures-display").style.display = "none";
 
@@ -2646,6 +2697,41 @@ function setScrollersEvents(Channel_ID){
     };
 };
 
+function setupTriggerCursor(){
+    let  startY;
+    let isDragging = false;
+
+    const scrollBar = document.getElementById("scroll-bar-horizontal-cursors");
+    const TriggerCursor = document.getElementById("trigger-cursor");
+
+    TriggerCursor.addEventListener('mousedown', function(event) {
+        isDragging = true;
+        startY = event.clientY - TriggerCursor.getBoundingClientRect().top + scrollBar.getBoundingClientRect().top;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(event){
+        if (!isDragging) return;
+
+        let newY = event.clientY - startY;
+        newY = Math.max(newY, 0);
+        newY = Math.min(newY, scrollBar.clientHeight - TriggerCursor.clientHeight);
+
+        TriggerCursor.style.top = newY + 'px';
+
+        let cursorPosToMilliVolts = parseFloat(getMilliVoltsRelativeToTriggerCursor(newY).value);
+        triggerOptions.triggerLevel = cursorPosToMilliVolts;
+    }
+
+    function onMouseUp(event){
+        isDragging = false;
+
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    }
+};
+
 /*
 ╔══════════════════════════════════════════════════════╗
 ║           INFORMATION COMPUTING & DISPLAY            ║
@@ -2734,6 +2820,24 @@ function getMilliVoltForACursor(cursorPosition){
             }
         }
     });
+
+    return result;
+};
+
+function getMilliVoltsRelativeToTriggerCursor(Position){
+    const triggerChannel = triggerOptions.triggerChannel;
+    const sizeOfOneDivisionInPixels = CANVAS.height / config.verticalDivisions;
+    const milliVoltsPerDivision = getMilliVoltsPerDiv(channelData[triggerChannel].verticalScale);
+    let result;
+    if (Position == (CANVAS.height / 2)){
+        result = {value: "0", scale: "mV"};
+    }else if (Position > (CANVAS.height / 2)){//negative values
+        const cursorValue = ((Position - (CANVAS.height / 2)) / sizeOfOneDivisionInPixels) * milliVoltsPerDivision;
+        result = {value: -cursorValue.toFixed(1), scale: "mV"}
+    }else if (Position < (CANVAS.height / 2)){//positive values
+        const cursorValue = (((CANVAS.height / 2) - Position) / sizeOfOneDivisionInPixels) * milliVoltsPerDivision;
+        result = {value: cursorValue.toFixed(1), scale: "mV"}
+    }
 
     return result;
 };
@@ -3257,20 +3361,68 @@ function resetMeasurements(){
     }
 };
 
-function updateTriggerSettings(modalElement){
-    console.log("Updating trigger settings");
-    console.log(modalElement);
+function getPositionRelativeToTriggerCursor(milliVolts) {
+    const triggerChannel = triggerOptions.triggerChannel;
+    const sizeOfOneDivisionInPixels = CANVAS.height / config.verticalDivisions;
+    const milliVoltsPerDivision = getMilliVoltsPerDiv(channelData[triggerChannel].verticalScale);
+    let position;
+    if (milliVolts === 0) {
+        position = CANVAS.height / 2;
+    } else if (milliVolts < 0) {
+        const cursorValue = Math.abs(milliVolts) / milliVoltsPerDivision;
+        position = (CANVAS.height / 2) + (cursorValue * sizeOfOneDivisionInPixels);
+    } else if (milliVolts > 0) {
+        const cursorValue = milliVolts / milliVoltsPerDivision;
+        position = (CANVAS.height / 2) - (cursorValue * sizeOfOneDivisionInPixels);
+    }
 
+    return position;
+};
+
+function updateTriggerSettings(modalElement){
     triggerOptions.isTriggerOn = modalElement.querySelector("#selectOnOffStatus").value;
     triggerOptions.triggerMode = modalElement.querySelector("#selectTriggerMode").value;
     triggerOptions.triggerChannel = modalElement.querySelector("#selectTriggerChannel").value;
-    triggerOptions.triggerLevel = modalElement.querySelector("#TriggerLevelInput").value;
-    triggerOptions.windowLevelMin = modalElement.querySelector("#WindowLevelMinInput").value;
-    triggerOptions.windowLevelMax = modalElement.querySelector("#WindowLevelMaxInput").value;
+    if (modalElement.querySelector("#TriggerLevelInput").value > 1100){
+        triggerOptions.triggerLevel = 1100
+    }else if(modalElement.querySelector("#TriggerLevelInput").value < -1100){
+        triggerOptions.triggerLevel = -1100
+    }else{
+        triggerOptions.triggerLevel = modalElement.querySelector("#TriggerLevelInput").value;
+    }
+    if (modalElement.querySelector("#WindowLevelMinInput").value > 1100){
+        triggerOptions.windowLevelMin = 1100
+    }else if(modalElement.querySelector("#WindowLevelMinInput").value < -1100){
+        triggerOptions.windowLevelMin = -1100
+    }else{
+        triggerOptions.windowLevelMin = modalElement.querySelector("#WindowLevelMinInput").value;
+    }
+    if (modalElement.querySelector("#WindowLevelMaxInput").value > 1100){
+        triggerOptions.windowLevelMax = 1100
+    }else if(modalElement.querySelector("#WindowLevelMaxInput").value < -1100){
+        triggerOptions.windowLevelMax = -1100
+    }else{
+        triggerOptions.windowLevelMax = modalElement.querySelector("#WindowLevelMaxInput").value;
+    }
     triggerOptions.triggerSlope = modalElement.querySelector("#selectTriggerSlope").value;
-    triggerOptions.holdOff = modalElement.querySelector("#holdOffInput").value;
+    if (modalElement.querySelector("#holdOffInput").value > 3600){
+        triggerOptions.holdOff = 3600
+    }else if(modalElement.querySelector("#holdOffInput").value < 0){
+        triggerOptions.holdOff = 0
+    }else{
+        triggerOptions.holdOff = modalElement.querySelector("#holdOffInput").value;
+    }
 
     showToast("Trigger settings updated !", "toast-info");
+
+    if (triggerOptions.isTriggerOn == "on"){
+        document.getElementById("trigger-cursor").style.display = "block";
+
+        const newCursorPosition = getPositionRelativeToTriggerCursor(parseFloat(triggerOptions.triggerLevel));
+        document.getElementById("trigger-cursor").style.top = newCursorPosition + 'px';
+    }else{
+        document.getElementById("trigger-cursor").style.display = "none";
+    }
 };
 
 function calculateZoomFactors() {

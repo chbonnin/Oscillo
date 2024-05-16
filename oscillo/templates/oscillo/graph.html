@@ -83,6 +83,9 @@
                 <div id="scroller-horizontal-A" style="display: none;">
 
                 </div>
+                <div id="trigger-cursor" style="display: none;">
+                    T
+                </div>
                 <div id="scroller-horizontal-B" style="display: none;">
 
                 </div>
@@ -139,38 +142,45 @@
             </span>
         </div>
         <div id="knobs-div" class="main-divs-aside"><!--Contains the knobs to interact with the signal rendering-->
-            <!--Knob to change the vertical scaling of the signal (how many pixels per volt unit)-->
-            <input 
-                type="range" 
-                class="input-knob" 
-                id="vertical-scaling"
-                data-src={% static "IMAGES/knob.png" %} 
-                data-sprites="100"
-                data-diameter="100"
-                style="
-                    background-image: url({% static "IMAGES/knob.png" %} ); 
-                    background-size: 100% 10100%; 
-                    background-position: 0px -6400px;"
-                min="0"
-                max="10"
-                value="1"
-                step="0.01">
-            <!--Knob to change the horizontal scaling of the signal (how many micro-seconds per pixels)-->
-            <input 
-                type="range" 
-                class="input-knob" 
-                id="horizontal-scaling"
-                data-src={% static "IMAGES/knob.png" %} 
-                data-sprites="100"
-                data-diameter="100"
-                style="
-                    background-image: url({% static "IMAGES/knob.png" %} ); 
-                    background-size: 100% 10100%; 
-                    background-position: 0px -6400px;"
-                min="1"
-                step="1"
-                max="300"
-                value="50">
+            <span>
+                <!--Knob to change the vertical scaling of the signal (how many pixels per volt unit)-->
+                <input 
+                    type="range" 
+                    class="input-knob" 
+                    id="vertical-scaling"
+                    data-src={% static "IMAGES/knob.png" %} 
+                    data-sprites="100"
+                    data-diameter="100"
+                    style="
+                        background-image: url({% static "IMAGES/knob.png" %} ); 
+                        background-size: 100% 10100%; 
+                        background-position: 0px -6400px;"
+                    min="0"
+                    max="10"
+                    value="1"
+                    step="0.01">
+                <p>V/DIV</p>
+            </span>
+
+            <span>
+                <!--Knob to change the horizontal scaling of the signal (how many micro-seconds per pixels)-->
+                <input 
+                    type="range" 
+                    class="input-knob" 
+                    id="horizontal-scaling"
+                    data-src={% static "IMAGES/knob.png" %} 
+                    data-sprites="100"
+                    data-diameter="100"
+                    style="
+                        background-image: url({% static "IMAGES/knob.png" %} ); 
+                        background-size: 100% 10100%; 
+                        background-position: 0px -6400px;"
+                    min="1"
+                    step="1"
+                    max="300"
+                    value="50">
+                <p>S/DIV</p>
+            </span>
         </div>
     </aside>
 

@@ -28,6 +28,7 @@
 
         <button type="submit" class="btn btn-info mt-4 mx-auto px-5">Login</button>
         <p class="text-center mt-2">Don't have an account ? <a href={% url "oscillo:register" %}>Register</a></p>
+        <a class="text-center mt-1" href="/oscillo/">Back to settings</a>
     </form>
 
     {% if messages %}<!--In case the login failed-->

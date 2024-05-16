@@ -148,6 +148,18 @@ aside{
     justify-content: center;
 }
 
+
+#knobs-div span{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+}
+
+#knobs-div span p{
+    color: whitesmoke;
+    text-align: center;
+}
+
 #user-related-actions{
     display: flex;
     flex-direction: row;
@@ -813,7 +825,7 @@ aside{
     padding: 20px;
     border: 2px solid #888;
     width: 20%; /* Could be more or less, depending on screen size */
-    height: 65%; /* Could be more or less, depending on screen size */
+    height: fit-content; /* Could be more or less, depending on screen size */
     position: relative;
     top: 45%;
     transform: translateY(-50%);
@@ -826,6 +838,8 @@ aside{
     float: right;
     font-size: 28px;
     font-weight: bold;
+
+    transition: 0.2s;
 }
 
 .close:hover,
@@ -833,6 +847,9 @@ aside{
     color: #000;
     text-decoration: none;
     cursor: pointer;
+
+    text-shadow: 4px 4px #313131a1;
+    transition: 0.2s;
 }
   
 #modal-generated-content{
@@ -847,7 +864,26 @@ aside{
 }
 
 .modal-save-button{
-    margin-bottom: 0.5em;
+    margin: 1em auto;
+    width: 60%;
+    background-color: #0dcaf0;
+    box-shadow: 5px 3px 3px rgba(0, 0, 0, 0.562);
+    border: 1px solid #0a9fbd;
+    border-radius: 5px;
+    padding-top: 0.6em;
+    padding-bottom: 0.6em;
+    font-weight: 500;
+    color: #1a1a1a;
+
+    transition: 0.2s;
+}
+
+
+.modal-save-button:hover{
+    background-color: #0bb6d8;
+    cursor: pointer;
+    box-shadow: 8px 5px 5px rgba(0, 0, 0, 0.562);
+    transition: 0.2s;
 }
 
 .modal-select-trigger{
@@ -896,6 +932,132 @@ aside{
 
 #autoSwitchButton{
     margin-top: auto;
+    margin-bottom: 0em;
+    background-color: #0dcaf0;
+    box-shadow: 5px 3px 3px rgba(0, 0, 0, 0.562);
+    border: 1px solid #0a9fbd;
+    padding-top: 0.6em;
+    padding-bottom: 0.6em;
+
+    transition: 0.2s;
+}
+
+#autoSwitchButton:hover{
+    background-color: #0bb6d8;
+    cursor: pointer;
+    box-shadow: 8px 5px 5px rgba(0, 0, 0, 0.562);
+    transition-duration: 0.2s;
+}
+
+#saveButton{
+    width: 60%;
+    margin: 2em auto;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+
+    color: whitesmoke;
+    font-weight: 600;
+
+    background-color: #1e9e62;
+    box-shadow: 5px 3px 3px rgba(0, 0, 0, 0.562);
+    border: 1px solid #177047;
+
+    transition: 0.2s;
+}
+
+#saveButton:hover{
+    cursor: pointer;
+    background-color: #198b56;
+    box-shadow: 8px 5px 5px rgba(0, 0, 0, 0.562);
+    transition: 0.2s;
+}
+
+#resetButton{
+    width: 50%;
+    margin: 2em auto;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+
+    color: whitesmoke;
+    font-weight: 600;
+
+    background-color: #ffc107;
+    box-shadow: 5px 3px 3px rgba(0, 0, 0, 0.562);
+    border: 1px solid #d19e06;
+
+    transition: 0.2s;    
+}
+
+#resetButton:hover{
+    cursor: pointer;
+    background-color: #dfaa0b;
+    box-shadow: 8px 5px 5px rgba(0, 0, 0, 0.562);
+    transition: 0.2s;
+}
+
+#unzoomButton{
+    width: 50%;
+    margin: 0em auto 1.5em auto;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+
+    color: whitesmoke;
+    font-weight: 600;
+
+    background-color: #ffc107;
+    box-shadow: 5px 3px 3px rgba(0, 0, 0, 0.562);
+    border: 1px solid #d19e06;
+
+    transition: 0.2s;
+} 
+
+#unzoomButton:hover{
+    cursor: pointer;
+    background-color: #dfaa0b;
+    box-shadow: 8px 5px 5px rgba(0, 0, 0, 0.562);
+    transition: 0.2s;
+}
+
+#triggerOptionsSaveButton, #setupModalSaveButton{
+    margin-top: 1.5em;
+    border-radius: 5px;
+    background-color: #0dcaf0;
+    box-shadow: 5px 3px 3px rgba(0, 0, 0, 0.562);
+    border: 1px solid #0a9fbd;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+
+    transition: 0.2s;
+}
+
+#triggerOptionsSaveButton:hover, #setupModalSaveButton:hover{
+    cursor: pointer;
+    background-color: #0ca8c7;
+    box-shadow: 8px 5px 5px rgba(0, 0, 0, 0.562);
+    transition: 0.2s;
+}
+
+#selectHorizontal, #selectVertical, #selectValue{
+    width: 40%;
+    text-align: center;
+    box-shadow: 5px 2px 4px rgba(0, 0, 0, 0.562);
+}
+
+#selectGridDisplay, #selectTheme{
+    width: 40%;
+    text-align: center;
+    box-shadow: 5px 2px 4px rgba(0, 0, 0, 0.562);
+}
+
+#selectSlotChannel, #selectChannel, #selectOperation, #selectSecondChannel{
+    width: 40%;
+    text-align: center;
+    box-shadow: 5px 3px 4px rgba(0, 0, 0, 0.562);
+}
+
+#sizeSelectionInput{
+    text-align: center;
+    box-shadow: 5px 3px 4px rgba(0, 0, 0, 0.562);
 }
 
 .generated-signal{
@@ -951,6 +1113,23 @@ aside{
     background-color: darkorange;
 }
 
+#trigger-cursor{
+    background-color: blue;
+    color: white;
+
+    text-align: end;
+    font-weight: 600;
+
+    height: 20px;
+    width: 20px;
+    border-bottom-left-radius: 90%;
+    border-top-left-radius: 90%;
+    position: absolute;
+    cursor: grab;
+
+    top: 390px;
+}
+
 
 #colorSelectionContainer{
     display: flex;
@@ -959,6 +1138,10 @@ aside{
     margin: 0px;
     padding: 0px;
     width: 100%;
+}
+
+#colorSelectionContainer div h5{
+    margin: 0.2em 0px 1em 0px;
 }
 
 #DarkColorSelectionContainer, #LightColorSelectionContainer{
@@ -971,7 +1154,7 @@ aside{
 
 #DarkColorSelectionContainer{
     border-right: 2px solid black;
-    padding-right: 0.2em;
+    padding-right: 0.4em;
     margin-right: 0.2em;
 }
 
@@ -990,14 +1173,26 @@ aside{
 
 .individualChannelColorContainer select{
     margin: 0px;
+    border-radius: 5px;
+    border: 1px solid gray;
 }
 
 #GridOpacityContainer{
     width: 100%;
-    margin-top: 0.5em;
+    margin-top: 1.5em;
     margin-bottom: 1em;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     flex-wrap: nowrap;
+}
 
+#GridOpacityContainer label{
+    width: 70%;
+}
+
+#GridOpacityContainer input{
+    width: 30%;
+    border-radius: 5px;
+    border: 1px solid gray;
+    text-align: center;
 }
