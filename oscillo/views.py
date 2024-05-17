@@ -159,7 +159,8 @@ class Main(TemplateView):
             return HttpResponse(data, content_type="application/octet-stream")
         except socket.timeout:
             return HttpResponse("No data received so far..", status=408)
-        
+
+ 
     def getRawData(self, request):
         if not self.sock:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
