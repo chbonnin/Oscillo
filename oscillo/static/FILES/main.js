@@ -231,8 +231,23 @@ function fetchDataFromFile(){
                         drawSignalFromFile(key);
                     }
                 }
+
+                //Here we make sure to align offset cursors to the mean value of each signal (only done during the first gathering)
+                const scroller = document.getElementById("scroller-" + key);
+
+                const meanSignalValue = autoMeasures.getMeanValue(channelData[key].points);
+                const meanSignalValueToCanvasPosition = getPositionRelativeToTriggerCursor(meanSignalValue, key);
+
+                if ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) > CANVAS.height || (meanSignalValueToCanvasPosition + channelData[key].verticalOffset) < 0){
+                    if ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) > CANVAS.height){
+                        scroller.style.top = (CANVAS.height - 5) + 'px';
+                    }else{
+                        scroller.style.top = '0px';
+                    }
+                }else{
+                    scroller.style.top = ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) - 5) + 'px';
+                }
             });
-            //console.log(channelData);
         } else if (Http.status === 408){
             console.error("Backend Error" + Http.status)
         } else {
@@ -243,9 +258,7 @@ function fetchDataFromFile(){
     Http.onerror = function() {
         console.error("There was a network error.");
     };
-
     Http.send();
-    // console.log("fetchDataFromFile ends");
 };
 
 function fetchRawData(){
@@ -320,6 +333,22 @@ function fetchRawData(){
                     } else {
                         drawSignalFromFile(key);
                     }
+                }
+
+                //Here we make sure to align offset cursors to the mean value of each signal (only done during the first gathering)
+                const scroller = document.getElementById("scroller-" + key);
+
+                const meanSignalValue = autoMeasures.getMeanValue(channelData[key].points);
+                const meanSignalValueToCanvasPosition = getPositionRelativeToTriggerCursor(meanSignalValue, key);
+
+                if ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) > CANVAS.height || (meanSignalValueToCanvasPosition + channelData[key].verticalOffset) < 0){
+                    if ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) > CANVAS.height){
+                        scroller.style.top = (CANVAS.height - 5) + 'px';
+                    }else{
+                        scroller.style.top = '0px';
+                    }
+                }else{
+                    scroller.style.top = ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) - 5) + 'px';
                 }
             });
         } else {
@@ -711,6 +740,9 @@ function MAINLOOP(){
                 }else{
                     triggerClock = triggerClock + loopDelay;
                 }
+            }else if(isRunning == false){
+                clearCanvas();
+                drawGrid('rgba(128, 128, 128, 0.5)', 3);
             }
         }else{
             console.log("Still waiting on settings retrieval");
@@ -1106,12 +1138,13 @@ function drawFFT(channelKey) {
         ctx.beginPath();
         if (config.theme == "dark"){
             ctx.strokeStyle = channel.colorDark;  // Color of the waveform
+            ctx.fillStyle = channel.colorDark;
         }else{
             ctx.strokeStyle = channel.colorLight;
+            ctx.fillStyle = channel.colorLight;
         }
         ctx.lineWidth = 1;
         ctx.font = "bold 18px Arial";
-        ctx.fillStyle = 'purple';
         ctx.textBaseline = 'middle';
         ctx.globalAlpha = 1.0;
 
@@ -1567,7 +1600,7 @@ function populateModalForMeasure_MATHS(){
 
             signalSpan.classList.add("generated-signal");
             signalText.textContent = signal + " → ";
-            deleteButton.textContent = "X";
+            // deleteButton.textContent = "X";
             deleteButton.classList.add("delete-button");
 
             signalSpan.appendChild(signalText);
@@ -3021,7 +3054,7 @@ function generatePoints(channelKey){
         const pointsSquared = channelData[originChannel1].points.map(point => {
             const voltage = autoMeasures.voltage_from_raw(point);
             const squaredVoltage = voltage * voltage;
-            return mapVoltageToRaw(squaredVoltage);
+            return parseInt(mapVoltageToRaw(squaredVoltage).toFixed(0));
         });
 
         channelData[channelKey].points = pointsSquared;
@@ -3035,7 +3068,7 @@ function generatePoints(channelKey){
                 difference = points[i + 1] - points[i];
                 //Since the derivative show the difference between two points on the graph we need to add the equivalent of 1/2 the height of the graph 
                 //so that it doesn't start being drawn at the bottom of the screen.
-                derivative[i] = (difference + 8191).toFixed(0);
+                derivative[i] = parseInt((difference + (config.maxSampleValue / 2)).toFixed(0));
             }
             return derivative;
         };
@@ -3056,7 +3089,7 @@ function generatePoints(channelKey){
                 let voltage1 = points[i];
                 let voltage2 = points[i+1];
                 currentIntegral += (voltage2 + voltage1) / 2 * deltaTime;
-                currentIntegral = currentIntegral.toFixed(0);
+                currentIntegral = parseInt(currentIntegral.toFixed(0));
                 integralValues.push(currentIntegral);
             }
             return integralValues;
@@ -3132,7 +3165,7 @@ function generatePoints(channelKey){
         const pointsAdded = points1.map((point, index) => {
             point = autoMeasures.voltage_from_raw(point);
             let point2 = autoMeasures.voltage_from_raw(points2[index]);
-            return mapVoltageToRaw(point + point2).toFixed(0);
+            return parseInt(mapVoltageToRaw(point + point2).toFixed(0));
         });
         channelData[channelKey].points = pointsAdded;
     };
@@ -3143,7 +3176,7 @@ function generatePoints(channelKey){
         const pointsMultiplied = points1.map((point, index) => {
             point = autoMeasures.voltage_from_raw(point);
             let point2 = autoMeasures.voltage_from_raw(points2[index]);
-            return mapVoltageToRaw(point * point2).toFixed(0);
+            return parseInt(mapVoltageToRaw(point * point2).toFixed(0));
         });
         channelData[channelKey].points = pointsMultiplied;
     };
@@ -3154,7 +3187,7 @@ function generatePoints(channelKey){
         const pointsSubtracted = points1.map((point, index) => {
             point = autoMeasures.voltage_from_raw(point);
             let point2 = autoMeasures.voltage_from_raw(points2[index]);
-            return mapVoltageToRaw(point - point2).toFixed(0);
+            return parseInt(mapVoltageToRaw(point - point2).toFixed(0));
         });
         channelData[channelKey].points = pointsSubtracted;
     };
@@ -3168,7 +3201,7 @@ function generatePoints(channelKey){
             if (point2 === 0){
                 return 8192;// = 0V 
             }else{
-                return mapVoltageToRaw(point / point2).toFixed(0);
+                return parseInt(mapVoltageToRaw(point / point2).toFixed(0));
             }
         });
         channelData[channelKey].points = pointsDivided;
@@ -3361,10 +3394,9 @@ function resetMeasurements(){
     }
 };
 
-function getPositionRelativeToTriggerCursor(milliVolts) {
-    const triggerChannel = triggerOptions.triggerChannel;
+function getPositionRelativeToTriggerCursor(milliVolts, channelKey) {
     const sizeOfOneDivisionInPixels = CANVAS.height / config.verticalDivisions;
-    const milliVoltsPerDivision = getMilliVoltsPerDiv(channelData[triggerChannel].verticalScale);
+    const milliVoltsPerDivision = getMilliVoltsPerDiv(channelData[channelKey].verticalScale);
     let position;
     if (milliVolts === 0) {
         position = CANVAS.height / 2;
@@ -3418,7 +3450,7 @@ function updateTriggerSettings(modalElement){
     if (triggerOptions.isTriggerOn == "on"){
         document.getElementById("trigger-cursor").style.display = "block";
 
-        const newCursorPosition = getPositionRelativeToTriggerCursor(parseFloat(triggerOptions.triggerLevel));
+        const newCursorPosition = getPositionRelativeToTriggerCursor(parseFloat(triggerOptions.triggerLevel), triggerOptions.triggerChannel);
         document.getElementById("trigger-cursor").style.top = newCursorPosition + 'px';
     }else{
         document.getElementById("trigger-cursor").style.display = "none";
@@ -3645,15 +3677,16 @@ function triggerCheck(channelPoints){
 */
 
 function autoset(){
-    function updateCursorPosition(channel) {
-        let totalHeight = document.getElementById("scroll-bar").clientHeight - scroller.clientHeight;
+    function updateCursorPosition(channelKey) {
+        let channel = channelData[channelKey]
+        let totalHeight = document.getElementById("scroll-bar").clientHeight - document.getElementById("scroller-"+channelKey).clientHeight;
         let percent = (channel.verticalOffset / 1000) + 0.5; // reverse offset mapping
         let newY = percent * totalHeight;
     
         newY = Math.max(newY, 0);
         newY = Math.min(newY, totalHeight);
     
-        if (channel.focused){document.getElementById("scroller").style.top = newY + 'px';};
+        document.getElementById("scroller-"+channelKey).style.top = newY + 'px';
         channel.verticalOffsetRelativeCursorPosition = newY;
     }
 
@@ -3685,7 +3718,6 @@ function autoset(){
                 if (previewedYPositionHighestPoint < 0 || previewedYPositionLowestPoint > CANVAS.height){
                     //See if it is possible to simply adjust the offset to make the signal fit
                     if (previewedYPositionHighestPoint < 0 && previewedYPositionLowestPoint > CANVAS.height){
-                        // console.log("Can't simply adjust the offset, signal is clipping through both ends !");
                         if (channel.verticalScale > 1){
                             channel.verticalScale = channel.verticalScale - 1;
                         }else{
@@ -3696,13 +3728,11 @@ function autoset(){
                         }
                     //If the signal is clipping through the top of the screen
                     }else if (previewedYPositionHighestPoint < 0){
-                        // console.log("Signal is clipping through the top of the screen.")
                         if (channel.verticalOffset != 0 && adjustementsCounter < 3){//CHANGE 3 TO 5 ONCE SCALING IS FUNCTIONNAL
                             //We first try to offset the signal to make it fit
                             // we add 100 px to the offset every loop max 5 times
-                            // console.log("Adding 100 px to offset");
                             channel.verticalOffset += 100;
-                            updateCursorPosition(channel);
+                            updateCursorPosition(key);
                         }else {
                             //If the signal is already without any offset, we scale it back
                             if (channel.verticalScale > 1){
@@ -3716,16 +3746,13 @@ function autoset(){
                         }
                     //If the signal is clipping through the bottom of the screen
                     }else if (previewedYPositionLowestPoint > CANVAS.height){
-                        // console.log("Signal is clipping through the bottom of the screen.")
                         if (channel.verticalOffset != 0 && adjustementsCounter < 3){//CHANGE 3 TO 5 ONCE SCALING IS FUNCTIONNAL
                             //We first try to offset the signal to make it fit
                             // we remove 100 px to the offset every loop max 5 times
-                            // console.log("Removing 100 px to offset");
                             channel.verticalOffset -= 100;
-                            updateCursorPosition(channel);
+                            updateCursorPosition(key);
                         }else {
                             //If the signal is already without any offset, we scale it back
-                            // console.log("Changing the offset did not work, scaling back..");
                             if (channel.verticalScale > 1){
                                 channel.verticalScale = channel.verticalScale - 1;
                             }else{

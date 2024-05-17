@@ -72,6 +72,12 @@
         </span>
     </main>
 
+    {% if error_message %}
+        <div class="alert alert-danger w-25 mt-2 text-center">
+            <p>{{ error_message }}</p>
+        </div>
+    {% endif %}
+
     <footer>
         <p>&copy; 2024 CNRS-IPHC. All rights reserved.</p>
     </footer>

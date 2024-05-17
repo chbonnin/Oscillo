@@ -16,6 +16,7 @@ import sys
 import base64
 import os
 import struct, time
+from shutil import rmtree
 
 #User-related imports
 from django.contrib.auth.models import User
@@ -24,6 +25,20 @@ from django.contrib.auth import login, logout, authenticate
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, OscilloSettingsForm, UserUpdateForm, PasswordUpdateForm
 from .models import FavoriteColors
 
+def clear_temp_files(directory):
+    """
+    this function is here to clear out completely a directory given as a parameter.
+    """
+    if os.path.exists(directory):
+        for filename in os.listdir(directory):
+            file_path = os.path.join(directory, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    rmtree(file_path)
+            except Exception as e:
+                print(f'Failed to delete {file_path}. Reason: {e}')
 
 def clear_console():
     if os.name == 'nt':
@@ -80,8 +95,15 @@ class Main(TemplateView):
                     file_size_in_bytes = file.size
                     file_size_in_mb = file_size_in_bytes / (1024 * 1024)
                     print(f"Uploaded file size: {file_size_in_mb:.2f} MB")
+                    print(f"File name : {file.name}")
+                    if file.name.split(".")[-1] != "osc":
+                        form = OscilloSettingsForm()
+                        return render(request, 'oscillo/select.html', {'form': form, "error_message": "The file given was not a .osc file."})
 
-                    temp_file = NamedTemporaryFile(delete=False, suffix=".osc", dir=os.path.join(settings.BASE_DIR, 'temp_files'))
+                    temp_files_directory = os.path.join(settings.BASE_DIR, 'temp_files')
+                    clear_temp_files(temp_files_directory)
+
+                    temp_file = NamedTemporaryFile(delete=False, suffix=".osc", dir=temp_files_directory)
                     for chunk in file.chunks():
                         temp_file.write(chunk)
                     temp_file.close()
@@ -151,6 +173,7 @@ class Main(TemplateView):
 
 
     def getFileData(self, request, filePosition, fileName):
+        clear_console()
         print(f"GET DATA AT POSITION {filePosition} FOR FILE {fileName}")
 
         completeFilePath = os.path.join(settings.BASE_DIR, 'temp_files') + "/" + fileName
@@ -158,7 +181,6 @@ class Main(TemplateView):
         if Data == "EOF":#End Of File
             Data = read_file(completeFilePath, 0)
 
-        clear_console()
         print("====================================================")
         print("           Data returned from the file")
         print("             --------------------")

@@ -951,7 +951,7 @@ aside{
 
 #saveButton{
     width: 60%;
-    margin: 2em auto;
+    margin: 1.5em auto 1em auto;
     padding-top: 0.5em;
     padding-bottom: 0.5em;
 
@@ -1009,7 +1009,7 @@ aside{
     border: 1px solid #d19e06;
 
     transition: 0.2s;
-} 
+}
 
 #unzoomButton:hover{
     cursor: pointer;
@@ -1063,20 +1063,39 @@ aside{
 .generated-signal{
     display: flex;
     flex-direction: row;
-    align-content: center;
+    align-items: center;
     justify-content: flex-start;
+
+    margin-bottom: 0.5em;
 }
 
 .generated-signal button{
     background-color: crimson;
-    font-weight: 900;
-    font-size: 1em;
     padding: 0px;
-    height: fit-content;
+    border: none !important;
+    
+    width: 2.5em;
+    height: 2.5em;
+    margin-left: 1em;
+    background-image: url("./delete.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    border-radius: 5px;
+    box-shadow: 5px 3px 4px rgba(0, 0, 0, 0.562);
+
+    transition: 0.2s;
+}
+
+.generated-signal button:hover{
+    cursor: pointer;
+    box-shadow: 8px 4px 5px rgba(0, 0, 0, 0.562);
+    transition: 0.2s;
 }
 
 .generated-signal p {
     margin: 0px;
+    font-size: 1.2em;
 }
 
 
