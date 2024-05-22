@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>infoExport.js - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Autoset.html">Autoset</a><ul class='methods'><li data-type='method'><a href="module-Autoset.html#.autoset">autoset</a></li><li data-type='method'><a href="module-Autoset.html#.updateCursorPosition">updateCursorPosition</a></li></ul></li><li><a href="module-Exports.html">Exports</a><ul class='methods'><li data-type='method'><a href="module-Exports.html#.copyCanvasToClipboard">copyCanvasToClipboard</a></li><li data-type='method'><a href="module-Exports.html#.downloadCanvasAsImage">downloadCanvasAsImage</a></li><li data-type='method'><a href="module-Exports.html#.downloadDataToCsv">downloadDataToCsv</a></li></ul></li><li><a href="module-Main.html">Main</a><ul class='methods'><li data-type='method'><a href="module-Main.html#.MAINLOOP">MAINLOOP</a></li><li data-type='method'><a href="module-Main.html#.environmentSetup">environmentSetup</a></li><li data-type='method'><a href="module-Main.html#.fetchDataFromFile">fetchDataFromFile</a></li><li data-type='method'><a href="module-Main.html#.fetchRawData">fetchRawData</a></li><li data-type='method'><a href="module-Main.html#.getCurrentSettings">getCurrentSettings</a></li><li data-type='method'><a href="module-Main.html#.saveColorChoices">saveColorChoices</a></li></ul></li><li><a href="module-Trigger.html">Trigger</a><ul class='methods'><li data-type='method'><a href="module-Trigger.html#.getHundredItemsBeforeAfter">getHundredItemsBeforeAfter</a></li><li data-type='method'><a href="module-Trigger.html#.triggerCheck">triggerCheck</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="VARIABLES.html">VARIABLES</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">infoExport.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file infoExport.js
+ * @description This file contains every function that allows a user to download data
+ * may that be pictures or another file type (.csv, base64, etc..).
+ * 
+ * Functions included in this file : 
+ *  - **downloadCanvasAsImage**
+ *  - **copyCanvasToClipboard**
+ *  - **downloadDataToCsv**
+ * 
+ * @version 1.0.0
+ * @since 2024-05-31
+ * @author Owen Pichot
+ * 
+ * @license Public Domain
+ */
+
+/**
+ * @module Exports
+ */
+
+/**
+ * Downloads the current canvas content as an image file.
+ *
+ * This function creates a temporary canvas element, draws the current content
+ * of the global CANVAS onto it, and then converts it to a specified image format
+ * (PNG or JPEG). The resulting image is then downloaded to the user's device
+ * with a predefined filename based on the image type.
+ *
+ * @function downloadCanvasAsImage
+ * @memberof module:Exports
+ * @param {string} imageType - The type of the image to download. Accepted values are "png" or "jpeg".
+ * @throws Will throw an error if there is an issue with the canvas conversion or download process.
+ * @returns {void}
+ */
+function downloadCanvasAsImage(imageType) {
+    try{
+        let imageUrl
+        let exportCanvas = document.createElement('canvas');
+        exportCanvas.width = CANVAS.width;
+        exportCanvas.height = CANVAS.height;
+    
+        let exportCtx = exportCanvas.getContext('2d');
+    
+        exportCtx.fillStyle = '#000000';
+        exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+        
+        exportCtx.drawImage(CANVAS, 0, 0);
+    
+        if (imageType === "png") {
+            imageUrl = exportCanvas.toDataURL("image/png");
+        }else if (imageType === "jpeg") {
+            imageUrl = exportCanvas.toDataURL("image/jpeg");
+        }
+
+        // Create temporary link element
+        let downloadLink = document.createElement('a');
+        downloadLink.href = imageUrl;
+    
+        // set the download filename
+        if (imageType === "png") {
+            downloadLink.download = "oscilloscope_snapshot.png";
+        }else if (imageType === "jpeg") {
+            downloadLink.download = "oscilloscope_snapshot.jpeg";
+        }
+        
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        showToast("Image downloaded successfully !", "toast-success");
+    } catch (error) {
+        console.error('Failed to download canvas as image', error);
+        showToast("Error while downloading the image..", "toast-error");
+        return;
+    }
+};
+
+/**
+ * Copies the canvas content to the clipboard as an image. This function uses the Clipboard API to create a blob from the canvas and then writes this blob to the clipboard as an image in PNG format.
+ * It handles different scenarios including API unavailability and operational failures by displaying appropriate toast notifications.
+ *
+ * @function copyCanvasToClipboard
+ * @memberof module:Exports
+ * @throws {Error} Throws an error and warns the user if the image could not be copied to the clipboard.
+ * @returns {void}
+ */
+function copyCanvasToClipboard() {
+    // first we check in case this browser does not have the clipboard API
+    if (!navigator.clipboard || !window.ClipboardItem) {
+        showToast("Your browser does not support this feature", "toast-error");
+        return;
+    }
+  
+    CANVAS.toBlob(function(blob) {
+      try {
+        const item = new ClipboardItem({ "image/png": blob });
+        navigator.clipboard.write([item]).then(function() {
+          console.log('Canvas image copied to clipboard');
+          showToast("Image copied to your clipboard !", "toast-success");
+        }).catch(function(error) {
+          console.error('Copying to clipboard failed', error);
+          showToast("Error while copying to the clipboard..", "toast-error");
+        });
+      } catch (error) {
+        console.error('Failed to copy canvas to clipboard', error);
+        showToast("Error while copying to the clipboard..", "toast-error");
+      }
+    }, 'image/png');
+};
+
+/**
+ * Takes every single point from every single channel currently on screen and maps it to a csv file.
+ * 
+ * Within the csv file, every column is a channel and every line is a point N from said channel.
+ * 
+ * We also create a pseudo/temp link element to click it and start the download as soon as possible.
+ * 
+ * @function downloadDataToCsv
+ * @memberof module:Exports
+ * @returns {void}
+ * @throws {Error} Throws an error if the function fails and warns the user something went wrong.
+ */
+function downloadDataToCsv() {
+    try {
+        const channelNames = Object.keys(channelData).sort();//get channel names and sort them
+        const csvHeader = channelNames.join(',') + '\n';//set csv header
+        const maxPointsLength = Math.max(...channelNames.map(name => channelData[name].points.length));//get each channel max length
+      
+        let csvRows = [];//create csv rows
+        for (let i = 0; i &lt; maxPointsLength; i++) {
+          let row = channelNames.map(name => {
+            //we leave the row space blank if there are no samples at that index
+            return channelData[name].points[i] || '';
+          }).join(',');
+          csvRows.push(row);
+        }
+      
+        // combine headers w/ rows and create blob for the download
+        const csvString = csvHeader + csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      
+        //create the link for the download, then trigger it
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'channels_data.csv');
+        document.body.appendChild(link); // needed with firefox
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast("Data downloaded successfully !", "toast-success");
+    } catch (error) {
+        console.error('Failed to download data to CSV', error);
+        showToast("Error while downloading the data..", "toast-error");
+    }
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.3</a> on Wed May 22 2024 09:28:59 GMT+0100 (Western European Summer Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>
