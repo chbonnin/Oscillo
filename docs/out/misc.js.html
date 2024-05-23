@@ -3,7 +3,7 @@
 <head>
     
     <meta charset="utf-8">
-    <title>Trigger - Documentation</title>
+    <title>misc.js - Documentation</title>
     
     
     <script src="scripts/prettify/prettify.js"></script>
@@ -35,415 +35,88 @@
 
 <div id="main">
     
-    <h1 class="page-title">Trigger</h1>
-    
-
-    
-
-
-
-
-<section>
-
-<header>
-    
-        
-    
-</header>
-
-<article>
-    
-        <div class="container-overview">
-        
-            
-
-            
-        
-        </div>
-    
-
-    
-
-    
-
-    
-    
-    
-
-     
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    <h4 class="name" id=".getHundredItemsBeforeAfter"><span class="type-signature type-signature-static">(static) </span>getHundredItemsBeforeAfter<span class="signature">(array, index)</span><span class="type-signature"> &rarr; {object}</span></h4>
-
-    
-
-
-
-
-<dl class="details">
-    
-    <dt class="tag-description">Description:</dt>
-    <dd class="tag-description"><ul class="dummy"><li><p>This functions returns all 100th items before and after a certain index within an array.</p></li></ul></dd>
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="triggerAndAutoset.js.html">triggerAndAutoset.js</a>, <a href="triggerAndAutoset.js.html#line89">line 89</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-    <h5 class="h5-examples">Example</h5>
-    
-    <pre class="prettyprint"><code>let result = getHundredItemsBeforeAfter(channelData["CH3"].points, 841);</code></pre>
-
-
-
-
-    <h5 class="h5-parameters">Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>array</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Array.&lt;number></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Data points from a channel</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>index</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Position within the array where the trigger threshold has been surpassed.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5 class="h5-returns">Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>Returns an object with two arrays :</p>
-<ul>
-<li><strong>before</strong> : all 100th items before the index point.</li>
-<li><strong>after</strong> : all 100th items after the index point.</li>
-</ul>
-</div>
-
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">object</span>
-
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".triggerCheck"><span class="type-signature type-signature-static">(static) </span>triggerCheck<span class="signature">(channelPoints)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
-
-    
-
-
-
-
-<dl class="details">
-    
-    <dt class="tag-description">Description:</dt>
-    <dd class="tag-description"><ul class="dummy"><li><p>This function evaluates a channel's data points to determine if a trigger condition has been met based on predefined trigger options.
-We start by checking wether or not the trigger edge / window has been surpassed.
-If the one of the points is higher than the threshold set by the user, we finish by checking the current slope the point is in to make sur all criterias are met before stopping the display.</p></li></ul></dd>
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="triggerAndAutoset.js.html">triggerAndAutoset.js</a>, <a href="triggerAndAutoset.js.html#line24">line 24</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-    <h5 class="h5-examples">Example</h5>
-    
-    <pre class="prettyprint"><code>triggerCheck(channelData["CH4"].points);</code></pre>
-
-
-
-
-    <h5 class="h5-parameters">Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>channelPoints</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Array.&lt;number></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Array containing the channel's data points.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5 class="h5-returns">Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>True if the trigger should be activated and false otherwise.</p>
-</div>
-
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">boolean</span>
-
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-    
-
-    
-
-    
-</article>
-
-</section>
+    <h1 class="page-title">misc.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file misc.js
+ * @description This file contains versatile fonctions without a specific module appartenance.
+ * 
+ * Functions included in this file : 
+ *   - **showToast**
+ *   - **getMedian**
+ *   - **formatFrequency**
+ * 
+ * @version 1.0.0
+ * @since 2024-05-31
+ * @author Owen Pichot
+ * @license Public Domain
+ */
+
+/**
+ * @module Misc
+ */
+
+/**
+ * Displays a small popup message in the bottom of the screen.
+ * 
+ * @function showToast
+ * @memberof module:Misc
+ * @param {string} message Message you want to display within the popup. 
+ * @param {string} status Style of the popup window :
+ *  - **toast-success**
+ *  - **toast-info**
+ *  - **toast-error**
+ */
+function showToast(message, status) {
+    let toast = document.getElementById("toast");
+    toast.innerHTML = message;
+    toast.className = "";
+    toast.classList.add("show", status);
+    setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+};
+
+/**
+ * This function returns the median value from an array.
+ * @function getMedian
+ * @memberof module:Misc
+ * @param {number[]} array Array of numbers. 
+ * @returns {number} The median value from the array.
+ */
+function getMedian(array){
+    let total = 0;
+    for (let i = 0; i &lt; array.length; i++){
+        total = total + array[i];
+    }
+    return total / array.length
+};
+
+/**
+ * This function takes in a frequency in Hz and returns a more readable result in kHz or mHz.
+ * @function formatFrequency
+ * @memberof module:Misc
+ * @param {number} hertz 
+ * @returns {string} A string value containing the number and scale of the parameter passed.
+ */
+function formatFrequency(hertz) {
+    if (hertz &lt; 1e3) {
+        return `${hertz} Hz`;
+    } else if (hertz &lt; 1e6) {
+        return `${(hertz / 1e3).toFixed(1)} kHz`;
+    } else if (hertz &lt; 1e9) {
+        return `${(hertz / 1e6).toFixed(1)} MHz`;
+    }
+};
+</code></pre>
+        </article>
+    </section>
 
 
 
