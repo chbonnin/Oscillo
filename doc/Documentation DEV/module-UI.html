@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>UI - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Autoset.html">Autoset</a><ul class='methods'><li data-type='method'><a href="module-Autoset.html#.autoset">autoset</a></li><li data-type='method'><a href="module-Autoset.html#.updateCursorPosition">updateCursorPosition</a></li></ul></li><li><a href="module-Computing.html">Computing</a><ul class='methods'><li data-type='method'><a href="module-Computing.html#.calculateAutoMeasures">calculateAutoMeasures</a></li><li data-type='method'><a href="module-Computing.html#.calculateZoomFactors">calculateZoomFactors</a></li><li data-type='method'><a href="module-Computing.html#.generatePoints">generatePoints</a></li><li data-type='method'><a href="module-Computing.html#.getMilliVoltForACursor">getMilliVoltForACursor</a></li><li data-type='method'><a href="module-Computing.html#.getMilliVoltsPerDiv">getMilliVoltsPerDiv</a></li><li data-type='method'><a href="module-Computing.html#.getMilliVoltsRelativeToTriggerCursor">getMilliVoltsRelativeToTriggerCursor</a></li><li data-type='method'><a href="module-Computing.html#.getMillivoltsBetweenCursors">getMillivoltsBetweenCursors</a></li><li data-type='method'><a href="module-Computing.html#.getPositionRelativeToTriggerCursor">getPositionRelativeToTriggerCursor</a></li><li data-type='method'><a href="module-Computing.html#.getTimeBetweenCursors">getTimeBetweenCursors</a></li><li data-type='method'><a href="module-Computing.html#.getTimeForACursor">getTimeForACursor</a></li><li data-type='method'><a href="module-Computing.html#.getTimePerDiv">getTimePerDiv</a></li><li data-type='method'><a href="module-Computing.html#.getTimeScale">getTimeScale</a></li><li data-type='method'><a href="module-Computing.html#.mapRawToVoltage">mapRawToVoltage</a></li><li data-type='method'><a href="module-Computing.html#.mapVoltageToRaw">mapVoltageToRaw</a></li><li data-type='method'><a href="module-Computing.html#.resetMeasurements">resetMeasurements</a></li><li data-type='method'><a href="module-Computing.html#.setScreenInformation">setScreenInformation</a></li><li data-type='method'><a href="module-Computing.html#.toggleMeasurement">toggleMeasurement</a></li><li data-type='method'><a href="module-Computing.html#.updateGeneratedMathSignalsData">updateGeneratedMathSignalsData</a></li><li data-type='method'><a href="module-Computing.html#.updateTriggerSettings">updateTriggerSettings</a></li></ul></li><li><a href="module-Drawings.html">Drawings</a><ul class='methods'><li data-type='method'><a href="module-Drawings.html#.clearCanvas">clearCanvas</a></li><li data-type='method'><a href="module-Drawings.html#.drawCursors">drawCursors</a></li><li data-type='method'><a href="module-Drawings.html#.drawFFT">drawFFT</a></li><li data-type='method'><a href="module-Drawings.html#.drawGrid">drawGrid</a></li><li data-type='method'><a href="module-Drawings.html#.drawSignal">drawSignal</a></li><li data-type='method'><a href="module-Drawings.html#.drawTriggerCursor">drawTriggerCursor</a></li><li data-type='method'><a href="module-Drawings.html#.drawZoomRectangle">drawZoomRectangle</a></li><li data-type='method'><a href="module-Drawings.html#.removeSpikes">removeSpikes</a></li><li data-type='method'><a href="module-Drawings.html#.resetZoom">resetZoom</a></li></ul></li><li><a href="module-Exports.html">Exports</a><ul class='methods'><li data-type='method'><a href="module-Exports.html#.copyCanvasToClipboard">copyCanvasToClipboard</a></li><li data-type='method'><a href="module-Exports.html#.downloadCanvasAsImage">downloadCanvasAsImage</a></li><li data-type='method'><a href="module-Exports.html#.downloadDataToCsv">downloadDataToCsv</a></li></ul></li><li><a href="module-Main.html">Main</a><ul class='methods'><li data-type='method'><a href="module-Main.html#.MAINLOOP">MAINLOOP</a></li><li data-type='method'><a href="module-Main.html#.environmentSetup">environmentSetup</a></li><li data-type='method'><a href="module-Main.html#.fetchDataFromFile">fetchDataFromFile</a></li><li data-type='method'><a href="module-Main.html#.fetchRawData">fetchRawData</a></li><li data-type='method'><a href="module-Main.html#.getCurrentSettings">getCurrentSettings</a></li><li data-type='method'><a href="module-Main.html#.saveColorChoices">saveColorChoices</a></li></ul></li><li><a href="module-Misc.html">Misc</a><ul class='methods'><li data-type='method'><a href="module-Misc.html#.formatFrequency">formatFrequency</a></li><li data-type='method'><a href="module-Misc.html#.getMedian">getMedian</a></li><li data-type='method'><a href="module-Misc.html#.showToast">showToast</a></li></ul></li><li><a href="module-Modals.html">Modals</a><ul class='methods'><li data-type='method'><a href="module-Modals.html#.clearModal">clearModal</a></li><li data-type='method'><a href="module-Modals.html#.createSelect">createSelect</a></li><li data-type='method'><a href="module-Modals.html#.displayBaseModal">displayBaseModal</a></li><li data-type='method'><a href="module-Modals.html#.hideModal">hideModal</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForCursors">populateModalForCursors</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForDisplay">populateModalForDisplay</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForMeasure_AUTO">populateModalForMeasure_AUTO</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForMeasure_MATHS">populateModalForMeasure_MATHS</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForSave">populateModalForSave</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForSetup">populateModalForSetup</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForSize">populateModalForSize</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForTrigger">populateModalForTrigger</a></li></ul></li><li><a href="module-Trigger.html">Trigger</a><ul class='methods'><li data-type='method'><a href="module-Trigger.html#.getHundredItemsBeforeAfter">getHundredItemsBeforeAfter</a></li><li data-type='method'><a href="module-Trigger.html#.triggerCheck">triggerCheck</a></li></ul></li><li><a href="module-UI.html">UI</a><ul class='methods'><li data-type='method'><a href="module-UI.html#.changeChannelButtonStatus">changeChannelButtonStatus</a></li><li data-type='method'><a href="module-UI.html#.changeScreenLightMode">changeScreenLightMode</a></li><li data-type='method'><a href="module-UI.html#.changeScreenSize">changeScreenSize</a></li><li data-type='method'><a href="module-UI.html#.onMouseMoveScrollerHorizontal">onMouseMoveScrollerHorizontal</a></li><li data-type='method'><a href="module-UI.html#.onMouseMoveScrollerVertical">onMouseMoveScrollerVertical</a></li><li data-type='method'><a href="module-UI.html#.onMouseUpScrollerHorizontal">onMouseUpScrollerHorizontal</a></li><li data-type='method'><a href="module-UI.html#.onMouseUpScrollerVertical">onMouseUpScrollerVertical</a></li><li data-type='method'><a href="module-UI.html#.setScrollersEvents">setScrollersEvents</a></li><li data-type='method'><a href="module-UI.html#.setupDragListeners">setupDragListeners</a></li><li data-type='method'><a href="module-UI.html#.setupDragListeners">setupDragListeners</a></li><li data-type='method'><a href="module-UI.html#.setupTriggerCursor">setupTriggerCursor</a></li><li data-type='method'><a href="module-UI.html#.toggleDisplayForHorizontalCursorScrollers">toggleDisplayForHorizontalCursorScrollers</a></li><li data-type='method'><a href="module-UI.html#.toggleDisplayForVerticalCursorScrollers">toggleDisplayForVerticalCursorScrollers</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="VARIABLES.html">VARIABLES</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">UI</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+
+            
+        
+        </div>
+    
+
+    
+
+    
+
+    
+    
+    
+
+     
+
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="~isHorizontalMouseDownListenerSet"><span class="type-signature type-signature-inner">(inner) </span>isHorizontalMouseDownListenerSet<span class="type-signature"> :boolean</span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This variable is necessary for the function 'toggleDisplayForHorizontalCursorScrollers' in order to prevent adding multiple listeners onto the same element.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line112">line 112</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>This variable is necessary for the function 'toggleDisplayForHorizontalCursorScrollers' in order to prevent adding multiple listeners onto the same element.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">boolean</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~isVerticalMouseDownListenerSet"><span class="type-signature type-signature-inner">(inner) </span>isVerticalMouseDownListenerSet<span class="type-signature"> :boolean</span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This variable is necessary for the function 'toggleDisplayForVerticalCursorScrollers' in order to prevent adding multiple listeners onto the same element.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line107">line 107</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>This variable is necessary for the function 'toggleDisplayForVerticalCursorScrollers' in order to prevent adding multiple listeners onto the same element.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">boolean</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id=".changeChannelButtonStatus"><span class="type-signature type-signature-static">(static) </span>changeChannelButtonStatus<span class="signature">(channelKey)</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function executes whenever a user clicks on one of the channel buttons :
+The button will be grayed out if it is already in focus.
+The button will be 'activated/colored' if it is grayed out.
+The button will be focused if not already focused.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line24">line 24</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>channelKey</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Object key corresponding to a certain signal saved within 'channelData'.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-throws">Throws:</h5>
+
+        
+
+    <div class="param-desc usertext">
+    
+        <p>Will throw an error if the button clicked on is not linked to an active channel. We then warn the user.</p>
+    
+    </div>
+
+
+    
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".changeScreenLightMode"><span class="type-signature type-signature-static">(static) </span>changeScreenLightMode<span class="signature">(mode)</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function works in two sections.
+The first section is the immediate change of the UI depending on the theme the user changed.
+The second section is there to save these changes in the UI to the database if the user is registered.
+If the user is anonymous, a message will let him know that he needs an account to save his preferences.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line602">line 602</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>changeScreenLightMode("light");
+changeScreenLightMode("dark");</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>mode</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Which of the two modes to set (light / dark).</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".changeScreenSize"><span class="type-signature type-signature-static">(static) </span>changeScreenSize<span class="signature">(size)</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function resizes the oscilloscope's screen.
+It will also move around some elements and/or resize them to make them fit within the new layout of the page.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line329">line 329</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>changeScreenSize("1200|800");
+changeScreenSize("400|267");</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>size</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Size, in pixels, to assign to the canvas (width|height).</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+<h5 class="h5-listens">Listens to Events:</h5>
+<ul>
+    <li>Escape When the screen is maximized,event: part of this function will listen for the 'Escape' key being pressed and reset the view back to standard.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".onMouseMoveScrollerHorizontal"><span class="type-signature type-signature-static">(static) </span>onMouseMoveScrollerHorizontal<span class="signature">(scroller, startY, whichCursor)</span><span class="type-signature"> &rarr; {function}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This fonction keeps track of a moving horizontal cursor being dragged by a user.
+We get the cursor's position anytime it is being moved and save these values to the config relative to the cursors.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line239">line 239</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>scroller</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Scroller element on the top of the screen.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>startY</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Position from where the cursor started moving (abs value in pixels).</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>whichCursor</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Which of the 2 scrollers are we moving.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+<h5 class="h5-listens">Listens to Events:</h5>
+<ul>
+    <li>event:MouseMove For a user dragging the mouse.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns the entire fonction in order to assign it to a variable and easily keep track of the listeners.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">function</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".onMouseMoveScrollerVertical"><span class="type-signature type-signature-static">(static) </span>onMouseMoveScrollerVertical<span class="signature">(scroller, startX, whichCursor)</span><span class="type-signature"> &rarr; {function}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This fonction keeps track of a moving vertical cursor being dragged by a user.
+We get the cursor's position anytime it is being moved and save these values to the config relative to the cursors.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line131">line 131</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>scroller</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Scroller element on the top of the screen.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>startX</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Position from where the cursor started moving (abs value in pixels).</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>whichCursor</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Which of the 2 scrollers are we moving.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+<h5 class="h5-listens">Listens to Events:</h5>
+<ul>
+    <li>event:MouseMove For a user dragging the mouse.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns the entire fonction in order to assign it to a variable and easily keep track of the listeners.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">function</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".onMouseUpScrollerHorizontal"><span class="type-signature type-signature-static">(static) </span>onMouseUpScrollerHorizontal<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This fonction handles the final part of a moving horizontal cursor which is when a user finally releases it.
+We then remove all listeners assigned to this cursor and reset the variables responsible for keeping track of the events.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line265">line 265</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-listens">Listens to Events:</h5>
+<ul>
+    <li>event:Mouseup For a user releasing the mouse.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".onMouseUpScrollerVertical"><span class="type-signature type-signature-static">(static) </span>onMouseUpScrollerVertical<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This fonction handles the final part of a moving vertical cursor which is when a user finally releases it.
+We then remove all listeners assigned to this cursor and reset the variables responsible for keeping track of the events.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line157">line 157</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-listens">Listens to Events:</h5>
+<ul>
+    <li>event:Mouseup For a user releasing the mouse.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".setScrollersEvents"><span class="type-signature type-signature-static">(static) </span>setScrollersEvents<span class="signature">(Channel_ID)</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function is used to setup the interactions between the user and each of the vertical offset scrollers (left of the screen).
+It needs to be called for each scroller.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line678">line 678</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>setScrollersEvents(4);</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>Channel_ID</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Which channel are we setting an offset cursor for.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+<h5 class="h5-listens">Listens to Events:</h5>
+<ul>
+    <li>MouseMove - Whenever the scroller is moved,event: the new position of the scroller will be saved and its relative position is then mapped to an offset on the corresponding signal.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".setupDragListeners"><span class="type-signature type-signature-static">(static) </span>setupDragListeners<span class="signature">(scroller, whichCursor)</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This functions sets up listeners to allow the user to move one of the two vertical cursors by dragging it along the scrollbar.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line176">line 176</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>scroller</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Scroller element on top of the screen.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>whichCursor</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Which of the two vertical cursors we are sending (A / B).</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+<h5 class="h5-listens">Listens to Events:</h5>
+<ul>
+    <li>Mousedown For a user clicking on one of the vertical measure cursors. 
+When a user clicks on one, we attach two new listeners to the cursor to track where it is dragged to and when the user relases the mouse.event:</li>
+</ul>
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".setupDragListeners"><span class="type-signature type-signature-static">(static) </span>setupDragListeners<span class="signature">(scroller, whichCursor)</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This functions sets up listeners to allow the user to move one of the two horizontal cursors by dragging it along the scrollbar.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line284">line 284</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>scroller</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Scroller element on top of the screen.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>whichCursor</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Which of the two horizontal cursors we are sending (A / B).</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+<h5 class="h5-listens">Listens to Events:</h5>
+<ul>
+    <li>Mousedown For a user clicking on one of the horizontal measure cursors. 
+When a user clicks on one, we attach two new listeners to the cursor to track where it is dragged to and when the user relases the mouse.event:</li>
+</ul>
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".setupTriggerCursor"><span class="type-signature type-signature-static">(static) </span>setupTriggerCursor<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function is used to setup the interactions for the trigger cursor.
+This cursor shows the user the current threshold set for the trigger and allows them to move it and therefore change the trigger threshold.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line740">line 740</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-listens">Listens to Events:</h5>
+<ul>
+    <li>MouseMove - Whenever the scroller is moved,event: the new position of the scroller will be saved and its relative position is then mapped to an offset on the corresponding signal.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".toggleDisplayForHorizontalCursorScrollers"><span class="type-signature type-signature-static">(static) </span>toggleDisplayForHorizontalCursorScrollers<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Similarly to 'toggleDisplayForVerticalCursorScrollers' this function is fired when a user chooses to display the horizontal cursors.
+It will start by displaying the corresponding cursors and assign event listeners to them.
+If the cursors have been previously hidden then showned again, the listeners won't be set again.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line222">line 222</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".toggleDisplayForVerticalCursorScrollers"><span class="type-signature type-signature-static">(static) </span>toggleDisplayForVerticalCursorScrollers<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function is fired when a user chooses to display the vertical cursors.
+It will start by displaying the corresponding cursors and assign event listeners to them.
+If the cursors have been previously hidden then showned again, the listeners won't be set again.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ui.js.html">ui.js</a>, <a href="ui.js.html#line114">line 114</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.3</a> on Thu May 23 2024 16:28:34 GMT+0100 (Western European Summer Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>

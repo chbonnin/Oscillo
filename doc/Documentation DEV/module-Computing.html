@@ -1,0 +1,3068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>Computing - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Autoset.html">Autoset</a><ul class='methods'><li data-type='method'><a href="module-Autoset.html#.autoset">autoset</a></li><li data-type='method'><a href="module-Autoset.html#.updateCursorPosition">updateCursorPosition</a></li></ul></li><li><a href="module-Computing.html">Computing</a><ul class='methods'><li data-type='method'><a href="module-Computing.html#.calculateAutoMeasures">calculateAutoMeasures</a></li><li data-type='method'><a href="module-Computing.html#.calculateZoomFactors">calculateZoomFactors</a></li><li data-type='method'><a href="module-Computing.html#.generatePoints">generatePoints</a></li><li data-type='method'><a href="module-Computing.html#.getMilliVoltForACursor">getMilliVoltForACursor</a></li><li data-type='method'><a href="module-Computing.html#.getMilliVoltsPerDiv">getMilliVoltsPerDiv</a></li><li data-type='method'><a href="module-Computing.html#.getMilliVoltsRelativeToTriggerCursor">getMilliVoltsRelativeToTriggerCursor</a></li><li data-type='method'><a href="module-Computing.html#.getMillivoltsBetweenCursors">getMillivoltsBetweenCursors</a></li><li data-type='method'><a href="module-Computing.html#.getPositionRelativeToTriggerCursor">getPositionRelativeToTriggerCursor</a></li><li data-type='method'><a href="module-Computing.html#.getTimeBetweenCursors">getTimeBetweenCursors</a></li><li data-type='method'><a href="module-Computing.html#.getTimeForACursor">getTimeForACursor</a></li><li data-type='method'><a href="module-Computing.html#.getTimePerDiv">getTimePerDiv</a></li><li data-type='method'><a href="module-Computing.html#.getTimeScale">getTimeScale</a></li><li data-type='method'><a href="module-Computing.html#.mapRawToVoltage">mapRawToVoltage</a></li><li data-type='method'><a href="module-Computing.html#.mapVoltageToRaw">mapVoltageToRaw</a></li><li data-type='method'><a href="module-Computing.html#.resetMeasurements">resetMeasurements</a></li><li data-type='method'><a href="module-Computing.html#.setScreenInformation">setScreenInformation</a></li><li data-type='method'><a href="module-Computing.html#.toggleMeasurement">toggleMeasurement</a></li><li data-type='method'><a href="module-Computing.html#.updateGeneratedMathSignalsData">updateGeneratedMathSignalsData</a></li><li data-type='method'><a href="module-Computing.html#.updateTriggerSettings">updateTriggerSettings</a></li></ul></li><li><a href="module-Drawings.html">Drawings</a><ul class='methods'><li data-type='method'><a href="module-Drawings.html#.clearCanvas">clearCanvas</a></li><li data-type='method'><a href="module-Drawings.html#.drawCursors">drawCursors</a></li><li data-type='method'><a href="module-Drawings.html#.drawFFT">drawFFT</a></li><li data-type='method'><a href="module-Drawings.html#.drawGrid">drawGrid</a></li><li data-type='method'><a href="module-Drawings.html#.drawSignal">drawSignal</a></li><li data-type='method'><a href="module-Drawings.html#.drawTriggerCursor">drawTriggerCursor</a></li><li data-type='method'><a href="module-Drawings.html#.drawZoomRectangle">drawZoomRectangle</a></li><li data-type='method'><a href="module-Drawings.html#.removeSpikes">removeSpikes</a></li><li data-type='method'><a href="module-Drawings.html#.resetZoom">resetZoom</a></li></ul></li><li><a href="module-Exports.html">Exports</a><ul class='methods'><li data-type='method'><a href="module-Exports.html#.copyCanvasToClipboard">copyCanvasToClipboard</a></li><li data-type='method'><a href="module-Exports.html#.downloadCanvasAsImage">downloadCanvasAsImage</a></li><li data-type='method'><a href="module-Exports.html#.downloadDataToCsv">downloadDataToCsv</a></li></ul></li><li><a href="module-Main.html">Main</a><ul class='methods'><li data-type='method'><a href="module-Main.html#.MAINLOOP">MAINLOOP</a></li><li data-type='method'><a href="module-Main.html#.environmentSetup">environmentSetup</a></li><li data-type='method'><a href="module-Main.html#.fetchDataFromFile">fetchDataFromFile</a></li><li data-type='method'><a href="module-Main.html#.fetchRawData">fetchRawData</a></li><li data-type='method'><a href="module-Main.html#.getCurrentSettings">getCurrentSettings</a></li><li data-type='method'><a href="module-Main.html#.saveColorChoices">saveColorChoices</a></li></ul></li><li><a href="module-Misc.html">Misc</a><ul class='methods'><li data-type='method'><a href="module-Misc.html#.formatFrequency">formatFrequency</a></li><li data-type='method'><a href="module-Misc.html#.getMedian">getMedian</a></li><li data-type='method'><a href="module-Misc.html#.showToast">showToast</a></li></ul></li><li><a href="module-Modals.html">Modals</a><ul class='methods'><li data-type='method'><a href="module-Modals.html#.clearModal">clearModal</a></li><li data-type='method'><a href="module-Modals.html#.createSelect">createSelect</a></li><li data-type='method'><a href="module-Modals.html#.displayBaseModal">displayBaseModal</a></li><li data-type='method'><a href="module-Modals.html#.hideModal">hideModal</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForCursors">populateModalForCursors</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForDisplay">populateModalForDisplay</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForMeasure_AUTO">populateModalForMeasure_AUTO</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForMeasure_MATHS">populateModalForMeasure_MATHS</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForSave">populateModalForSave</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForSetup">populateModalForSetup</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForSize">populateModalForSize</a></li><li data-type='method'><a href="module-Modals.html#.populateModalForTrigger">populateModalForTrigger</a></li></ul></li><li><a href="module-Trigger.html">Trigger</a><ul class='methods'><li data-type='method'><a href="module-Trigger.html#.getHundredItemsBeforeAfter">getHundredItemsBeforeAfter</a></li><li data-type='method'><a href="module-Trigger.html#.triggerCheck">triggerCheck</a></li></ul></li><li><a href="module-UI.html">UI</a><ul class='methods'><li data-type='method'><a href="module-UI.html#.changeChannelButtonStatus">changeChannelButtonStatus</a></li><li data-type='method'><a href="module-UI.html#.changeScreenLightMode">changeScreenLightMode</a></li><li data-type='method'><a href="module-UI.html#.changeScreenSize">changeScreenSize</a></li><li data-type='method'><a href="module-UI.html#.onMouseMoveScrollerHorizontal">onMouseMoveScrollerHorizontal</a></li><li data-type='method'><a href="module-UI.html#.onMouseMoveScrollerVertical">onMouseMoveScrollerVertical</a></li><li data-type='method'><a href="module-UI.html#.onMouseUpScrollerHorizontal">onMouseUpScrollerHorizontal</a></li><li data-type='method'><a href="module-UI.html#.onMouseUpScrollerVertical">onMouseUpScrollerVertical</a></li><li data-type='method'><a href="module-UI.html#.setScrollersEvents">setScrollersEvents</a></li><li data-type='method'><a href="module-UI.html#.setupDragListeners">setupDragListeners</a></li><li data-type='method'><a href="module-UI.html#.setupDragListeners">setupDragListeners</a></li><li data-type='method'><a href="module-UI.html#.setupTriggerCursor">setupTriggerCursor</a></li><li data-type='method'><a href="module-UI.html#.toggleDisplayForHorizontalCursorScrollers">toggleDisplayForHorizontalCursorScrollers</a></li><li data-type='method'><a href="module-UI.html#.toggleDisplayForVerticalCursorScrollers">toggleDisplayForVerticalCursorScrollers</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="VARIABLES.html">VARIABLES</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">Computing</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+
+            
+        
+        </div>
+    
+
+    
+
+    
+
+    
+    
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id=".calculateAutoMeasures"><span class="type-signature type-signature-static">(static) </span>calculateAutoMeasures<span class="signature">()</span><span class="type-signature"> &rarr; {functions}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function regroups all sub-functions needed to calculate the values we display below the oscilloscope's screen.
+These sub-functions won't be entirely documented, most of them are pretty self-explanatory and comments are there already to clarify their use.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line598">line 598</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>const measures = calculateAutoMeasures();
+let minimumValue = measures.getMinValue(channelData["CH2"].points);</code></pre>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns the following functions to use :</p>
+<ul>
+<li><strong>voltage_from_raw</strong></li>
+<li><strong>getMinValue</strong></li>
+<li><strong>getMaxValue</strong></li>
+<li><strong>getVppValue</strong></li>
+<li><strong>getMeanValue</strong></li>
+<li><strong>getMiddleValue</strong></li>
+<li><strong>getRMS</strong></li>
+<li><strong>getAverageFrequency</strong></li>
+<li><strong>calculateThreshold</strong></li>
+<li><strong>getFrequenciesMaxMin</strong></li>
+</ul>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">functions</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".calculateZoomFactors"><span class="type-signature type-signature-static">(static) </span>calculateZoomFactors<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function calculates the zoom factors when a user selects an area to zoom on.
+It also update the global object 'zoomConfig' with the new values for the current zoom if any.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line930">line 930</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".generatePoints"><span class="type-signature type-signature-static">(static) </span>generatePoints<span class="signature">(channelKey)</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function is responsible for generating the points array for the signals not received directly but generated by the user.
+This goes for all maths functions like +, -, fft, integral, etc.
+Each time this function is called for a certain channel, we check the type of operation to execute, generate the points and return immediately.
+The drawSignal function will then draw the signal like any other.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line430">line 430</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>channelKey</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Key to access this signal within 'channelData' (CH1, CH2, etc.).</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".getMilliVoltForACursor"><span class="type-signature type-signature-static">(static) </span>getMilliVoltForACursor<span class="signature">(cursorPosition)</span><span class="type-signature"> &rarr; {number|string}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function returns the equivalent in mV relative to the position of a horizontal measure cursor.
+It also takes into account the vertical scaling of the current channel focused.
+If no channel is focused then the function will just return &quot;No channel Selected&quot;.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line170">line 170</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>getMilliVoltForACursor(150);
+//output : { value: "687.5", scale: "mV" }
+getMilliVoltForACursor(540);
+//output : { value: -385, scale: "mV" }
+getMilliVoltForACursor(300);//While no channel is focused.
+//output : { value: "No channel", scale: "selected" }</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>cursorPosition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Position, in pixels from the top of the screen to the cursor.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns the voltage (in mv) equivalent to the position of the cursor.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+|
+
+<span class="param-type">string</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".getMilliVoltsPerDiv"><span class="type-signature type-signature-static">(static) </span>getMilliVoltsPerDiv<span class="signature">(channelVerticalScale)</span><span class="type-signature"> &rarr; {number}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function returns how many mV are within a single vertical division.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line729">line 729</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>channelVerticalScale</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Vertical scale of a specific channel we want to know the mv/div for.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns the mv/div for the given channel.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".getMilliVoltsRelativeToTriggerCursor"><span class="type-signature type-signature-static">(static) </span>getMilliVoltsRelativeToTriggerCursor<span class="signature">(Position)</span><span class="type-signature"> &rarr; {number|string}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This fonction returns how much mV represents the current position of the trigger cursor (right of the screen, T icon).
+This function is mostly used when the user moves the trigger cursor to change the current threshold.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line208">line 208</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>getMilliVoltsRelativeToTriggerCursor(150);
+//output : { value: 687.5, scale: "mV" }
+getMilliVoltsRelativeToTriggerCursor(430);
+//output : { value: -82.5, scale: "mV" }</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>Position</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Position of the trigger cursor, in pixels, on its scrollbar.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns the voltage (in mv) relative to the cursor's position.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+|
+
+<span class="param-type">string</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".getMillivoltsBetweenCursors"><span class="type-signature type-signature-static">(static) </span>getMillivoltsBetweenCursors<span class="signature">(pixelsBetweenCursors)</span><span class="type-signature"> &rarr; {number|string}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function, similarly to 'getTimeBetweenCursors' gets the voltage represented between the two horizontal measure cursors.
+It takes into account which channel we are currently focused on and its current vertical scaling.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line140">line 140</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>getMillivoltsBetweenCursors(254);
+//output : { value: "698.5", scale: "mV" }
+getMillivoltsBetweenCursors(57);
+//output : { value: "156.8", scale: "mV" }</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>pixelsBetweenCursors</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Number of pixels between the two cursors.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns the voltage and its associated scale (mv, v, etc).</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+|
+
+<span class="param-type">string</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".getPositionRelativeToTriggerCursor"><span class="type-signature type-signature-static">(static) </span>getPositionRelativeToTriggerCursor<span class="signature">(milliVolts, channelKey)</span><span class="type-signature"> &rarr; {number}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function is used to get the position to set the trigger cursor at relative to the threshold set by the user.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line849">line 849</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>milliVolts</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Current treshold set for the trigger in mv.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>channelKey</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Object key corresponding to a certain signal saved within 'channelData'.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Position, in pixels, of the trigger cursor along the scrollbar.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".getTimeBetweenCursors"><span class="type-signature type-signature-static">(static) </span>getTimeBetweenCursors<span class="signature">(pixelsBetweenCursors)</span><span class="type-signature"> &rarr; {number|string}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function is used when the user uses the vertical measure cursors on the screen.
+It calculates the time represented between the two vertical measure cursors.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line115">line 115</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>// /!\ Without any horizontal scaling /!\
+getTimeBetweenCursors(542);
+//output : { value: 4.63, scale: "µs" }
+getTimeBetweenCursors(247):
+//output : { value: 2.11, scale: "µs" }</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>pixelsBetweenCursors</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Number of pixels between the two cursors.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns the time value and the corresponding scale.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+|
+
+<span class="param-type">string</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".getTimeForACursor"><span class="type-signature type-signature-static">(static) </span>getTimeForACursor<span class="signature">(cursorPosition)</span><span class="type-signature"> &rarr; {number|string}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Similarly to 'getMilliVoltForACursor', this function returns the equivalent time relative to the position of a vertical measure cursor.
+It takes into account the global horizontal scaling of the oscilloscope.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line239">line 239</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>getTimeForACursor(150);
+//output : { value: 1.28, scale: "µs" }
+getTimeForACursor(655);
+//output : { value: 5.59, scale: "µs" }</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>cursorPosition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Position, in pixels, from the left of the screen to the cursor.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns the time and time-scale relative to the cursor's position.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+|
+
+<span class="param-type">string</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".getTimePerDiv"><span class="type-signature type-signature-static">(static) </span>getTimePerDiv<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function returns how much time represents 1 horizontal division on screen.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line76">line 76</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>An object with two attributes, 'value' &amp; 'scale'.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".getTimeScale"><span class="type-signature type-signature-static">(static) </span>getTimeScale<span class="signature">(timeInSeconds)</span><span class="type-signature"> &rarr; {object}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function takes a time in seconds and scales it to something that makes more sense depending on the value.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line37">line 37</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>getTimeScale(0.05);
+//output : { value: 50, scale: "ms" }
+getTimeScale(0.0004);
+//output : { value: 400, scale: "µs" }
+getTimeScale(0.00000154);
+//output : { value: 1.54, scale: "µs" }</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>timeInSeconds</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Time period in seconds.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>An object with two attributes, 'value' &amp; 'scale'.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".mapRawToVoltage"><span class="type-signature type-signature-static">(static) </span>mapRawToVoltage<span class="signature">(rawValue)</span><span class="type-signature"> &rarr; {number}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function converts a raw value from a 14-bit ADC to the equivalent voltage.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line103">line 103</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>rawValue</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Raw value to convert.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The correponding voltage to the raw value given.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".mapVoltageToRaw"><span class="type-signature type-signature-static">(static) </span>mapVoltageToRaw<span class="signature">(voltage)</span><span class="type-signature"> &rarr; {number}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function converts a voltage to the equivalent absolute raw value of a 14-bit ADC</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line92">line 92</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>voltage</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Voltage to convert.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The corresponding raw value to the voltage given.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".resetMeasurements"><span class="type-signature type-signature-static">(static) </span>resetMeasurements<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function resets all values within the object 'autoMeasureOptions'.
+It also resets the visual aspect of each button for the user to select the auto-measures.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line820">line 820</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".setScreenInformation"><span class="type-signature type-signature-static">(static) </span>setScreenInformation<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function displays multiple informations below the screen like Mv/div, S/div, etc etc.
+It also displays all the 'auto-measures' selected by the user for a specific channel like vpp, rms, etc.
+This function's job is more about displaying the information on screen and not so much about doing the actual calculations for each value.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line267">line 267</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".toggleMeasurement"><span class="type-signature type-signature-static">(static) </span>toggleMeasurement<span class="signature">(measureKey, buttonId)</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function changes the status for the auto-measures, which ones to display or not.
+The values being changed are all stored within the global object 'autoMeasureOptions'.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line801">line 801</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>measureKey</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Key within the 'autoMeasureOptions' object representing the measure.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>buttonId</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Id of the button associated to this measure.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".updateGeneratedMathSignalsData"><span class="type-signature type-signature-static">(static) </span>updateGeneratedMathSignalsData<span class="signature">(slotChannel, channel1, channel2, operation)</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function is called whenever a user selects a new signal to generate via a math function.
+We start by creating a new slot for a channel within channelData.
+We then update the config and the UI components related to this channel (button, scroller).
+We finish by setting up the interaction for the user with the offset cursor.
+The new signal will then be generated and drawned within the main loop.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line746">line 746</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>updateGeneratedMathSignalsData("CH6", "CH2", null, "squared");
+updateGeneratedMathSignalsData("CH8", "CH4", "CH1", "add");</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>slotChannel</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Empty slot to use for the new signal.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>channel1</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Base signal for the generated new one.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>channel2</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Second base signal in case the operation needs two operands.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>operation</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Which operation to use for the new signal.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".updateTriggerSettings"><span class="type-signature type-signature-static">(static) </span>updateTriggerSettings<span class="signature">(modalElement)</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>This function is used to update the current trigger settings set by the user.
+We had to add a few verifications in case the values entered by the user are outside the acceptable range.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="infoComputing.js.html">infoComputing.js</a>, <a href="infoComputing.js.html#line875">line 875</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>modalElement</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">DOMElement</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Modal containing the inputs relative to the trigger options.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.3</a> on Thu May 23 2024 16:28:34 GMT+0100 (Western European Summer Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>
