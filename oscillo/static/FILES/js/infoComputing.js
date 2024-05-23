@@ -41,6 +41,11 @@ function mapVoltageToRaw(voltage) {
     return (voltage + (config.voltage / 2)) / config.voltage * config.maxSampleValue;
 };
 
+//converts a raw value to the equivalent value in volts.
+function mapRawToVoltage(rawValue) {
+    return (rawValue / config.maxSampleValue * config.voltage) - (config.voltage / 2);
+}
+
 function getTimeBetweenCursors(pixelsBetweenCursors){
     const totalSamplingTime = config.samplesPerFrame * 1e-8;
     const sizeOfOneDivisionInPixels = CANVAS.width / config.horizontalDivisions;
@@ -312,23 +317,17 @@ function generatePoints(channelKey){
 
     if (operation == "integral"){
     
-        function getIntegral(points) {
-            const scale = 1e5; //arbitratry scaling factor which has to be added in order to work with the types of values we have. Without it the integral curve will never display any real variations unless we're talking spikes from -1 to +1 V on the data..
-            const deltaTime = 10e-9 * scale;
-            let integralValues = [];
-            let currentIntegral = 8192;
-        
-            for (let i = 0; i < points.length - 1; i++) {
-                let voltage1 = points[i];
-                let voltage2 = points[i+1];
-                currentIntegral += (voltage2 + voltage1) / 2 * deltaTime;
-                currentIntegral = parseInt(currentIntegral.toFixed(0));
-                integralValues.push(currentIntegral);
+        function integrateSignal(points, deltaT) {
+            const integratedSignal = [];
+            let integralSum = 0;
+            for (let i = 0; i < points.length; i++) {
+                const pointV = mapRawToVoltage(points[i]);
+                integralSum += pointV * deltaT;
+                integratedSignal.push(mapVoltageToRaw(integralSum));
             }
-            return integralValues;
+            return integratedSignal;
         }
-        
-        channelData[channelKey].points = getIntegral(channelData[originChannel1].points);
+        channelData[channelKey].points = integrateSignal(channelData[originChannel1].points, 1);
         return
     };
 

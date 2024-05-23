@@ -565,7 +565,6 @@ function setScrollersEvents(Channel_ID){
         newY = Math.min(newY, scrollBar.clientHeight - scroller.clientHeight);
 
         scroller.style.top = newY + 'px';
-        // console.log("Curser is being dragged");
 
         //this part maps the relative position of the scroller to the offset of the signal
         let percent = newY / (scrollBar.clientHeight - scroller.clientHeight);

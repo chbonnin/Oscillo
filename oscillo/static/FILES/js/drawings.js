@@ -272,52 +272,7 @@ function drawCursors(){
     };
 };
 
-function drawSignal(channelKey) {
-    const channel = channelData[channelKey];
-    const points = channel.points;
-    const ctx = CANVAS.getContext('2d');
-    const width = CANVAS.width;
-    const height = CANVAS.height;
-
-    // Find the max and min values in the points array
-    const maxValue = Math.max(...points);
-    const minValue = Math.min(...points);
-    const amplitudeRange = maxValue - minValue;
-
-    const verticalScalingFactor = channel.verticalScale; 
-
-    const verticalOffset = channel.verticalOffset;
-
-    // Calculate the scaling factors based on actual data range
-    const verticalScale = (height / amplitudeRange) * verticalScalingFactor;
-    const horizontalScaleFactor = (width / points.length) * (horizontalScale / 50);//we have to divide by 50 because the default value of the input is 50 which corresponds to 1 : no scaling
-
-    // Start drawing the waveform
-    ctx.beginPath();
-
-    // Adjust the waveform to be centered vertically
-    points.forEach((point, index) => {
-        const x = (index * (width / points.length) / horizontalScaleFactor) + horizontalOffset;//horizontalOffset is init at the start of the script and modified by an eventlistener (cursor)
-        // Rescale and center the signal around the middle of the canvas
-        const y = ((height / 2) - ((point - minValue) - (amplitudeRange / 2)) * verticalScale) + verticalOffset;
-
-        if (index === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
-        }
-    });
-
-    if (config.theme == "dark"){
-        ctx.strokeStyle = channel.colorDark;  // Color of the waveform
-    }else{
-        ctx.strokeStyle = channel.colorLight;
-    }
-    ctx.lineWidth = 2;
-    ctx.stroke();
-};
-
-function drawSignalFromFile(channelKey){
+function drawSignal(channelKey){
     const channel = channelData[channelKey];
     const points = channel.points;
     const ctx = CANVAS.getContext('2d');
@@ -355,6 +310,16 @@ function drawSignalFromFile(channelKey){
     ctx.lineWidth = 2;
     ctx.globalAlpha = 0.8;
     ctx.stroke();
+
+    if (zoomConfig.isZoomed){
+        // Calculate rectangle dimensions
+        const rectangleWidth = zoomConfig.finalX - zoomConfig.initX;
+        const rectangleHeight = zoomConfig.finalY - zoomConfig.initY;
+
+        const text = `${rectangleWidth}px * ${rectangleHeight}px`;
+        ctx.fillText(text, zoomConfig.initX + 5, zoomConfig.initY + 5);
+    }
+
 };
 
 function drawFFT(channelKey) {
@@ -498,10 +463,25 @@ function drawZoomRectangle(){
         ctx.strokeStyle = 'black';
         ctx.fillStyle = 'black';
     }
+
+    // Calculate rectangle dimensions
+    const width = zoomConfig.finalX - zoomConfig.initX;
+    const height = zoomConfig.finalY - zoomConfig.initY;
+
     ctx.beginPath();
     ctx.rect(zoomConfig.initX, zoomConfig.initY, zoomConfig.finalX - zoomConfig.initX, zoomConfig.finalY - zoomConfig.initY);
     ctx.fill();
+    ctx.stroke();
+
     ctx.globalAlpha = 1;
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    // Draw the dimensions at the top left corner of the rectangle
+    const text = `${width}px x ${height}px`;
+    ctx.fillText(text, zoomConfig.initX + 5, zoomConfig.initY + 5);
+
 };
 
 function resetZoom(){

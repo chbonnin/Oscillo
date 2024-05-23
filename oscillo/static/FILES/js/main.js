@@ -141,9 +141,10 @@ function getCurrentSettings(){
         }
 
         console.log("Updated config:", config);
+       
+        let startOffset = -100
 
         // update the channelData object now that we know the number of channels
-
         for (let ch = 1; ch <= config.numChannels; ch++) {
             channelData['CH' + ch] = {
                 points: [],
@@ -165,6 +166,11 @@ function getCurrentSettings(){
 
             //This part assigns each channel to its own scroller for the offset.
             setScrollersEvents(ch);
+
+            //Here we add a small offset for the signals in order to not have them all clutered in the middle at the beginning.
+            document.getElementById('scroller-CH'+ch).style.top = ((CANVAS.height / 2) + startOffset - 5) + 'px';
+            channelData['CH' + ch].verticalOffset = startOffset - 30;
+            startOffset += 50;
         }
     }
 };
@@ -228,24 +234,8 @@ function fetchDataFromFile(){
                     if (channelData[key].type == "generatedData" && channelData[key].operation == "fft"){
                         drawFFT(key);
                     } else {
-                        drawSignalFromFile(key);
+                        drawSignal(key);
                     }
-                }
-
-                //Here we make sure to align offset cursors to the mean value of each signal (only done during the first gathering)
-                const scroller = document.getElementById("scroller-" + key);
-
-                const meanSignalValue = autoMeasures.getMeanValue(channelData[key].points);
-                const meanSignalValueToCanvasPosition = getPositionRelativeToTriggerCursor(meanSignalValue, key);
-
-                if ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) > CANVAS.height || (meanSignalValueToCanvasPosition + channelData[key].verticalOffset) < 0){
-                    if ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) > CANVAS.height){
-                        scroller.style.top = (CANVAS.height - 5) + 'px';
-                    }else{
-                        scroller.style.top = '0px';
-                    }
-                }else{
-                    scroller.style.top = ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) - 5) + 'px';
                 }
             });
         } else if (Http.status === 408){
@@ -331,24 +321,8 @@ function fetchRawData(){
                     if (channelData[key].type == "generatedData" && channelData[key].operation == "fft"){
                         drawFFT(key);
                     } else {
-                        drawSignalFromFile(key);
+                        drawSignal(key);
                     }
-                }
-
-                //Here we make sure to align offset cursors to the mean value of each signal (only done during the first gathering)
-                const scroller = document.getElementById("scroller-" + key);
-
-                const meanSignalValue = autoMeasures.getMeanValue(channelData[key].points);
-                const meanSignalValueToCanvasPosition = getPositionRelativeToTriggerCursor(meanSignalValue, key);
-
-                if ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) > CANVAS.height || (meanSignalValueToCanvasPosition + channelData[key].verticalOffset) < 0){
-                    if ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) > CANVAS.height){
-                        scroller.style.top = (CANVAS.height - 5) + 'px';
-                    }else{
-                        scroller.style.top = '0px';
-                    }
-                }else{
-                    scroller.style.top = ((meanSignalValueToCanvasPosition + channelData[key].verticalOffset) - 5) + 'px';
                 }
             });
         } else {
@@ -558,11 +532,9 @@ function environmentSetup(){//This function sets up anything necessary for inter
 
     RUNSTOP.addEventListener("click", function() {
         if (isRunning) {
-            //console.log("Stopping the oscilloscope");
             isRunning = false;
             RUNSTOP.innerHTML = "RUN";
-            clearCanvas(); //we delete the signals on screen
-            drawGrid('rgba(128, 128, 128, 0.5)', 3);//we keep the grid however.
+            console.log("stopped the oscillo");
         } else {
             if (config.mode == null || config.mode == "NA"){
                 showToast("Your settings are not set yet.\nClick on the 'Settings' button to set them up.", "toast-error");
@@ -662,7 +634,7 @@ function environmentSetup(){//This function sets up anything necessary for inter
             ctx.restore();
 
             zoomConfig.isZoomed = true;
-            showToast("Zoom applied", "toast-info");
+            showToast("Press Shift + X to exit zoomed mode", "toast-info");
         }
     });
     
@@ -686,6 +658,19 @@ function environmentSetup(){//This function sets up anything necessary for inter
     SETUP.addEventListener("click", function(){
         populateModalForSetup();
         displayBaseModal();
+    });
+
+    //====================== AVOID MODAL DUPLICATIONS =======================
+
+    function preventSpaceTrigger(event) {
+        if (event.key === " " || event.code === "Space") {
+            event.preventDefault();
+        }
+    }
+
+    const buttons = [RUNSTOP, CURSORS, DISPLAY, TRIGGER, SAVE, AUTOSET, MEASURE, PRINT, SETUP, SIZE]
+    buttons.forEach(button => {
+        button.addEventListener("keydown", preventSpaceTrigger);
     });
 
     setupTriggerCursor();
@@ -720,7 +705,7 @@ function MAINLOOP(){
                         if (channelData[key].type == "generatedData" && channelData[key].operation == "fft"){
                             drawFFT(key);
                         }else{
-                            drawSignalFromFile(key);
+                            drawSignal(key);
                             setScreenInformation();
                         }
                     };
@@ -740,9 +725,6 @@ function MAINLOOP(){
                 }else{
                     triggerClock = triggerClock + loopDelay;
                 }
-            }else if(isRunning == false){
-                clearCanvas();
-                drawGrid('rgba(128, 128, 128, 0.5)', 3);
             }
         }else{
             console.log("Still waiting on settings retrieval");
