@@ -28,5 +28,7 @@ This setup will allow for precise and detailed gamma-ray tracking and spectrosco
 For more information on how to set up and use the application, see the documentations : 
 
 **Dev Documentation** : https://github.com/Wewenito/Oscillo/tree/main/doc/Documentation%20DEV/index.html
+
 **User Documentation** : https://github.com/Wewenito/Oscillo/blob/main/oscillo/static/DOCS/index.html
+
 **Docker container installation** : https://github.com/Wewenito/Oscillo/blob/main/docker/Procedure_installation.txt
