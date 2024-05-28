@@ -14,6 +14,8 @@
     <div id="toast"><!--message goes here--></div>
     {% csrf_token %}<!--Token used during http request and such by the javascript-->
     <script>
+        let DocFileName = "module-MAIN-PAGE.html";
+
         const channelsMetaData = {{ channels|safe }};
         {% if user.is_authenticated %}
             const userId = {{ user.id }};
@@ -104,7 +106,6 @@
                 <a href={% url "oscillo:register" %}><button>Register</button></a>
             {% endif %}
             <a href={% url "oscillo:oscilloSelect" %}><button>Settings</button></a>
-
         </nav>
         <div id="channel-select-div" class="main-divs-aside"><!--Contains the Channel selections-->
             <span>
@@ -195,8 +196,6 @@
         </div>
       </div>
 
-
-    {% comment %} <script src={% static 'FILES/test.js' %}></script> {% endcomment %}
     <script src={% static 'FILES/js/drawings.js' %}></script>
     <script src={% static 'FILES/js/modal.js' %}></script>
     <script src={% static 'FILES/js/ui.js' %}></script>
@@ -205,5 +204,25 @@
     <script src={% static 'FILES/js/triggerAndAutoset.js' %}></script>
     <script src={% static 'FILES/js/misc.js' %}></script>
     <script src={% static 'FILES/js/main.js' %}></script>
+
+    <script>
+    //====================== INTERACTIVE DOC LISTENER =======================
+    document.addEventListener('keydown', function(event) {
+        const modeSelectionInput = document.getElementById("id_mode");
+
+        if (event.key === 'F1' || event.code === 'F1') {
+            console.log("F1 pressed");
+            event.preventDefault();
+            let relativeStaticURI = "{% static 'DOCS/' %}";
+
+            let fullUrl = window.location.origin + relativeStaticURI + DocFileName;
+            let docWindow = window.open(fullUrl, '_blank');
+
+            if (!docWindow || docWindow.closed || typeof docWindow.closed === 'undefined') {
+                alert('You need to allow popups to open the documentation by pressing F1.');
+            }
+        }
+    });
+    </script>
 </body>
 </html>

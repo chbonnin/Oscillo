@@ -83,6 +83,7 @@
     </footer>
 
     <script>
+    //====================== INPUT DISPLAY =======================
         function updateFormVisibility() {
             let selectedMode = document.getElementById('id_mode').value;
             let settingsFormElements = document.querySelectorAll(".settingsForm-elements");
@@ -107,6 +108,31 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateFormVisibility();
         });
+
+
+    //====================== INTERACTIVE DOC LISTENER =======================
+    document.addEventListener('keydown', function(event) {
+        const modeSelectionInput = document.getElementById("id_mode");
+
+        if (event.key === 'F1' || event.code === 'F1') {
+            event.preventDefault();  // Prevent the default action (which is usually opening the help menu)
+            let relativeStaticURI = "{% static 'DOCS/' %}";
+            let fileName;
+            if (modeSelectionInput.value == "REAL-TIME"){
+                fileName = "module-SETTINGS.html#.Real-Time";
+            }else if (modeSelectionInput.value == "FILE"){
+                fileName = "module-SETTINGS.html#.Files";
+            }else{
+                fileName = "module-SETTINGS.html";
+            }
+            let fullUrl = window.location.origin + relativeStaticURI + fileName;
+            let docWindow = window.open(fullUrl, '_blank');
+
+            if (!docWindow || docWindow.closed || typeof docWindow.closed === 'undefined') {
+                alert('You need to allow popups to open the documentation by pressing F1.');
+            }
+        }
+    });
     </script>
 </body>
 </html>
