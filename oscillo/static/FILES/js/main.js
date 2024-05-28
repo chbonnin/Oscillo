@@ -70,7 +70,7 @@ let channelData = {}; //This dictionnary holds the data for each channel includi
 let horizontalOffset = 0;
 let horizontalScale = 50;
 
-let loopDelay = 100//ms
+let loopDelay = 50//ms
 let isRunning = false;
 let triggered = false;
 let triggerClock = 0;
@@ -555,6 +555,8 @@ function environmentSetup(){//This function sets up anything necessary for inter
     SAVE.addEventListener("click", function(){
         populateModalForSave();
         displayBaseModal();
+
+        DocFileName = "module-SAVE.html";
     });
 
 
@@ -563,6 +565,8 @@ function environmentSetup(){//This function sets up anything necessary for inter
     MEASURE.addEventListener("click", function(){
         populateModalForMeasure_MATHS();
         displayBaseModal();
+
+        DocFileName = "module-MEASURE.html";
     });
 
 
@@ -575,17 +579,23 @@ function environmentSetup(){//This function sets up anything necessary for inter
             populateModalForTrigger();
             displayBaseModal();
         }
+        DocFileName = "module-TRIGGER.html";
     });
 
     //===================== AUTOSET BUTTON INTERACTIONS =====================
 
-    AUTOSET.addEventListener("click", autoset);
+    AUTOSET.addEventListener("click", function(){
+        autoset();
+        DocFileName = "module-AUTOSET.html";
+    });
 
     //===================== CURSORS BUTTON INTERACTIONS =====================
 
     CURSORS.addEventListener("click", function(){
         populateModalForCursors();
         displayBaseModal();
+
+        DocFileName = "module-CURSORS.html";
     });
 
     //===================== SIZE BUTTON INTERACTIONS =====================
@@ -593,6 +603,8 @@ function environmentSetup(){//This function sets up anything necessary for inter
     SIZE.addEventListener("click", function(){
         populateModalForSize();
         displayBaseModal();
+
+        DocFileName = "module-SIZE.html";
     });
 
 
@@ -643,6 +655,8 @@ function environmentSetup(){//This function sets up anything necessary for inter
     DISPLAY.addEventListener("click", function(){
         populateModalForDisplay();
         displayBaseModal();
+
+        DocFileName = "module-DISPLAY.html";
     });
 
     //===================== GENERAL ZOOM RESET VIA KEY PRESS CTRL + X =====================
@@ -658,6 +672,8 @@ function environmentSetup(){//This function sets up anything necessary for inter
     SETUP.addEventListener("click", function(){
         populateModalForSetup();
         displayBaseModal();
+
+        DocFileName = "module-SETUP.html";
     });
 
     //====================== AVOID MODAL DUPLICATIONS =======================

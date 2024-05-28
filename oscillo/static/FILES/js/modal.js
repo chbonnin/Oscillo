@@ -36,6 +36,8 @@ function displayBaseModal(){
 function hideModal() {
     MODAL.style.display = "none"; // Hide the modal by setting display to 'none'
     clearModal();
+
+    DocFileName = "module-MAIN-PAGE.html";
 };
 
 function clearModal(){
