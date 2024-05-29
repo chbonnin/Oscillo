@@ -65,6 +65,8 @@ let autoMeasureOptions = {
     mid: {set: false},// middle Value of the signal (mV)
 };
 
+let LOOP;
+
 let channelData = {}; //This dictionnary holds the data for each channel including points, status, color, etc..
 
 let horizontalOffset = 0;
@@ -378,10 +380,6 @@ function saveColorChoices(){
         gridOpacity = 0;
     }
 
-    // console.log("FINAL ARRAYS : ");
-    // console.log(ColorChoicesDark);
-    // console.log(ColorChoicesLight);
-
     //Now we send the data to the backend where we'll change the preferences.
     const Http = new XMLHttpRequest();
     const url = `/oscillo/setNewColors/${UID}/`;
@@ -437,6 +435,16 @@ function saveColorChoices(){
             }
         }
     });
+
+    let timeDelay = parseInt(document.getElementById("timeDelayInput").value, 10);
+    if (timeDelay > 1000){
+        timeDelay = 1000;
+    }else if(timeDelay < 30){
+        timeDelay = 30;
+    }
+    loopDelay = timeDelay;
+    clearInterval(LOOP);
+    MAINLOOP();
 };
 
 /*
@@ -756,8 +764,7 @@ function MAINLOOP(){
         }else{
             console.log("Still waiting on settings retrieval");
         }
-    }, loopDelay)
-
+    }, loopDelay);
 };
 
 document.addEventListener('DOMContentLoaded', function() {
