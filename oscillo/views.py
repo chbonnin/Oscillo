@@ -92,6 +92,9 @@ class Main(TemplateView):
                     #Handle the file upload.
                     print("Getting file size")
                     file = form.cleaned_data['file']
+                    if file is None:
+                        form = OscilloSettingsForm()
+                        return render(request, 'oscillo/select.html', {'form': form, "error_message": "Please select a file to upload."})
                     file_size_in_bytes = file.size
                     file_size_in_mb = file_size_in_bytes / (1024 * 1024)
                     print(f"Uploaded file size: {file_size_in_mb:.2f} MB")
@@ -128,7 +131,7 @@ class Main(TemplateView):
             return render(request, 'oscillo/select.html', {'form': form})
 
 
-    def settings(self, request):#In the future (in prod) this function will retrieve the settings from the server (starecontrol)
+    def settings(self, request):
         try:
             user = User.objects.get(pk=request.user.id)
             favorite_colors, created = FavoriteColors.objects.get_or_create(user=user)
@@ -174,7 +177,7 @@ class Main(TemplateView):
 
 
     def getFileData(self, request, filePosition, fileName):
-        clear_console()
+        #clear_console()
         print(f"GET DATA AT POSITION {filePosition} FOR FILE {fileName}")
 
         completeFilePath = os.path.join(settings.BASE_DIR, 'temp_files') + "/" + fileName
@@ -448,22 +451,51 @@ def read_file(file_path, position_within_the_file):
             while True:
                 bytes_read = file.read(2)
                 value = struct.unpack('>h', bytes_read)[0]
+
                 if value == -1:
                     if currentChannel is None:
                         currentChannel = 1
                     elif currentChannel == 1:
                         currentChannel = None
+
+                        #Here we handle the case in which there aren't 4 channels in this file
+                        next_bytes = file.read(2)
+                        next_value = struct.unpack('>h', next_bytes)[0]
+                        file.seek(-2, 1)#Go back to the previous position
+                        if next_value != -2 and next_value != -3 and next_value != -4:
+                            print("NO MORE CHANNELS AFTER CH1")
+                            latest_position = file.tell()
+                            return latest_position, total_samples
+                    continue
                 elif value == -2:
                     if currentChannel == None:
                         currentChannel = 2
                     elif currentChannel == 2:
                         currentChannel = None
+
+                        #Here we handle the case in which there aren't 4 channels in this file
+                        next_bytes = file.read(2)
+                        next_value = struct.unpack('>h', next_bytes)[0]
+                        file.seek(-2, 1)#Go back to the previous position
+                        if next_value != -3 and next_value != -4:
+                            print("NO MORE CHANNELS AFTER CH2")
+                            latest_position = file.tell()
+                            return latest_position, total_samples
                     continue
                 elif value == -3:
                     if currentChannel == None:
                         currentChannel = 3
                     elif currentChannel == 3:
                         currentChannel = None
+
+                        #Here we handle the case in which there aren't 4 channels in this file
+                        next_bytes = file.read(2)
+                        next_value = struct.unpack('>h', next_bytes)[0]
+                        file.seek(-2, 1)#Go back to the previous position
+                        if next_value != -4:
+                            print("NO MORE CHANNELS AFTER CH3")
+                            latest_position = file.tell()
+                            return latest_position, total_samples
                     continue
                 elif value == -4:
                     if currentChannel == None:
@@ -504,7 +536,10 @@ def read_file(file_path, position_within_the_file):
             }
             
             #Then we get the data of said section
-            position_within_the_file, NbSamples = read_data(filename, position_within_the_file)
+            try:
+                position_within_the_file, NbSamples = read_data(filename, position_within_the_file)
+            except:
+                raise EOFError("End of file reached.")
 
             DataPacked = [NbSamples, headerData, ChannelPoints1, ChannelPoints2, ChannelPoints3, ChannelPoints4]
 
