@@ -36,13 +36,6 @@
 <div id="main">
     
     <h1 class="page-title">main.js</h1>
-    
-
-    
-
-
-
-    
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
@@ -218,6 +211,8 @@ let autoMeasureOptions = {
     lowFreq: {set: false},
     mid: {set: false},
 };
+
+let LOOP;
 
 /**
  * This object holds everything needed for the display and interaction with a signal.
@@ -473,7 +468,17 @@ function fetchDataFromFile(){
                         drawSignal(key);
                     }
                 }
+
+                if (firstLoop){
+                    if (channelData[key].points.length == 0){
+                        document.getElementById(key).className = "channel-not-displayed ch-button";
+                        document.getElementById("scroller-"+key).style.display = "none";
+                        delete channelData[key];
+
+                    }
+                }
             });
+            firstLoop = false;
         } else if (Http.status === 408){
             console.error("Backend Error" + Http.status)
         } else {
@@ -629,10 +634,6 @@ function saveColorChoices(){
         gridOpacity = 0;
     }
 
-    // console.log("FINAL ARRAYS : ");
-    // console.log(ColorChoicesDark);
-    // console.log(ColorChoicesLight);
-
     //Now we send the data to the backend where we'll change the preferences.
     const Http = new XMLHttpRequest();
     const url = `/oscillo/setNewColors/${UID}/`;
@@ -688,6 +689,16 @@ function saveColorChoices(){
             }
         }
     });
+
+    let timeDelay = parseInt(document.getElementById("timeDelayInput").value, 10);
+    if (timeDelay > 1000){
+        timeDelay = 1000;
+    }else if(timeDelay < 30){
+        timeDelay = 30;
+    }
+    loopDelay = timeDelay;
+    clearInterval(LOOP);
+    MAINLOOP();
 };
 
 /**
@@ -998,7 +1009,7 @@ function MAINLOOP(){
                     fetchRawData();
                 }
                 setScreenInformation();
-            }else if(triggered){
+            }else if(triggered || !isRunning){
                 clearCanvas();
                 drawGrid('rgba(128, 128, 128, 0.5)', 3);
                 Object.keys(channelData).forEach(key => {
@@ -1047,12 +1058,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });</code></pre>
         </article>
     </section>
-
-
-
-
-    
-    
 </div>
 
 <br class="clear">
@@ -1064,8 +1069,5 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>prettyPrint();</script>
 <script src="scripts/polyfill.js"></script>
 <script src="scripts/linenumber.js"></script>
-
-
-
 </body>
 </html>
