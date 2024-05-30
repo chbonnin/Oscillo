@@ -66,6 +66,91 @@
                 </ul>
                 <p>This setup will allow for precise and detailed gamma-ray tracking and spectroscopy.</p>
                 <hr>
+
+                <h1 class="mt-1">Installation tutorial of the oscillo app.</h1>
+
+                <h4 class="name">Seting up the database container</h4>
+                <dl class="details">
+                    <p>The first thing to setup for this app to work properly is the database container.</p>
+                    <p>
+                        A script is available within the "docker/" folder of the github repository (<a href="https://github.com/Wewenito/Oscillo/tree/main/docker">link here</a>), 
+                        called 'startMysqlDB.sh', to create and start the database container, simply type the following command in the terminal : 
+                    </p>
+                    <p class="code-example">
+                        > bash startMysqlDB.sh<br>
+                        > #OR<br>
+                        > ./startMysqlDB.sh<br>
+                    </p>
+                    <p>This might take a few minutes while the computer downloads any packages needed for the container..</p>
+                    <p>Once this is done, the mysql server/container should be up and running, you can check for sure by typing this command to the terminal : </p>
+                    <p class="code-example">> docker ps<br>#This should display a list of containers, check for the one with the name 'mysql' and make sure its status is set to 'up'.</p>
+                </dl>
+
+                <h4 class="name">Setting up & starting the oscillo-app container</h4>
+                <dl class="details">
+                    <p>The setup for the app container itself has an extra step but isn't much more complicated than the mysql one.</p>
+                    <p>In a terminal, type the following commands : </p>
+                    <p class="important">You need to be within the 'docker' folder for these steps !</p>
+                    <p class="code-example">
+                        #We start by building the image for the container.<br>
+                        > docker build -t oscillo-app . <br>
+                        #Now we create & start the container.<br>
+                        > bash runOscillo.sh <br>
+                        > #OR<br>
+                        > ./runOscillo.sh
+                    </p>
+
+                    <p>This step might take a few minutes, once done, the app should be up and running. You can make sure the app container is up and running like so :</p>
+                    <p class="code-example">> docker ps<br>#This should display a list of containers, check for the one with the name 'oscillo-app' and make sure its status is set to 'up'.</p>
+                </dl>
+
+                <h4 class="name">Accessing the oscillo-app</h4>
+                <dl class="details">
+                    <p>Now that everything is running, you can access the app by opening any internet browser and type any of the urls below to access it :</p>
+                    <ul class="classic-list">
+                        <li>http://127.0.0.1:8000/oscillo/</li>
+                        <li>http://localhost:8000/oscillo/</li>
+                        <li>http://*Your machine's name*:8000/oscillo/</li>
+                    </ul>
+
+                </dl>
+
+                <h4 class="name">Start-up mock-up server for the oscillo app (Sinusoidals only)</h4>
+                <dl class="details">
+                    <p>
+                        If you need to test wether or not the app is functionnal with a demo of some sort, you can follow this procedure to start a small server that will
+                        generate 4 sinusoidals that will be sent to the oscilloscope.
+                    </p>
+
+                    <p>Navigate to the "docker" folder, then, using the script "HandleFakeSins.sh", you can start or stop the demo sinusoidals like so :</p>
+                    <p class="code-example">
+                        #Starting the demo sinusoidals : <br>
+                        > bash HandleFakeSins.sh start<br>
+                        #Stopping the demo sinusoidals : <br>
+                        > bash HandleFakeSins.sh stop
+                    </p>
+                </dl>
+
+                <h4 class="name">Start-up mock-up server for the oscillo app (.dat files)</h4>
+                <dl class="details">
+                    <p>A second script is put at your disposal to allow a user to select a .dat file containing raw data and send said data to the app just like the STARE cards would. </p>
+                    <p>Same as with the demo sinusoidals, a script is available within the "docker" folder. Navigate to this folder in a terminal and use the script like so : </p>
+
+                    
+                    <p class="code-example">
+                        #Starting the server with a specific .dat file : <br>
+                        > bash HandleFakeStare.sh start<br>
+                        > Please enter the path to the .dat file you wish to upload : <br>
+                        > * Select here a .dat file you want to use *
+                    </p>
+
+                    <p>Now the server inside the app container will be sending the data from the file given, you can see it via the oscilloscope's page.</p>
+
+                    <p class="code-example">
+                        #Stopping the server : <br>
+                        > bash HandleFakeStare.sh stop
+                    </p>
+                </dl>
             </article>
         </section>
     </div>
