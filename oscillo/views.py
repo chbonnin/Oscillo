@@ -1,4 +1,4 @@
-#Backend-related imports
+# Backend-related imports
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
@@ -7,23 +7,24 @@ from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 from tempfile import NamedTemporaryFile
 
-#Python general imports
+# Python general imports
 import random
 import json
 import socket
-import pickle
-import sys
-import base64
 import os
-import struct, time
+import struct
+import numpy
 from shutil import rmtree
 
-#User-related imports
+# User-related imports
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import AuthenticationForm
+# from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
-from .forms import CustomUserCreationForm, CustomAuthenticationForm, OscilloSettingsForm, UserUpdateForm, PasswordUpdateForm
+from .forms import (
+    CustomUserCreationForm, CustomAuthenticationForm, OscilloSettingsForm, UserUpdateForm, PasswordUpdateForm
+)
 from .models import FavoriteColors
+
 
 def clear_temp_files(directory):
     """
@@ -99,14 +100,15 @@ class Main(TemplateView):
                     file_size_in_mb = file_size_in_bytes / (1024 * 1024)
                     print(f"Uploaded file size: {file_size_in_mb:.2f} MB")
                     print(f"File name : {file.name}")
-                    if file.name.split(".")[-1] != "osc":
+                    strExt = file.name.split(".")[-1]
+                    if strExt not in ["osc", "dat"]:
                         form = OscilloSettingsForm()
                         return render(request, 'oscillo/select.html', {'form': form, "error_message": "The file given was not a .osc file."})
 
                     temp_files_directory = os.path.join(settings.BASE_DIR, 'temp_files')
                     clear_temp_files(temp_files_directory)
 
-                    temp_file = NamedTemporaryFile(delete=False, suffix=".osc", dir=temp_files_directory)
+                    temp_file = NamedTemporaryFile(delete=False, suffix="."+strExt, dir=temp_files_directory)
                     for chunk in file.chunks():
                         temp_file.write(chunk)
                     temp_file.close()
@@ -163,7 +165,6 @@ class Main(TemplateView):
         except socket.timeout:
             return HttpResponse("No data received so far..", status=408)
 
- 
     def getRawData(self, request):
         if not self.sock:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -175,14 +176,14 @@ class Main(TemplateView):
         print("received", len(data))
         return HttpResponse(data)
 
-
     def getFileData(self, request, filePosition, fileName):
-        #clear_console()
+        # clear_console()
         print(f"GET DATA AT POSITION {filePosition} FOR FILE {fileName}")
 
         completeFilePath = os.path.join(settings.BASE_DIR, 'temp_files') + "/" + fileName
         Data = read_file(completeFilePath, filePosition)
-        if Data == "EOF":#End Of File
+        # print("return", Data)
+        if Data == "EOF":  # End Of File
             Data = read_file(completeFilePath, 0)
 
         print("====================================================")
@@ -197,7 +198,7 @@ class Main(TemplateView):
         print("Header Data : ", Data[0][1])
         print("====================================================")
         return JsonResponse(Data, safe=False)
-    
+
 
 def SetNewColors(request, UID):
     if request.method == 'POST':
@@ -427,7 +428,7 @@ def read_file(file_path, position_within_the_file):
             # Convert reordered bytes to a number
             trigger_count = struct.unpack('>I', reordered)[0]
             triggers.append(trigger_count)
-        
+
         # Unpacking and rearranging the last 6 bytes for ADC clock ticks
         # Original order: 5-6-3-4-1-2, we need to reorder to 1-2-3-4-5-6
         reordered_ticks = header[20:22] + header[18:20] + header[16:18]
@@ -438,11 +439,11 @@ def read_file(file_path, position_within_the_file):
 
     def read_data(filename, position):
         with open(filename, 'rb') as file:
-            file.seek(22 + position) #skip the header (22bytes long), indexing starts at 0
+            file.seek(22 + position)  # skip the header (22bytes long), indexing starts at 0
             total_samples = 0
             currentChannel = None
 
-            #Here we make sure the arrays are empty and not full from a previous loop
+            # Here we make sure the arrays are empty and not full from a previous loop
             ChannelPoints1.clear()
             ChannelPoints2.clear()
             ChannelPoints3.clear()
@@ -458,55 +459,57 @@ def read_file(file_path, position_within_the_file):
                     elif currentChannel == 1:
                         currentChannel = None
 
-                        #Here we handle the case in which there aren't 4 channels in this file
+                        # Here we handle the case in which there aren't 4 channels in this file
                         next_bytes = file.read(2)
                         next_value = struct.unpack('>h', next_bytes)[0]
-                        file.seek(-2, 1)#Go back to the previous position
+                        file.seek(-2, 1)  # Go back to the previous position
                         if next_value != -2 and next_value != -3 and next_value != -4:
                             print("NO MORE CHANNELS AFTER CH1")
                             latest_position = file.tell()
                             return latest_position, total_samples
                     continue
                 elif value == -2:
-                    if currentChannel == None:
+                    if currentChannel is None:
                         currentChannel = 2
                     elif currentChannel == 2:
                         currentChannel = None
 
-                        #Here we handle the case in which there aren't 4 channels in this file
+                        # Here we handle the case in which there aren't 4 channels in this file
                         next_bytes = file.read(2)
                         next_value = struct.unpack('>h', next_bytes)[0]
-                        file.seek(-2, 1)#Go back to the previous position
+                        file.seek(-2, 1)  # Go back to the previous position
                         if next_value != -3 and next_value != -4:
                             print("NO MORE CHANNELS AFTER CH2")
                             latest_position = file.tell()
                             return latest_position, total_samples
                     continue
                 elif value == -3:
-                    if currentChannel == None:
+                    if currentChannel is None:
                         currentChannel = 3
                     elif currentChannel == 3:
                         currentChannel = None
 
-                        #Here we handle the case in which there aren't 4 channels in this file
+                        # Here we handle the case in which there aren't 4 channels in this file
                         next_bytes = file.read(2)
                         next_value = struct.unpack('>h', next_bytes)[0]
-                        file.seek(-2, 1)#Go back to the previous position
+                        file.seek(-2, 1)  # Go back to the previous position
                         if next_value != -4:
                             print("NO MORE CHANNELS AFTER CH3")
                             latest_position = file.tell()
                             return latest_position, total_samples
                     continue
                 elif value == -4:
-                    if currentChannel == None:
+                    if currentChannel is None:
                         currentChannel = 4
                     elif currentChannel == 4:
                         currentChannel = None
                         CurrentPosition = file.tell()
                         return CurrentPosition, total_samples
-                elif value == 24575 or value == 24576:#positive / negative overflow
+                elif value == 24575 or value == 24576:  # positive / negative overflow
                     continue
                 elif value >= 0 and value <= 16383:
+                    if value > 8191:
+                        value -= 16384  # signed value over 14 bits
                     if currentChannel == 1:
                         ChannelPoints1.append(value)
                     elif currentChannel == 2:
@@ -523,7 +526,7 @@ def read_file(file_path, position_within_the_file):
         filename = file_path
 
         try:
-            #Here we get the header of that section of the file
+            # Here we get the header of that section of the file
             header = read_header(filename, position_within_the_file)
             triggers, ticks = rearrange_bytes_and_convert(header)
 
@@ -534,11 +537,11 @@ def read_file(file_path, position_within_the_file):
                 "TriggerCountCH3": triggers[2],
                 "TriggerCountCH4": triggers[3]
             }
-            
-            #Then we get the data of said section
+
+            # Then we get the data of said section
             try:
                 position_within_the_file, NbSamples = read_data(filename, position_within_the_file)
-            except:
+            except Exception:
                 raise EOFError("End of file reached.")
 
             DataPacked = [NbSamples, headerData, ChannelPoints1, ChannelPoints2, ChannelPoints3, ChannelPoints4]
@@ -546,8 +549,53 @@ def read_file(file_path, position_within_the_file):
             return DataPacked, position_within_the_file
 
         except EOFError as e:
-            #End of file reached, we start over.
+            # End of file reached, we start over.
             print(str(e))
             return "EOF"
 
-    return MAIN(position_within_the_file)
+    def raw_read_data(filename, position):
+        total_samples = 0
+        nb_samples = 1024
+        channels = []
+        with open(filename, 'rb') as file:
+            # file.seek(position)
+            # Here we make sure the arrays are empty and not full from a previous loop
+            # ChannelPoints1.clear()
+            # ChannelPoints2.clear()
+            # ChannelPoints3.clear()
+            # ChannelPoints4.clear()
+
+            # while True:
+            channels.append(list(map(int, numpy.fromfile(file, dtype=numpy.uint16, count=nb_samples,
+                                                         offset=position + nb_samples * 0))))
+            channels.append(list(map(int, numpy.fromfile(file, dtype=numpy.uint16, count=nb_samples,
+                                                         offset=position + nb_samples * 2))))
+            channels.append(list(map(int, numpy.fromfile(file, dtype=numpy.uint16, count=nb_samples,
+                                                         offset=position + nb_samples * 4))))
+            channels.append(list(map(int, numpy.fromfile(file, dtype=numpy.uint16, count=nb_samples,
+                                                         offset=position + nb_samples * 6))))
+            total_samples += nb_samples * 4
+            latest_position = position + nb_samples * 8
+
+        return latest_position, total_samples, channels
+
+    def raw_main(position_within_the_file):
+        headerData = {
+            "ADCClockTicks": position_within_the_file,
+            "TriggerCountCH1": 0,
+            "TriggerCountCH2": 1,
+            "TriggerCountCH3": 2,
+            "TriggerCountCH4": 3
+        }
+        try:
+            position_within_the_file, NbSamples, channels = raw_read_data(file_path, position_within_the_file)
+        except Exception:
+            raise EOFError("End of file reached.")
+
+        DataPacked = [NbSamples, headerData] + channels
+        return DataPacked, position_within_the_file
+
+    if file_path.endswith(".osc"):
+        return MAIN(position_within_the_file)
+    else:
+        return raw_main(position_within_the_file)

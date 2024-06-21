@@ -87,7 +87,7 @@ class OscilloSettingsForm(forms.Form):
         choices=MODE_CHOICES,
         label='Mode :',
         initial='REAL-TIME',
-        widget=forms.Select(attrs={'onchange': 'updateFormVisibility();', 'class': 'form-control'}),
+        widget=forms.Select(attrs={'onchange': 'updateFormVisibility();', 'class': 'form-control', "size": "2"}),
     )
 
     channels = forms.IntegerField(

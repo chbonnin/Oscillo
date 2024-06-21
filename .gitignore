@@ -1,0 +1,3 @@
+*.pyc
+temp_files/*.osc
+temp_files/*.dat
